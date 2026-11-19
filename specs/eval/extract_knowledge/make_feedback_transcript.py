@@ -1,0 +1,57 @@
+# ruff: noqa: E501  (평가 자료의 대화 글은 줄을 나누지 않는다)
+"""지식 추출 평가 자료: 계획을 보여 준 뒤의 피드백 대화를 Claude Code 대화 기록 모양(JSONL)으로 만든다.
+사용자 말은 사용자가 직접 쓴 추출 목표 예시(persona-enhancer-pg2/docs/extraction-target-examples.md)와
+지식 추출 초안의 예시에서 가져왔다. 줄마다 기대(뽑음 / 뽑지 않음)를 EXPECTED 에 적었다."""
+
+import json
+import sys
+
+TURNS = [
+    ("assistant", '계획 1 "쇼핑몰 주문 기능 추가" 을 만들었습니다. 노드 6개 … 고칠 곳이 있으면 대화로 말해 주세요.'),
+    ("user", "이건 왜 이렇게 나눴어?"),
+    ("assistant", "화면, 데이터, API, 경쟁사 조사로 나눴습니다. UI/UX 설계는 노드 하나로 화면 설계를 맡겼습니다."),
+    ("user", "ui/ux 설계 단계는 와이어 프레임, 디자인 테마 선택, 공통 컴포넌트로 나누는 과정으로 나눠서 진행할 수 있게 해줘."),
+    ("assistant", "UI/UX 설계를 세 노드로 나눴습니다. 주문 테이블 설계 노드에서는 주문 항목 테이블에 FK 를 겁니다."),
+    ("user", "fk 걸지 마, 우리 서비스는 안 걸어"),
+    ("assistant", "알겠습니다. 주문 목록 조회는 주문, 주문 항목, 상품, 회원을 한 번에 조인하는 쿼리로 작성합니다."),
+    ("user", "조인 너무 깊게 하지 마. 3번 이하로 하고, 두 번 조회해서 풀 수 있으면 두 번 조회해도 돼"),
+    ("assistant", "반영했습니다. 카카오 스타일 서비스 조사 노드는 서비스 전체 페이지를 봅니다."),
+    ("user", "카카오 스타일 서비스 조사는 3 depth 까지의 페이지만 해"),
+    ("assistant", "범위를 줄였습니다. 주문 테이블은 주문, 주문 항목, 배송, 결제 이력까지 한 번에 설계합니다."),
+    ("user", "테이블은 최소 스펙부터 꼭 필요한 것만 해. 기존 테이블에 붙이는 거면 기존 DB 먼저 조회해서 컨벤션 보고 해"),
+    ("assistant", "최소 스펙으로 줄였습니다. 노드 제목은 \"주문·결제 데이터 모델 변경\"입니다."),
+    ("user", "노드 제목 좀 짧게 바꿔"),
+    ("assistant", "\"주문 데이터 모델\"로 바꿨습니다. 결제 연동 방식은 조사 결과에 따라 A 안으로 가정하고 이후 노드를 짰습니다."),
+    ("user", "조사 결과 안 나왔는데 미리 결론 낸 것처럼 계획 세우지 마. 그 뒤는 비워 두고 나한테 물어봐"),
+    ("assistant", "결제 연동 뒤 노드를 비우고 확인 노드를 넣었습니다. 배송 테이블에도 주문 FK 를 겁니다."),
+    ("user", "아까 말했잖아 fk 걸지 말라고"),
+    ("assistant", "FK 를 뺐습니다. 이대로 진행할까요?"),
+    ("user", "응 좋아"),
+]
+
+EXPECTED = """
+뽑음
+- plan  UI/UX 설계: 와이어프레임, 디자인 테마, 공통 컴포넌트로 나눈다
+- domain 테이블 설계: 기존 서비스가 FK 를 걸지 않으면 걸지 않는다 (quotes 두 개로 묶음: "fk 걸지 마…", "아까 말했잖아…")
+- domain SQL 조회: join 3번 이하, 두 번 조회해도 됨
+- plan  경쟁사 조사: 3 depth 까지 (카카오 스타일 → 이름을 빼고 일반화)
+- domain 테이블 설계: 최소 스펙부터, 기존 테이블에 붙이면 기존 DB 를 먼저 조회해 컨벤션 파악
+판단 대상 (태도에 가까움, 종류가 plan·domain 뿐이라 어떻게 나오는지 본다)
+- 조사 결과가 확정되지 않았으면 결론을 가정해 계획하지 말고 비워 두고 묻는다
+뽑지 않음
+- "이건 왜 이렇게 나눴어?" (질문만)
+- "노드 제목 좀 짧게 바꿔" (이번 계획에서만)
+- "응 좋아" (동의만)
+"""
+
+if __name__ == "__main__":
+    out = sys.argv[1]
+    rows = []
+    for index, (role, text) in enumerate(TURNS):
+        at = f"2026-11-19T10:{index:02d}:00.000Z"
+        if role == "user":
+            rows.append({"type": "user", "timestamp": at, "message": {"content": text}})
+        else:
+            rows.append({"type": "assistant", "timestamp": at, "message": {"content": [{"type": "text", "text": text}]}})
+    with open(out, "w", encoding="utf-8") as f:
+        f.write("\n".join(json.dumps(row, ensure_ascii=False) for row in rows))

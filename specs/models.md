@@ -1,0 +1,105 @@
+# model
+
+## plan
+
+계획, 노드, 간선. 원본은 계획 저장소(`port/plan_api/`)다.
+
+### Plan (`model/plan/plan.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| plan_id | int | 계획 저장소가 준다 |
+| title | str | |
+| request | str | 명령서 본문 (md) |
+| persona_ids | tuple[int, ...] | 참여 페르소나 id |
+| status | PlanStatus | |
+| created_at | str | ISO 8601 |
+| nodes | tuple[PlanNode, ...] | |
+| edges | tuple[PlanEdge, ...] | |
+
+동작: `node(node_id) -> PlanNode` (없으면 KeyError), `prerequisites(node_id) -> tuple[int, ...]` (간선으로 바로 이어진 앞 노드 id)
+
+### PlanNode (`model/plan/plan_node.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| node_id | int | 계획 저장소가 준다 |
+| title | str | |
+| kind | NodeKind | |
+| persona_ids | tuple[int, ...] | 확인 노드면 빈 튜플 |
+| output_spec | str | md. `### 하는 일`, `### 산출물`, `### 그 외 설명` |
+| status | PlanNodeStatus | |
+
+선행 노드는 필드로 두지 않는다. `Plan.prerequisites` 로 간선에서 계산한다.
+
+### PlanEdge (`model/plan/plan_edge.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| edge_id | int | |
+| from_node_id | int | 이 노드가 끝나야 |
+| to_node_id | int | 이 노드를 시작한다 |
+
+### PlanStatus (`model/plan/plan_status.py`)
+DRAFTING = "drafting", REVIEWING = "reviewing", APPROVED = "approved", REJECTED = "rejected", RUNNING = "running", DONE = "done"
+
+동작: `can_move_to(to) -> bool`. 허용: drafting → reviewing, reviewing → approved 또는 rejected, approved → running, running → done. 흐름 도식 B 절의 가안이다.
+
+### PlanNodeStatus (`model/plan/plan_node_status.py`)
+TODO = "todo", RUNNING = "running", DONE = "done", FAILED = "failed", SKIPPED = "skipped"
+
+번들 engine 의 `NodeStatus` 와 다른 것이다.
+
+### NodeKind (`model/plan/node_kind.py`)
+DOCUMENT = "document", RESEARCH = "research", CODE = "code", HITL = "hitl"
+
+## node_run
+
+노드 하나의 로컬 실행 기록. 계획 폴더의 `nodes/<node_id>/run.json` 에 저장한다 (`port/local/plan_folder/`).
+
+### NodeRun (`model/node_run/node_run.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| round | int | 몇 번째 실행인지 |
+| status | PlanNodeStatus | 원본은 계획 저장소 |
+| started_at | str \| None | |
+| finished_at | str \| None | |
+| read_inputs | tuple[ReadInput, ...] | 이 회차에 읽은 선행 노드와 그 회차 |
+| confirm | str \| None | 확인 노드면 사용자가 한 말 |
+| skipped_reason | str \| None | 건너뛴 이유 |
+
+동작: `start(now, read_inputs) -> NodeRun`, `finish(status, now) -> NodeRun`
+
+### ReadInput (`model/node_run/read_input.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| node_id | int | 선행 노드 |
+| round | int | 읽은 결과의 회차 |
+
+## persona
+
+### Persona (`model/persona/persona.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| persona_id | int | 계획 저장소(서버)가 준다 |
+| name | str | 예: dankim-persona |
+| description | str | |
+
+## memory
+
+지식. 작업 이름(theme) 아래 md 본문(body).
+
+### Memory (`model/memory/memory.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| memory_id | int | |
+| kind | MemoryKind | |
+| theme | str | 작업 이름 |
+| body | str | md. 덧붙일 때마다 `****** KNOWLEDGE APPENDED <n> ********` 머리를 달고 뒤에 붙는다 |
+| persona_ids | tuple[int, ...] | |
+| sources | tuple[MemorySource, ...] | 근거 |
+
+동작: `append(body, sources) -> Memory`
+
+### MemorySource (`model/memory/memory_source.py`)
+quote: str, plan_id: int
+
+### MemoryKind (`model/memory/memory_kind.py`)
+KNOWLEDGE = "knowledge", ATTITUDE = "attitude", PLAN = "plan"
