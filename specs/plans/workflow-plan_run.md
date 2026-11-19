@@ -299,6 +299,34 @@ tool-assess-model: **부분 충족**
 - 종류: MAIN_SESSION_SHOW. 묶음 5 의 notify 로 바꾼다
 - 글: "계획 {plan_id} \"{title}\" 을 실행 중으로 두었습니다. (작업 지시 만들기부터는 아직 만들지 않았습니다)" / 멈췄으면 "노드 {id}, {id} 에서 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}"
 
+### 묶음 2: 작업 지시 만들기 (prompts)
+
+사용자 결정 (2026-11-19): "run_agent 를 지금 만들어서 여기 사용 하도록", 앞 노드 절은 "읽어서 한번에 유저 컨텍스트로 넣는 방식으로 수정", 끊긴 노드처럼 실패한 노드는 한 질문에 모아 묻기, prompt.md 가 이미 있으면 만들지 않기 (브리핑의 제안대로 "이대로 진행").
+
+준비 평가 (tool-planner 형식)
+- 나누기: 공통 기능 run_agent (claude_utils, 묶음 2 와 4 가 씀). 포트는 있는 것 (read_command, read_prompt, write_prompt, persona_api list_personas)
+- tool-assess-port: 충족
+- tool-assess-model: 충족 (NodeSpec, PlanNode, Persona 그대로)
+- 공통 기능: [신규] claude_utils/agent/run_agent.py, dto/agent_result.py, agent_call_error.py. 기존 call_prompt 는 그대로
+
+흐름도
+```
+├─ prompts              [IN_ORDER] [run_if: plan_run.not_stopped]
+│  ├─ count_prompts     [CODE]                                         작업 지시가 없는 노드, 대략의 시간·비용
+│  ├─ show_estimate     [MAIN_SESSION_SHOW] [run_if: plan_run.has_missing_prompts]
+│  ├─ write_prompts     [CODE] [run_if: plan_run.has_missing_prompts]  run_agent(읽기 도구) 3개씩 동시
+│  ├─ ask_retry         [MAIN_SESSION_ASK] [run_if: plan_run.has_failed_prompts]   한 질문에 모아: 모두 다시 만들기 / 멈추기
+│  └─ retry_prompts     [CODE] [run_if: plan_run.has_failed_prompts]   한 번 더. 그래도 실패한 노드는 멈춤
+```
+
+단계 요지 (상세는 계획서 확답 뒤 같은 형식으로)
+- count_prompts: 출력 { missing: list[{node_id, title}], minutes: int, cost_low: float, cost_high: float }. 계산: 노드 하나 1분 안팎, 3개씩 동시, $0.3~0.6 (기존 plan-go/procedure.md:51)
+- show_estimate: "노드 {N}개의 작업 지시를 만듭니다. 약 {M}분, ${lo}~${hi} 안팎"
+- write_prompts: 출력 { made: list[{node_id, cost_usd, seconds}], failed: list[{node_id, title, reason}] }. 실패: claude 오류, 시간 초과(15분), 첫 줄이 "## 전체 작업과 이 노드의 목표" 가 아님. 실패한 노드는 prompt.md 를 쓰지 않는다
+- ask_retry: "아래 노드는 작업 지시를 만들지 못했습니다.\n- 노드 {id} \"{title}\": {이유}\n다시 만들까요?" 모두 다시 만들기 / 멈추기
+- retry_prompts: 출력 { made, failed }. 그래도 failed 가 있으면 멈춤 (알림에 그 노드)
+- 다시 수행: write_prompts·retry_prompts 는 안전 (prompt.md 가 생긴 노드는 다음에 건너뜀)
+
 ## 같이 쓰는 코드
 
 - 조건 함수: `workflow/plan_run/` 아래 (묶음 1 에서 위치 확정). 쓰는 단계: resume, prompts, rounds 안 묶음
@@ -322,6 +350,7 @@ tool-assess-model: **부분 충족**
 
 1. 메인 세션이 긴 명령(run_nodes 가 도는 next·done)을 백그라운드로 부르고 기다리게 할지 (묶음 4 전에 확인)
 2. 루프가 도는 동안 진행이 화면에 안 보임. 첫 판은 기록 파일에 노드 시작·끝만 남기는 안 (묶음 4)
+3. 명령이 끊겨도(예: 메인 세션의 10분 한도) run_agent 가 띄운 claude -p 는 끝까지 돌고 그 결과는 버려진다. 자식을 새 프로세스 그룹으로 띄우기 때문이다. 묶음 2 리뷰 지적, 실제로 생긴 적은 없음. 노드 실행은 10분을 넘기는 것이 보통이라 묶음 4 에서 1 과 함께 본다
 
 ## 확인 결과
 
@@ -344,4 +373,11 @@ tool-assess-model: **부분 충족**
   - 끊긴 노드를 한 질문에 모아 묻기. resume/broken_each 와 broken_nodes_items.py 를 지우고 resume/ask_rerun, resume/apply_rerun, resume/rerun_choices.py 로. 조건 has_broken.py 더함. stopped_node.py 의 stopped_nodes 는 apply_rerun 결과 하나만 본다
   - 시험: 끊긴 노드 둘을 한 번에 다시 실행, 둘에서 멈추면 상태 그대로·알림에 둘 다, 끊긴 노드 없는 이어 가기
   - 검증: ruff check, mypy, lint-imports 4/4, pytest 177 통과
-
+- 2026-11-19 묶음 2 (사용자 "오케이 좋소 이대로 한번 해봅시다"):
+  - 공통 기능: claude_utils/agent/run_agent.py, agent_call_error.py, dto/agent_result.py. 시험 tests/claude_utils/test_run_agent.py. 실제 claude(haiku)로 작업 폴더 파일 읽기 확인
+  - 단계: prompts/count_prompts, show_estimate, write_prompts(write_node_prompts.py, node_prompt_input.py, prompt_write_node_prompt.md, writing.md), ask_retry, retry_prompts, retry_choices.py. 조건 has_missing_prompts, has_failed_prompts
+  - 바꿈: stopped_node.py 를 stop_point(context, upto) 로 (멈춘 자리 종류와 노드). not_stopped 에 upto 인자 (선언의 읽기 검사가 뒤 단계 읽기를 막으므로). wip_notice 에 만든 작업 지시 수와 작업 지시 실패 멈춤 글
+  - 프롬프트: 기존 node_prompt.md 에서 맨 위 주석 줄을 빼고, 확인받은 두 문장만 고침. writing.md 그대로
+  - 시험: 묶음 1 시험의 노드에 작업 지시를 미리 넣어 작업 지시 만들기를 건너뜀. 더한 것: 원문 절·글쓰기 규칙 붙임과 입력 글(앞 노드 산출물 스펙, 담당, 결과 위치 없음), 있는 prompt.md 지킴, 실패 한 질문 → 다시 만들기, 멈추기·다시 실패면 멈춤, 끊긴 노드에서 멈추면 작업 지시 만들기 건너뜀
+  - 검증: ruff check, mypy, lint-imports 4/4, pytest 189 통과
+- 2026-11-20 묶음 2 리뷰 (지적 3 건): 반영하지 않음 (사용자). 1 다시 돌면 덮어씀(일어나지 않을 상황 전제), 3 claude 실행 파일 없음(다시 만들어도 실패). 2 자식 claude 가 남음은 정할 것 3 으로 묶음 4 에서

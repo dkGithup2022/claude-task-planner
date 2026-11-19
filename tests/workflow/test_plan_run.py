@@ -1,6 +1,9 @@
-"""plan_run 을 CLI 로 돌린다. 묶음 1 (find_plan, start_run, resume) 과 임시 끝 단계까지. 묶음마다 시험을 늘린다."""
+"""plan_run 을 CLI 로 돌린다. 묶음 1 (find_plan, start_run, resume), 묶음 2 (prompts) 와 임시 끝 단계까지.
+묶음마다 시험을 늘린다. 묶음 1 시험의 노드는 작업 지시를 미리 넣어 두어 작업 지시 만들기를 건너뛴다."""
 
 import json
+import stat
+import sys
 
 import pytest
 
@@ -62,6 +65,7 @@ def _add_running_node(plan_id: int, title: str, with_result: bool, with_run: boo
     writer = MockPlanApiWriter()
     node_id = writer.add_node(plan_id, NewNode(title, NodeKind.CODE, (1,), "### 하는 일")).node_id
     writer.update_node(plan_id, node_id, NodeChange(status=PlanNodeStatus.RUNNING))
+    DefaultPlanFolderWriter().write_prompt(plan_id, node_id, "## 전체 작업과 이 노드의 목표\n미리 둔 작업 지시")
     if with_run:
         started = NodeRun(2, PlanNodeStatus.TODO).start(STARTED_AT, ())
         DefaultPlanFolderWriter().save_run(plan_id, node_id, started)
@@ -81,7 +85,7 @@ def test_should_move_approved_plan_to_running(tmp_path, capsys):
     _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
 
     finished = run(capsys, "start", "plan_run")  # 마지막 보이기 단계의 글은 끝 지시에 실린다
-    assert finished["type"] == "finished"
+    assert finished["type"] == "finished", finished
     assert finished["payload"]["text"].startswith(f'계획 {plan_id} "댓글 기능" 을 실행 중으로 두었습니다.')
     assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.RUNNING
 
@@ -178,3 +182,137 @@ def test_should_fail_when_plan_is_missing(tmp_path, capsys):
     _session_with_command(tmp_path, "/task_plan_manager:plan-run 5")
     failed = run(capsys, "start", "plan_run")
     assert failed["type"] == "failed" and "계획 5 이 계획 저장소에 없습니다" in failed["payload"]["text"]
+
+
+# ── 묶음 2: 작업 지시 만들기 ─────────────────────────────────────────
+
+FAKE_AGENT = r"""
+import json, os, sys
+user_input = sys.stdin.read()
+title = user_input.split("- 제목: ", 1)[1].split("\n", 1)[0]
+log = os.environ["FAKE_AGENT_LOG"]
+with open(log, "a", encoding="utf-8") as f:
+    f.write(json.dumps({"title": title, "input": user_input}, ensure_ascii=False) + "\n")
+bad = os.environ.get("FAKE_AGENT_BAD", "")
+first = "조사를 마쳤습니다" if title in bad.split(",") else "## 전체 작업과 이 노드의 목표"
+print(json.dumps({"result": first + "\n" + title + " 작업 지시", "total_cost_usd": 0.4}, ensure_ascii=False))
+"""
+
+
+@pytest.fixture
+def fake_agent(tmp_path, monkeypatch):
+    """run_agent 대신 도는 가짜 claude. FAKE_AGENT_BAD 에 적은 제목의 노드는 첫 줄을 틀리게 답한다."""
+    exe = tmp_path / "fake-agent"
+    exe.write_text(f"#!{sys.executable}\n" + FAKE_AGENT)
+    exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
+    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", str(exe))
+    monkeypatch.setenv("FAKE_AGENT_LOG", str(tmp_path / "agent.jsonl"))
+
+    def bad(*titles: str) -> None:
+        monkeypatch.setenv("FAKE_AGENT_BAD", ",".join(titles))
+
+    return bad
+
+
+def _add_todo_node(plan_id: int, title: str, after: int | None = None) -> int:
+    writer = MockPlanApiWriter()
+    spec = f"### 하는 일\n{title} 작업을 한다\n\n### 산출물\n- 형태: 문서\n{title} 결과"
+    node_id = writer.add_node(plan_id, NewNode(title, NodeKind.CODE, (2,), spec)).node_id
+    if after is not None:
+        writer.add_edge(plan_id, after, node_id)
+    return node_id
+
+
+def _agent_inputs(tmp_path) -> dict[str, str]:
+    rows = [json.loads(line) for line in (tmp_path / "agent.jsonl").read_text(encoding="utf-8").splitlines()]
+    return {row["title"]: row["input"] for row in rows}
+
+
+def test_should_write_prompts_with_spec_and_writing_rules(tmp_path, capsys, fake_agent):
+    plan_id = _make_plan(PlanStatus.APPROVED)
+    table_id = _add_todo_node(plan_id, "테이블 설계")
+    api_id = _add_todo_node(plan_id, "API 구현", after=table_id)
+    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+
+    shown = run(capsys, "start", "plan_run")
+    assert shown["type"] == "show"
+    assert shown["payload"]["text"] == "노드 2개의 작업 지시를 만듭니다. 약 1분, $0.6~1.2 안팎"
+    finished = run(capsys, "next")
+    assert finished["type"] == "finished", finished
+    assert "작업 지시 2개를 새로 만들었습니다" in finished["payload"]["text"]
+
+    prompt = DefaultPlanFolderReader().read_prompt(plan_id, api_id)
+    assert prompt is not None
+    assert prompt.startswith("## 전체 작업과 이 노드의 목표\nAPI 구현 작업 지시\n\n## 이 노드의 산출물 스펙 (원문)\n")
+    assert "### 하는 일\nAPI 구현 작업을 한다" in prompt and prompt.rstrip().endswith("원래 표기대로 둔다.")
+    sent = _agent_inputs(tmp_path)["API 구현"]
+    assert "# 앞 노드\n\n## 테이블 설계 (1)\n\n### 하는 일\n테이블 설계 작업을 한다" in sent
+    assert "- 담당: be-developer" in sent and "be-developer: 백엔드 개발 역할" in sent
+    assert "result.md" not in sent  # 앞 노드 결과의 위치는 넣지 않는다
+    assert "(없음. 계획의 첫 노드)" in _agent_inputs(tmp_path)["테이블 설계"]
+
+
+def test_should_keep_existing_prompt(tmp_path, capsys, fake_agent):
+    plan_id = _make_plan(PlanStatus.APPROVED)
+    kept_id = _add_todo_node(plan_id, "테이블 설계")
+    DefaultPlanFolderWriter().write_prompt(plan_id, kept_id, "사람이 고친 작업 지시")
+    _add_todo_node(plan_id, "API 구현", after=kept_id)
+    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+
+    assert run(capsys, "start", "plan_run")["payload"]["text"].startswith("노드 1개의 작업 지시를 만듭니다")
+    run(capsys, "next")
+    assert DefaultPlanFolderReader().read_prompt(plan_id, kept_id) == "사람이 고친 작업 지시"
+    assert list(_agent_inputs(tmp_path)) == ["API 구현"]
+
+
+def test_should_ask_once_and_retry_failed_prompts(tmp_path, capsys, fake_agent, monkeypatch):
+    plan_id = _make_plan(PlanStatus.APPROVED)
+    table_id = _add_todo_node(plan_id, "테이블 설계")
+    api_id = _add_todo_node(plan_id, "API 구현", after=table_id)
+    fake_agent("API 구현")
+    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+
+    run(capsys, "start", "plan_run")
+    asked = run(capsys, "next")
+    assert asked["type"] == "ask"
+    assert asked["payload"]["question"] == (
+        "아래 노드는 작업 지시를 만들지 못했습니다.\n"
+        f'- 노드 {api_id} "API 구현": 첫 줄이 정해진 제목이 아님\n다시 만들까요?'
+    )
+    assert asked["payload"]["choices"] == ["모두 다시 만들기", "멈추기"]
+    assert DefaultPlanFolderReader().read_prompt(plan_id, api_id) is None
+
+    fake_agent()  # 다시 만들면 맞게 답한다
+    finished = run(capsys, "done", "--answer", "모두 다시 만들기")
+    assert "작업 지시 2개를 새로 만들었습니다" in finished["payload"]["text"]
+    assert DefaultPlanFolderReader().read_prompt(plan_id, api_id) is not None
+
+
+@pytest.mark.parametrize("answer", ["멈추기", "모두 다시 만들기"])
+def test_should_stop_when_prompt_still_missing(tmp_path, capsys, fake_agent, answer):
+    plan_id = _make_plan(PlanStatus.APPROVED)
+    api_id = _add_todo_node(plan_id, "API 구현")
+    fake_agent("API 구현")  # 다시 만들어도 틀린다
+    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+
+    run(capsys, "start", "plan_run")
+    run(capsys, "next")
+    finished = run(capsys, "done", "--answer", answer)
+    assert finished["payload"]["text"] == (
+        f"노드 {api_id} 의 작업 지시를 만들지 못해 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}"
+    )
+    calls = (tmp_path / "agent.jsonl").read_text(encoding="utf-8").splitlines()
+    assert len(calls) == (1 if answer == "멈추기" else 2)
+
+
+def test_should_skip_prompts_when_stopped_at_broken_node(tmp_path, capsys, fake_agent, package_home):
+    plan_id = _make_plan(PlanStatus.RUNNING)
+    _add_running_node(plan_id, "API 구현", with_result=False)
+    _add_todo_node(plan_id, "화면 구현")
+    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+
+    run(capsys, "start", "plan_run")
+    finished = run(capsys, "done", "--answer", "멈추기")
+    assert "에서 멈췄습니다" in finished["payload"]["text"]
+    run_dir = next((package_home / "sessions" / "s" / "runs").iterdir())
+    assert not list(run_dir.glob("count_prompts_*"))
