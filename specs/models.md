@@ -18,6 +18,19 @@
 
 동작: `node(node_id) -> PlanNode` (없으면 KeyError), `prerequisites(node_id) -> tuple[int, ...]` (간선으로 바로 이어진 앞 노드 id)
 
+실행 순서 계산 (`model/plan/plan_schedule.py`, 순수 함수, 노드 상태와 간선만 봄. 끝남 = done·skipped):
+- `runnable_nodes(plan, limit) -> tuple[PlanNode, ...]`: todo, 확인 노드 아님, 선행 노드가 모두 끝남. node_id 순 limit 개
+- `waiting_confirm_nodes(plan) -> tuple[PlanNode, ...]`: 확인 노드, todo, 선행 노드가 모두 끝남
+- `nodes_to_skip(plan, node_id) -> tuple[int, ...]`: 그 노드와, 들어오는 간선이 모두 건너뛴 노드에서 오는 뒤 노드 (완료·실행 중 제외)
+- `plan_progress(plan) -> PlanProgress`
+
+### PlanProgress (`model/plan/plan_progress.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| counts | dict[PlanNodeStatus, int] | 상태마다 노드 수 |
+| finished | bool | 모든 노드가 완료·건너뜀 |
+| blocked | bool | 안 끝났는데 실행할 노드, 확인 노드, 실행 중, 실패한 노드가 모두 없음 |
+
 ### PlanNode (`model/plan/plan_node.py`)
 | 필드 | 타입 | 뜻 |
 |---|---|---|

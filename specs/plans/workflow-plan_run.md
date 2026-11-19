@@ -327,6 +327,30 @@ tool-assess-model: **부분 충족**
 - retry_prompts: 출력 { made, failed }. 그래도 failed 가 있으면 멈춤 (알림에 그 노드)
 - 다시 수행: write_prompts·retry_prompts 는 안전 (prompt.md 가 생긴 노드는 다음에 건너뜀)
 
+### 묶음 3: 다음 노드 계산 (model)
+
+사용자 결정 (2026-11-20): 동시 실행은 빈 자리 채우기 ("B는 나안"), 계산 함수는 model 에 새 파일로 두고 Plan 클래스는 바꾸지 않음 ("C는 추천대로").
+
+준비 평가 (tool-planner 형식)
+- 나누기: model 만. 포트·공통 기능·워크플로 없음 (쓰는 곳은 묶음 4 의 run_nodes, apply_failed, 묶음 5 의 finish_plan, notify)
+- tool-assess-port: 해당 없음
+- tool-assess-model: 미충족
+  - [신규] model/plan/plan_schedule.py — 함수 `runnable_nodes`, `waiting_confirm_nodes`, `nodes_to_skip`, `plan_progress`
+  - [신규] model/plan/plan_progress.py — PlanProgress (counts: dict[PlanNodeStatus, int], finished: bool, blocked: bool)
+  - 기존 Plan, PlanNode 는 바꾸지 않는다. 노드 상태는 PlanNode.status (계획 저장소) 만 본다. run.json 은 읽지 않는다
+  - 사용자 확인: 받음 (C)
+
+규칙 (기존 schedule.py:21-75, run.py:263-281 에서 루프를 뺀 것)
+- 끝난 노드 = 완료(done) 또는 건너뜀(skipped)
+- runnable_nodes(plan, limit): 상태 todo, 확인 노드가 아님, 선행 노드가 모두 끝남. node_id 작은 순으로 limit 개. 실패한 노드의 뒤 노드는 선행 노드가 안 끝났으므로 저절로 빠진다. limit 은 부르는 쪽이 "3 - 지금 도는 수" 로 준다 (빈 자리 채우기)
+- waiting_confirm_nodes(plan): 확인 노드(hitl), 상태 todo, 선행 노드가 모두 끝남. node_id 작은 순
+- nodes_to_skip(plan, node_id): 그 노드와, 들어오는 간선이 모두 건너뛴(또는 이번에 건너뛸) 노드에서 오는 뒤 노드. 완료·실행 중인 노드는 넣지 않는다
+- plan_progress(plan): 상태별 개수. finished = 모든 노드가 끝남. blocked = 안 끝났는데 실행할 노드, 확인 노드, 실행 중인 노드, 실패한 노드가 모두 없음
+
+동시 실행 (묶음 4 에서 씀): 빈 자리 채우기. 하나가 끝날 때마다 노드 상태를 다시 읽고 runnable_nodes(plan, 3 - 도는 수) 로 빈 자리에 새 노드를 띄운다. 도는 노드가 없고 고를 노드도 없으면 안쪽 루프를 끝낸다
+
+앞 노드 결과를 노드 실행에 넘기는 방식 (정할 것 A, 2026-11-20 사용자 질문 "result 하위의 자료들을 전부 텍스트로 읽어오는게 필요할까?"): 정할 것 4 로 묶음 4 에서
+
 ## 같이 쓰는 코드
 
 - 조건 함수: `workflow/plan_run/` 아래 (묶음 1 에서 위치 확정). 쓰는 단계: resume, prompts, rounds 안 묶음
@@ -351,6 +375,7 @@ tool-assess-model: **부분 충족**
 1. 메인 세션이 긴 명령(run_nodes 가 도는 next·done)을 백그라운드로 부르고 기다리게 할지 (묶음 4 전에 확인)
 2. 루프가 도는 동안 진행이 화면에 안 보임. 첫 판은 기록 파일에 노드 시작·끝만 남기는 안 (묶음 4)
 3. 명령이 끊겨도(예: 메인 세션의 10분 한도) run_agent 가 띄운 claude -p 는 끝까지 돌고 그 결과는 버려진다. 자식을 새 프로세스 그룹으로 띄우기 때문이다. 묶음 2 리뷰 지적, 실제로 생긴 적은 없음. 노드 실행은 10분을 넘기는 것이 보통이라 묶음 4 에서 1 과 함께 본다
+4. 노드 실행에 앞 노드 결과를 넘기는 방식: 결과 본문을 읽어 넣을지, 실행 데이터 (확정) 3 절의 조회 결과(노드 id, 제목, 상태, 회차, result.md 경로, files 목록, 건너뛴 이유)만 넘기고 claude -p 가 Read 로 읽게 할지 (묶음 4)
 
 ## 확인 결과
 
@@ -381,3 +406,9 @@ tool-assess-model: **부분 충족**
   - 시험: 묶음 1 시험의 노드에 작업 지시를 미리 넣어 작업 지시 만들기를 건너뜀. 더한 것: 원문 절·글쓰기 규칙 붙임과 입력 글(앞 노드 산출물 스펙, 담당, 결과 위치 없음), 있는 prompt.md 지킴, 실패 한 질문 → 다시 만들기, 멈추기·다시 실패면 멈춤, 끊긴 노드에서 멈추면 작업 지시 만들기 건너뜀
   - 검증: ruff check, mypy, lint-imports 4/4, pytest 189 통과
 - 2026-11-20 묶음 2 리뷰 (지적 3 건): 반영하지 않음 (사용자). 1 다시 돌면 덮어씀(일어나지 않을 상황 전제), 3 claude 실행 파일 없음(다시 만들어도 실패). 2 자식 claude 가 남음은 정할 것 3 으로 묶음 4 에서
+- 2026-11-20 묶음 3 (사용자 "오케이 진행 후에 테스트 까지 진행 해주세요"):
+  - model: model/plan/plan_schedule.py (runnable_nodes, waiting_confirm_nodes, nodes_to_skip, plan_progress), model/plan/plan_progress.py (PlanProgress). Plan, PlanNode 는 그대로. specs/models.md 갱신
+  - 시험: tests/model/plan/test_plan_schedule.py 18 개 (시뮬레이션의 노드 상태마다 고를 노드와 확인 노드, limit, 건너뛰기 번짐 다섯 경우와 실행 중 뒤 노드, 진행 상태, 막힘)
+  - 검증: ruff check, mypy, lint-imports 4/4, pytest 207 통과
+  - 아직 흐름에서 쓰지 않음. 묶음 4 의 run_nodes, apply_failed 와 묶음 5 의 finish_plan, notify 가 쓴다
+

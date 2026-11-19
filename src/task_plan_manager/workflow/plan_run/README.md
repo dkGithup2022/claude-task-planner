@@ -1,7 +1,7 @@
 # plan_run (D 계획 실행)
 
 승인된 계획의 계획 노드를 간선 순서대로 실행하는 워크플로. 계획서: `specs/plans/workflow-plan_run.md`.
-2026-11-19 기준으로 묶음 1(계획 찾기와 실행 시작), 묶음 2(작업 지시 만들기)까지 만들었다. 묶음 3~5 는 아직 없다.
+2026-11-20 기준으로 묶음 1(계획 찾기와 실행 시작), 묶음 2(작업 지시 만들기), 묶음 3(다음 노드 계산, model/plan/plan_schedule.py)까지 만들었다. 묶음 4~5 는 아직 없다. 묶음 3 의 계산은 아직 흐름에서 쓰지 않는다 (묶음 4 의 run_nodes 가 쓴다).
 
 ## 지금 구성
 
@@ -48,7 +48,7 @@ plan_run
 
 쓰는 공통 기능: `claude_utils/agent/run_agent.py` (도구를 쓰는 claude -p. 작업 폴더에서, 켠 도구만 묻지 않고, 훅 끄고).
 
-쓰는 model·port: `Plan`, `PlanNode`, `Persona`, `PersonaApiReader.list_personas`, `PlanFolderReader.read_command·read_prompt`, `PlanFolderWriter.write_prompt`,, `PlanStatus`, `PlanNodeStatus`, `NodeRun`(`back_to_todo` 를 이번에 더함), `PlanApiReader.get_plan`, `PlanApiWriter.set_plan_status·update_node`, `PlanFolderReader.list_plan_ids·read_output·read_run`, `PlanFolderWriter.save_run`.
+쓰는 model·port: `Plan`, `PlanNode`, `Persona`, `PersonaApiReader.list_personas`, `PlanFolderReader.read_command·read_prompt`, `PlanFolderWriter.write_prompt`, `PlanStatus`, `PlanNodeStatus`, `NodeRun`(`back_to_todo` 를 이번에 더함), `PlanApiReader.get_plan`, `PlanApiWriter.set_plan_status·update_node`, `PlanFolderReader.list_plan_ids·read_output·read_run`, `PlanFolderWriter.save_run`.
 
 시험: `tests/workflow/test_plan_run.py` (CLI 로 끝까지), `tests/workflow/plan_run/` (명령 줄 읽기, 상태별 판정), `tests/model/node_run/test_node_run.py`.
 
