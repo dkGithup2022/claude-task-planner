@@ -25,3 +25,7 @@ class NodeRun:
     def finish(self, status: PlanNodeStatus, now: str) -> NodeRun:
         """끝난 상태(완료, 실패, 건너뜀)와 끝난 시각을 넣은 새 기록."""
         return replace(self, status=status, finished_at=now)
+
+    def back_to_todo(self) -> NodeRun:
+        """다시 실행할 할 일로 되돌린 새 기록. 회차는 그대로 둔다 (다음 시작 때 정한다)."""
+        return replace(self, status=PlanNodeStatus.TODO, started_at=None, finished_at=None)

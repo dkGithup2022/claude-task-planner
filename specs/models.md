@@ -78,7 +78,7 @@ DOCUMENT = "document", RESEARCH = "research", CODE = "code", HITL = "hitl"
 | confirm | str \| None | 확인 노드면 사용자가 한 말 |
 | skipped_reason | str \| None | 건너뛴 이유 |
 
-동작: `start(now, read_inputs) -> NodeRun`, `finish(status, now) -> NodeRun`
+동작: `start(now, read_inputs) -> NodeRun`, `finish(status, now) -> NodeRun`, `back_to_todo() -> NodeRun` (끊긴 노드를 다시 실행할 때. 회차 그대로)
 
 ### ReadInput (`model/node_run/read_input.py`)
 | 필드 | 타입 | 뜻 |

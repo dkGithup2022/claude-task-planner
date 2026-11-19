@@ -10,3 +10,9 @@ def test_should_return_new_run_on_start_and_finish():
     done = started.finish(PlanNodeStatus.DONE, "2026-11-19T10:06:00Z")
     assert done.status == PlanNodeStatus.DONE and done.finished_at == "2026-11-19T10:06:00Z"
     assert first_run == NodeRun(1, PlanNodeStatus.TODO)
+
+
+def test_should_keep_round_when_back_to_todo():
+    started = NodeRun(2, PlanNodeStatus.TODO).start("2026-11-19T10:00:00Z", (ReadInput(11, 1),))
+    again = started.back_to_todo()
+    assert again == NodeRun(2, PlanNodeStatus.TODO, read_inputs=(ReadInput(11, 1),))

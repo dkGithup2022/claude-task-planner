@@ -8,6 +8,7 @@ from task_plan_manager.workflow.count_joke.count_joke_flow import COUNT_JOKE_FLO
 from task_plan_manager.workflow.demo.demo_flow import DEMO_FLOW
 from task_plan_manager.workflow.list_plans.list_plans_flow import LIST_PLANS_FLOW
 from task_plan_manager.workflow.make_plan.make_plan_flow import MAKE_PLAN_FLOW
+from task_plan_manager.workflow.plan_run.plan_run_flow import PLAN_RUN_FLOW
 
 FLOWS: dict[str, FlowDefinition] = {
     "demo": DEMO_FLOW,
@@ -16,4 +17,5 @@ FLOWS: dict[str, FlowDefinition] = {
     "list_plans": LIST_PLANS_FLOW,
     "plan_go": PLAN_GO_FLOW,
     "plan_cancel": PLAN_CANCEL_FLOW,
+    "plan_run": PLAN_RUN_FLOW,
 }
