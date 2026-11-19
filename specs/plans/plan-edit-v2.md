@@ -133,6 +133,7 @@ JSON 하나입니다.
 - neighbor_nodes: 바뀌기 전에 원래 노드의 선행·후행이던 노드 (한 단계만)
 - previous_edges: 바뀌기 전, 위 노드들 사이의 간선
 - user_edges: 사용자가 직접 잇거나(link) 끊으라고(unlink) 한 간선
+- fixed_edges: 그대로 남는 간선. 판단할 때 참고만 하고 다시 정하지 않습니다. 없으면 []
 
 노드 하나의 모양: id, title, kind, does(하는 일), output(산출물의 form 과 contents), notes(그 외 설명)
 
@@ -194,6 +195,7 @@ JSON 하나입니다.
     {"from": 37, "to": 39},
     {"from": 34, "to": 37}
   ],
+  "fixed_edges": [],
   "user_edges": {"link": [], "unlink": []}
 }
 ```
@@ -234,10 +236,18 @@ JSON 하나입니다.
     {"id": 37, "title": "댓글 백엔드 API 구현", "kind": "code",
      "does": "댓글 목록, 작성, 수정, 삭제 API 를 만든다.",
      "output": {"form": "코드 변경", "contents": "댓글 API 네 개"},
+     "notes": ""},
+    {"id": 38, "title": "댓글 API 테스트 작성", "kind": "code",
+     "does": "댓글 API 네 개의 요청과 응답을 확인하는 테스트를 쓴다.",
+     "output": {"form": "코드 변경", "contents": "API 별 테스트"},
      "notes": ""}
   ],
   "previous_edges": [
     {"from": 36, "to": 37}
+  ],
+  "fixed_edges": [
+    {"from": 36, "to": 38},
+    {"from": 37, "to": 38}
   ],
   "user_edges": {"link": [], "unlink": []}
 }
@@ -248,18 +258,21 @@ JSON 하나입니다.
 {"edges": [
   {"from_id": 36, "to_id": 45},
   {"from_id": 45, "to_id": 37},
+  {"from_id": 45, "to_id": 38},
   {"from_id": 36, "to_id": 37}
 ]}
 ```
 - 명세(45)는 테이블 설계를 보고 정하므로 36 을 받습니다.
+- API 구현(37)과 테스트(38)는 명세의 요청·응답 예시를 기준으로 쓰므로 45 를 받습니다.
 - API 구현(37)은 명세와 함께 테이블 컬럼도 직접 써야 하므로 36 → 37 을 남깁니다.
+- 36 → 38, 37 → 38 은 fixed_edges 라 답하지 않습니다. 그대로 남습니다.
 
 ## 출력
 JSON 하나로 답합니다.
 ```json
 {"edges": [{"from_id": 35, "to_id": 41}, {"from_id": 41, "to_id": 42}]}
 ```
-- edges: changed_nodes 와 neighbor_nodes 사이의 간선 전부. 지워진 original_nodes 는 쓰지 않습니다
+- edges: changed_nodes 와 neighbor_nodes 사이의 간선 가운데 fixed_edges 를 뺀 전부. 지워진 original_nodes 는 쓰지 않습니다
 - from_id, to_id: 노드 id(숫자). to_id 노드는 from_id 노드가 끝난 뒤 그 산출물을 받아 시작합니다
 - 입력한 노드와 그 밖의 노드 사이의 간선은 쓰지 않습니다. 그 간선은 그대로 남습니다
 ````
@@ -474,3 +487,8 @@ tests/workflow/make_plan/…                         간선 가짜 출력을 새
   4. 정의서의 머리 앞 글이나 같은 이름의 절이 덮어써졌다 → 이어 붙임. 시험 추가
   - 검증: pytest 158개, ruff, mypy, lint-imports 통과
 - 나눈 노드의 정의서를 claude -p 로 쓰는 안(2026-11-18 고치기 초안 3 절)은 지금 넣지 않는다. 메인 세션이 하는 일 1~2줄로 대략 적고, 필요하면 나중에 넣는다 (사용자, 2026-11-19)
+- 1 번(동작 둘 이상일 때 이전 간선이 빠짐)은 보류로 돌려 코드에서 뺐다. 백로그에 적음 (사용자, 2026-11-19: "1번은 보류하고, 백로그에 기록만")
+- 범위 밖 노드를 거치는 순환 거르기는 그대로 둔다 (사용자, 2026-11-19: LLM 이 볼 수 없는 길이라 어쩔 수 없음)
+- plan-feedback 스킬에 한 줄: "만약 insert 요청이 왔는데, 추가할 노드의 선행, 후행 노드를 특정할 수 없다면, 확실히 물어보세요." (사용자 문장 그대로). 코드로 자리 없는 넣기를 거절하는 것은 하지 않음, plan-edit 표의 insert 줄은 그대로 (사용자, 2026-11-19)
+- e2e5 (계획 9, 885e9f9): 나누기는 손으로 다시 잇지 않아도 맞음. 넣기는 자리 두 노드만 넘겨 새 명세 노드가 한 곳에만 이어짐 → 아래 다 안
+- 넣기의 범위 넓히기 (다 안, 사용자 2026-11-19): 앞뒤 노드로 자리(after, before)와 그 둘에 바로 붙은 노드를 넘긴다. 다시 정하는 간선은 새 노드에 닿는 간선과 자리 두 노드 사이 간선(previous_edges)뿐이고, 앞뒤 노드끼리의 나머지 간선은 fixed_edges 로 넘겨 그대로 둔다. 프롬프트: 입력 목록에 fixed_edges 한 줄, 출력 줄을 "fixed_edges 를 뺀 전부"로, 예시 1 에 "fixed_edges": [], 예시 2 를 38 API 테스트를 더한 판으로 (1.4 절 전문에 반영). 코드: relink_request 에 fixed_edges, relink_input 에 칸, _filter 가 fixed_edges 를 먼저 넣음, edit_graph._insert. 시험 1 개 추가. pytest 158 개 통과

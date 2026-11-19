@@ -16,6 +16,7 @@ JSON 하나입니다.
 - neighbor_nodes: 바뀌기 전에 원래 노드의 선행·후행이던 노드 (한 단계만)
 - previous_edges: 바뀌기 전, 위 노드들 사이의 간선
 - user_edges: 사용자가 직접 잇거나(link) 끊으라고(unlink) 한 간선
+- fixed_edges: 그대로 남는 간선. 판단할 때 참고만 하고 다시 정하지 않습니다. 없으면 []
 
 노드 하나의 모양: id, title, kind, does(하는 일), output(산출물의 form 과 contents), notes(그 외 설명)
 
@@ -77,6 +78,7 @@ JSON 하나입니다.
     {"from": 37, "to": 39},
     {"from": 34, "to": 37}
   ],
+  "fixed_edges": [],
   "user_edges": {"link": [], "unlink": []}
 }
 ```
@@ -117,10 +119,18 @@ JSON 하나입니다.
     {"id": 37, "title": "댓글 백엔드 API 구현", "kind": "code",
      "does": "댓글 목록, 작성, 수정, 삭제 API 를 만든다.",
      "output": {"form": "코드 변경", "contents": "댓글 API 네 개"},
+     "notes": ""},
+    {"id": 38, "title": "댓글 API 테스트 작성", "kind": "code",
+     "does": "댓글 API 네 개의 요청과 응답을 확인하는 테스트를 쓴다.",
+     "output": {"form": "코드 변경", "contents": "API 별 테스트"},
      "notes": ""}
   ],
   "previous_edges": [
     {"from": 36, "to": 37}
+  ],
+  "fixed_edges": [
+    {"from": 36, "to": 38},
+    {"from": 37, "to": 38}
   ],
   "user_edges": {"link": [], "unlink": []}
 }
@@ -131,17 +141,20 @@ JSON 하나입니다.
 {"edges": [
   {"from_id": 36, "to_id": 45},
   {"from_id": 45, "to_id": 37},
+  {"from_id": 45, "to_id": 38},
   {"from_id": 36, "to_id": 37}
 ]}
 ```
 - 명세(45)는 테이블 설계를 보고 정하므로 36 을 받습니다.
+- API 구현(37)과 테스트(38)는 명세의 요청·응답 예시를 기준으로 쓰므로 45 를 받습니다.
 - API 구현(37)은 명세와 함께 테이블 컬럼도 직접 써야 하므로 36 → 37 을 남깁니다.
+- 36 → 38, 37 → 38 은 fixed_edges 라 답하지 않습니다. 그대로 남습니다.
 
 ## 출력
 JSON 하나로 답합니다.
 ```json
 {"edges": [{"from_id": 35, "to_id": 41}, {"from_id": 41, "to_id": 42}]}
 ```
-- edges: changed_nodes 와 neighbor_nodes 사이의 간선 전부. 지워진 original_nodes 는 쓰지 않습니다
+- edges: changed_nodes 와 neighbor_nodes 사이의 간선 가운데 fixed_edges 를 뺀 전부. 지워진 original_nodes 는 쓰지 않습니다
 - from_id, to_id: 노드 id(숫자). to_id 노드는 from_id 노드가 끝난 뒤 그 산출물을 받아 시작합니다
 - 입력한 노드와 그 밖의 노드 사이의 간선은 쓰지 않습니다. 그 간선은 그대로 남습니다

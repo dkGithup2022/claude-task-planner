@@ -17,6 +17,7 @@ def build_relink_input(request: RelinkRequest) -> str:
         "changed_nodes": [_node(node) for node in request.changed_nodes],
         "neighbor_nodes": [_node(node) for node in request.neighbor_nodes],
         "previous_edges": _edges(request.previous_edges),
+        "fixed_edges": _edges(request.fixed_edges),
         "user_edges": {"link": _edges(request.user_links), "unlink": _edges(request.user_unlinks)},
     }
     return json.dumps(data, ensure_ascii=False, indent=2)

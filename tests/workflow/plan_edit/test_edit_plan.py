@@ -147,6 +147,47 @@ def test_should_keep_edge_between_neighbors_when_relink_keeps_it_on_insert():
     assert _node(plan_id, "화면 설계 확인").persona_ids == ()
 
 
+def test_should_widen_insert_to_nodes_around_place_and_keep_their_other_edges():
+    """e2e5 와 같은 모양: 넣는 자리의 앞뒤 노드까지 넘기고, 새 노드에 닿는 간선과 자리 사이 간선만 다시 정한다."""
+    plan_id, ids = _plan_with_chain()
+    writer = MockPlanApiWriter()
+    test_id = writer.add_node(plan_id, NewNode("화면 테스트", NodeKind.CODE, (1,), SPEC.format("테스트"))).node_id
+    writer.add_edge(plan_id, ids["화면 구현"], test_id)
+    writer.add_edge(plan_id, ids["화면 설계"], test_id)
+    op = {"op": "insert", "after": ids["화면 설계"], "before": ids["화면 구현"], "kind": "document",
+          "title": "화면 명세", "does": "화면별 입력과 표시 규칙을 정한다."}  # fmt: skip
+
+    def answer(sent):  # 명세는 설계를 받아 구현과 테스트에 준다. 설계 → 구현은 남긴다. 고정 간선은 답하지 않는다
+        new = _ids_of(sent, "changed_nodes")["화면 명세"]
+        return [(ids["화면 설계"], new), (new, ids["화면 구현"]), (new, test_id), (ids["화면 설계"], ids["화면 구현"])]
+
+    relink = FakeRelink(answer)
+    result = edit_plan(plan_id, {"ops": [op]}, relink)
+    sent = relink.sent[0]
+    assert result["ok"] is True
+    assert [node["title"] for node in sent["neighbor_nodes"]] == ["요구사항", "화면 설계", "화면 구현", "화면 테스트"]
+    assert sent["previous_edges"] == [{"from": ids["화면 설계"], "to": ids["화면 구현"]}]
+    assert sent["fixed_edges"] == [
+        {"from": ids["요구사항"], "to": ids["화면 설계"]},
+        {"from": ids["화면 설계"], "to": test_id},
+        {"from": ids["화면 구현"], "to": test_id},
+    ]
+    assert _titled_edges(plan_id) == {
+        ("요구사항", "화면 설계"),
+        ("화면 설계", "화면 명세"),
+        ("화면 명세", "화면 구현"),
+        ("화면 명세", "화면 테스트"),
+        ("화면 설계", "화면 구현"),
+        ("화면 설계", "화면 테스트"),
+        ("화면 구현", "화면 테스트"),
+    }
+    assert result["changes"][1:] == [
+        f"이음: {ids['화면 설계']} → {{new}}, {{new}} → {ids['화면 구현']}, {{new}} → {test_id}".replace(
+            "{new}", str(_node(plan_id, "화면 명세").node_id)
+        )
+    ]
+
+
 def test_should_merge_nodes_and_use_relinked_edges():
     plan_id, ids = _plan_with_chain()
     op = {
@@ -199,24 +240,6 @@ def test_should_not_reconnect_edge_the_user_unlinked_in_same_edit():
     result = edit_plan(plan_id, ops, relink)
     assert relink.sent[0]["user_edges"]["unlink"] == [{"from": ids["화면 설계"], "to": ids["화면 구현"]}]
     assert result["ok"] is True and ("화면 설계", "화면 구현") not in _titled_edges(plan_id)
-
-
-def test_should_keep_edges_between_scopes_of_different_ops_in_same_edit():
-    """빼기와 다른 곳에 넣기를 한 번에 하면, 두 동작의 범위 노드 사이 간선(요구사항 → 화면 구현)도 넘긴다."""
-    plan_id, ids = _plan_with_chain()
-    writer = MockPlanApiWriter()
-    extra = writer.add_node(plan_id, NewNode("배포", NodeKind.CODE, (1,), SPEC.format("배포"))).node_id
-    writer.add_edge(plan_id, ids["화면 구현"], extra)
-    writer.add_edge(plan_id, ids["요구사항"], ids["화면 구현"])
-    ops = {"ops": [
-        {"op": "remove", "node_id": ids["화면 설계"]},
-        {"op": "insert", "after": ids["화면 구현"], "before": extra, "kind": "hitl", "title": "확인", "does": "확인"},
-    ]}  # fmt: skip
-    relink = FakeRelink(lambda sent: [(edge["from"], edge["to"]) for edge in sent["previous_edges"]])
-    result = edit_plan(plan_id, ops, relink)
-    assert result["ok"] is True
-    assert {"from": ids["요구사항"], "to": ids["화면 구현"]} in relink.sent[0]["previous_edges"]
-    assert ("요구사항", "화면 구현") in _titled_edges(plan_id)
 
 
 def test_should_drop_cycle_through_node_outside_scope_instead_of_refusing():

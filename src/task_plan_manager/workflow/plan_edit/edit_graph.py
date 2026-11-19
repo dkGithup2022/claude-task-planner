@@ -47,7 +47,8 @@ class EditGraph:
         self._originals: dict[int, PlanNode] = {}  # 지워진 원래 노드
         self._changed: list[int] = []  # 생긴 노드
         self._neighbors: set[int] = set()  # 원래 노드의 앞뒤 노드
-        self._previous_edges: set[Edge] = set()  # 바뀌기 전, 원래 노드와 앞뒤 노드 사이의 간선
+        self._previous_edges: set[Edge] = set()  # 바뀌기 전, 원래 노드와 앞뒤 노드 사이의 간선 (다시 정함)
+        self._fixed_edges: set[Edge] = set()  # 넣기의 앞뒤 노드끼리 간선 가운데 그대로 남는 것
         self._user_links: list[Edge] = []
         self._user_unlinks: list[Edge] = []
 
@@ -80,8 +81,6 @@ class EditGraph:
         if len(changed) + len(neighbors) < 2:  # 이을 수 있는 짝이 없다 (앞뒤 없이 빼거나 넣음)
             return None
         scope = set(changed) | set(neighbors)
-        # 이전 간선: 동작마다 모은 것에 지금 범위 노드끼리의 간선을 더한다. 동작이 여럿이면 서로 다른 동작의 노드 사이도
-        previous = self._previous_edges | {edge for edge in self.edges if edge[0] in scope and edge[1] in scope}
         outside = tuple(sorted(edge for edge in self.edges if not (edge[0] in scope and edge[1] in scope)))
         return RelinkRequest(
             change="\n".join(self._relink_changes),
@@ -89,7 +88,8 @@ class EditGraph:
                                  if node_id not in self.nodes),
             changed_nodes=tuple(_relink_node(self.nodes[node_id]) for node_id in changed),
             neighbor_nodes=tuple(_relink_node(self.nodes[node_id]) for node_id in neighbors),
-            previous_edges=tuple(sorted(previous)),
+            previous_edges=tuple(sorted(self._previous_edges)),
+            fixed_edges=tuple(sorted(self._fixed_edges - self._previous_edges)),
             user_links=tuple(self._user_links),
             user_unlinks=tuple(self._user_unlinks),
             outside_edges=outside,
@@ -142,14 +142,21 @@ class EditGraph:
         self._relink_changes.append(f'{_ids(op.node_ids)} 을 {new_id} "{op.part.title}" 로 합침')
 
     def _insert(self, op: InsertOp) -> None:
-        """새 노드를 더한다. after, before 는 앞뒤 노드로 넘긴다. 확인 노드면 담당을 비운다."""
-        neighbors = [self._existing(node_id) for node_id in (op.after, op.before) if node_id is not None]
+        """새 노드를 더한다. 확인 노드면 담당을 비운다.
+        앞뒤 노드로 자리(after, before)와 그 둘에 바로 붙은 노드를 넘긴다 (사용자, 2026-11-19: 다 안).
+        다시 정하는 간선은 새 노드에 닿는 간선과 자리 두 노드 사이 간선뿐이다.
+        앞뒤 노드끼리의 나머지 간선은 그대로 둔다."""
+        place = {self._existing(node_id).node_id for node_id in (op.after, op.before) if node_id is not None}
         assert op.part.kind is not None  # 읽을 때 검사했다
         new_id = self._add(op.part, op.part.kind, None)
         self._changed.append(new_id)
-        ids = {node.node_id for node in neighbors}
-        self._neighbors.update(ids)
-        self._previous_edges.update(edge for edge in self.edges if edge[0] in ids and edge[1] in ids)
+        around = place | {other for edge in self.edges if set(edge) & place for other in edge}
+        self._neighbors.update(around)
+        between_place = {edge for edge in self.edges if edge[0] in place and edge[1] in place}
+        self._previous_edges.update(between_place)
+        self._fixed_edges.update(
+            edge for edge in self.edges if edge[0] in around and edge[1] in around and edge not in between_place
+        )
         self.changes.append(f"넣음: {self._label_of(new_id)}")
         self._relink_changes.append(f'{_where(op)}{new_id} "{op.part.title}" 를 넣음')
 

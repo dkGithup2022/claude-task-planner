@@ -44,16 +44,18 @@ def relink_edges(request: RelinkRequest, caller: PromptCaller = call_prompt) -> 
 
 
 def _filter(proposed: list[Edge], request: RelinkRequest) -> tuple[list[Edge], list[tuple[Edge, str]]]:
-    """쓸 수 없는 간선은 버리고 까닭과 함께 남긴다. 사용자가 이은 간선은 먼저 넣어 순환 검사에서 밀리지 않게 한다."""
+    """쓸 수 없는 간선은 버리고 까닭과 함께 남긴다.
+    그대로 남는 간선과 사용자가 이은 간선은 먼저 넣어 순환 검사에서 밀리지 않게 한다."""
     scope = request.scope_ids()
     unlinked = set(request.user_unlinks)
-    edges: list[Edge] = [edge for edge in request.user_links if edge[0] in scope and edge[1] in scope]
+    kept = [*request.fixed_edges, *request.user_links]
+    edges: list[Edge] = list(dict.fromkeys(edge for edge in kept if edge[0] in scope and edge[1] in scope))
     dropped: list[tuple[Edge, str]] = []
     for edge in proposed:
         reason = _drop_reason(edge, edges, scope, unlinked, request.outside_edges)
         if reason is None:
             edges.append(edge)
-        elif edge not in request.user_links:  # 사용자가 이은 간선이 다시 오면 알리지 않는다
+        elif edge not in kept:  # 그대로 남는 간선이나 사용자가 이은 간선이 다시 오면 알리지 않는다
             dropped.append((edge, reason))
     return edges, dropped
 
