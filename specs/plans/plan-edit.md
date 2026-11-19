@@ -46,6 +46,34 @@ plan-feedback (대화 스킬, 메인 세션 맥락에 남음)
 /plan-go 6 ─▶ 확정 흐름 (보여 준 시각부터의 대화 전체가 지식 추출 재료)
 ```
 
+## 1. 평가 (dk-claude-tool-bundle tool-planner 절차)
+
+### 나누기
+- 포트: 계획 읽기(노드, 간선, 상태), 노드 추가·고치기·지우기, 간선 추가·지우기 (계획 저장소 API)
+- 공통 기능: 없음
+- tool-planner 범위 밖 (직접 만듦): 고치기 기능 코드(`workflow/plan_edit/`), 명령(`entry/cli.py` 의 plan show·edit), engine 의 끝 지시 `skill`, 플러그인 스킬 셋(plan-feedback, plan-edit, run 한 줄). 흐름(FlowDefinition)이 아니라 tool-workflow-planner 로도 넘기지 않는다
+
+### tool-assess-port
+
+**판정**: 충족
+
+| 접근 | 판정 | 포트 | 메서드 |
+|---|---|---|---|
+| 계획 읽기 | 충족 | plan_api | PlanApiReader.get_plan(plan_id) -> Plan |
+| 노드 추가 | 충족 | plan_api | PlanApiWriter.add_node(plan_id, NewNode) -> PlanNode |
+| 노드 고치기 | 충족 | plan_api | PlanApiWriter.update_node(plan_id, node_id, NodeChange) -> PlanNode |
+| 노드 지우기 | 충족 | plan_api | PlanApiWriter.delete_node(plan_id, node_id) (닿은 간선도 지움) |
+| 간선 추가 | 충족 | plan_api | PlanApiWriter.add_edge(plan_id, from_node_id, to_node_id) -> PlanEdge |
+| 간선 지우기 | 충족 | plan_api | PlanApiWriter.delete_edge(plan_id, edge_id) |
+
+**model 층 요청**: 없음. 묶음 동작(op)은 도메인 데이터가 아니라 명령의 입력 스펙이라 `workflow/plan_edit/` 에 둔다.
+
+**사용자 확인 필요**: 없음
+
+### tool-assess-model
+
+**판정**: 충족. Plan(노드, 간선, persona_ids, status), `Plan.prerequisites`, `Plan.problems`, PlanStatus, NodeKind 로 충분하다. 뒤 노드 찾기는 간선에서 계산한다.
+
 ## 1. 입력과 받는 방식
 
 - 대화 스킬 `plan-feedback <id>`: make_plan 의 끝 지시가 부른다. 사용자가 직접 불러도 된다.
@@ -122,16 +150,17 @@ src/task_plan_manager/
 ├─ engine/instruction/instruction_converter.py  skill 이 있으면 payload 에 넣음
 ├─ engine/runner/unit/default_unit_runner.py   마지막 보이기를 끝 지시로 바꿀 때 skill 도 옮김
 ├─ entry/cli.py                                plan show, plan edit 하위 명령
-├─ plan_edit/                                  새로
-│  ├─ edit_op.py                op 데이터와 JSON 읽기
-│  ├─ edit_graph.py             op 를 메모리의 노드·간선에 적용 (앞뒤 다시 잇기, 정의서 만들기)
-│  ├─ send_edit.py              고치기 전과 후를 비교해 PlanApiWriter 로 보냄, 바뀐 것 글
-│  ├─ plan_view.py              plan show 의 JSON
-│  └─ plan_edit_refused_error.py
-└─ workflow/make_plan/
+└─ workflow/
+   ├─ plan_edit/                               새로 (흐름이 아닌 기능 폴더. 명령이 부름)
+   │  ├─ op/                    묶음 동작 데이터, 동작마다 한 파일, JSON 읽기
+   │  ├─ edit_graph.py          op 를 메모리의 노드·간선에 적용 (앞뒤 다시 잇기, 정의서 만들기)
+   │  ├─ send_edit.py           고치기 전과 후를 비교해 PlanApiWriter 로 보냄, 바뀐 것 글
+   │  ├─ plan_view.py           plan show 의 JSON
+   │  └─ plan_edit_refused_error.py
+   └─ make_plan/
    ├─ show_plan/show_plan_task.py      끝 지시에 skill "task_plan_manager:plan-feedback <id>"
    └─ prepare_show/plan_summary.py     머리 줄 "만들었습니다 / 고쳤습니다" 를 고름
-tests/plan_edit/                       새로: op 마다 다시 잇기, 거절, 보내는 순서, show JSON
+tests/workflow/plan_edit/              새로: op 마다 다시 잇기, 거절, 보내는 순서, show JSON
 ```
 
 ## 5. 스킬 전문
