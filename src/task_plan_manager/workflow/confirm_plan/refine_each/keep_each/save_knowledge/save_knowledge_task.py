@@ -16,7 +16,7 @@ from task_plan_manager.port.memory_api.dto.memory_addition import MemoryAddition
 from task_plan_manager.port.memory_api.dto.new_memory import NewMemory
 from task_plan_manager.port.memory_api.memory_api_choice import memory_api_writer
 from task_plan_manager.workflow.confirm_plan.refine_each.candidate_kind import memory_kind
-from task_plan_manager.workflow.confirm_plan.refine_each.choose_action.action_choices import append_target_id
+from task_plan_manager.workflow.confirm_plan.refine_each.choose_target.merge_target import merge_target_id
 
 
 @TASKS.register_as("confirm_plan.save_knowledge")
@@ -35,7 +35,7 @@ class SaveKnowledgeTask(Task):
         candidate = context.current_item()
         found = context.read("find_plan")
         sources = tuple(MemorySource(quote=quote, plan_id=found["plan_id"]) for quote in candidate["quotes"])
-        target_id = append_target_id(context.read("choose_action")["answer"])
+        target_id = merge_target_id(context)
         if target_id is not None:
             memory_id = memory_api_writer().append(target_id, MemoryAddition(body=final["body"], sources=sources))
             return TaskOutput({"saved": True, "action": "append", "memory_id": memory_id})

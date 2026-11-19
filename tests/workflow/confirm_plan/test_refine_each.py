@@ -1,4 +1,5 @@
-"""refine_each (C): 후보 세 개를 새로 저장 / 덧붙이기 / 넣지 않기로 다루고, mock 지식에 저장되는지 본다."""
+"""refine_each (C): 후보마다 병합 / 새로 저장 / 넣지 않기를 고르고, 병합이면 대상을 쪽마다 넘겨 고른다.
+mock 지식에 저장되는지 본다."""
 
 import json
 import stat
@@ -8,12 +9,18 @@ import pytest
 
 from task_plan_manager.common import files
 from task_plan_manager.entry.cli import hook, main
+from task_plan_manager.model.memory.memory_kind import MemoryKind
 from task_plan_manager.model.plan.plan_status import PlanStatus
 from task_plan_manager.model.plan.shown_record import ShownRecord
 from task_plan_manager.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
-from task_plan_manager.port.memory_api.mock_memory_files import load_memories
+from task_plan_manager.port.memory_api.dto.new_memory import NewMemory
+from task_plan_manager.port.memory_api.mock_memory_api_writer import MockMemoryApiWriter
+from task_plan_manager.port.memory_api.mock_memory_files import load_memories, save_memories
 from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
 from task_plan_manager.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
+from task_plan_manager.workflow.confirm_plan.refine_each.choose_target.merge_target import TARGET_PAGES
+from task_plan_manager.workflow.confirm_plan.refine_each.choose_target.target_pages import has_next, page_of
+from task_plan_manager.workflow.confirm_plan.refine_each.find_existing.find_existing_task import SEARCH_LIMIT
 
 CANDIDATES = [
     {"type": "plan", "theme": "UI/UX 설계", "content": "셋으로 나눈다", "quotes": ["셋으로 나눠줘"]},
@@ -74,21 +81,24 @@ def run(capsys, *args):
     return json.loads(capsys.readouterr().out)
 
 
-def test_should_save_new_append_and_skip_by_choice(capsys, package_home):
+def test_should_save_new_merge_and_skip_by_choice(capsys, package_home):
     first = run(capsys, "start", "plan_go")
     assert first["type"] == "ask"
-    assert first["payload"]["question"].startswith(
-        '지식 후보 1/3: [계획] UI/UX 설계\n셋으로 나눈다\n근거: "셋으로 나눠줘"'
-    )
-    assert "****** KNOWLEDGE SEARCHED 1 ********\n#1 테이블 설계" in first["payload"]["question"]
-    assert first["payload"]["choices"] == [
-        "새 지식으로 저장", "덧붙이기: #1 테이블 설계", "덧붙이기: #2 테이블 설계", "넣지 않기"]  # fmt: skip
+    question = first["payload"]["question"]
+    head = '지식 후보 1/3: [계획] UI/UX 설계\n셋으로 나눈다\n근거: "셋으로 나눠줘"\n\n비슷한 지식 2개\n'
+    assert question.startswith(head)
+    assert " 1. #1 테이블 설계 — " in question and question.endswith("병합하시겠습니까?")
+    assert first["payload"]["choices"] == ["병합", "새 지식으로 저장", "넣지 않기"]
 
-    talk = run(capsys, "done", "--answer", "새 지식으로 저장")
+    talk = run(capsys, "done", "--answer", "새 지식으로 저장")  # 고르기 쪽은 건너뜀
     assert talk["type"] == "talk" and talk["payload"]["opening"].startswith("[계획] UI/UX 설계 (새 지식)\n본문:\n")
     second = run(capsys, "done")
     assert second["type"] == "ask" and second["payload"]["question"].startswith("지식 후보 2/3")
-    talk = run(capsys, "done", "--answer", "덧붙이기: #2 테이블 설계")
+    target = run(capsys, "done", "--answer", "병합")
+    # 1 번 후보로 방금 저장한 #3 도 비슷한 지식으로 나온다 (mock 검색은 저장한 순서대로)
+    assert target["payload"]["question"] == "어느 지식에 병합할까요? (1~3 / 3)"
+    assert target["payload"]["choices"] == ["#1 테이블 설계", "#2 테이블 설계", "#3 UI/UX 설계"]
+    talk = run(capsys, "done", "--answer", "#2 테이블 설계")
     assert talk["payload"]["opening"].startswith("[도메인] 테이블 설계 (#2 에 덧붙이기)\n덧붙일 내용:\n")
     third = run(capsys, "done")
     assert third["payload"]["question"].startswith("지식 후보 3/3")
@@ -111,6 +121,69 @@ def test_should_save_new_append_and_skip_by_choice(capsys, package_home):
     assert "# 덧붙일 기존 지식\n#2 테이블 설계\n배열은 별도 테이블로 둔다." in sent
 
 
+def test_should_turn_pages_and_merge_into_last_page_target(capsys):
+    _add_memories(8)  # 기존 둘 + 여덟 = 10 개
+    run(capsys, "start", "plan_go")
+    page_1 = run(capsys, "done", "--answer", "병합")
+    assert page_1["payload"]["question"] == "어느 지식에 병합할까요? (1~3 / 10)"
+    assert page_1["payload"]["choices"] == ["#1 테이블 설계", "#2 테이블 설계", "#3 주제 3", "다음 3개 보기"]
+    page_2 = run(capsys, "done", "--answer", "다음 3개 보기")
+    assert page_2["payload"]["choices"] == ["#4 주제 4", "#5 주제 5", "#6 주제 6", "다음 3개 보기"]
+    page_3 = run(capsys, "done", "--answer", "다음 3개 보기")
+    assert page_3["payload"]["question"] == "어느 지식에 병합할까요? (7~10 / 10)"
+    assert page_3["payload"]["choices"] == ["#7 주제 7", "#8 주제 8", "#9 주제 9", "#10 주제 10"]
+    talk = run(capsys, "done", "--answer", "#10 주제 10")
+    assert talk["payload"]["opening"].startswith("[계획] UI/UX 설계 (#10 에 덧붙이기)")
+    run(capsys, "done")
+    assert load_memories()[-1].body.endswith("UI/UX 설계 확인한 본문")
+
+
+def test_should_skip_later_pages_after_choosing_on_first(capsys, package_home):
+    _add_memories(8)
+    run(capsys, "start", "plan_go")
+    run(capsys, "done", "--answer", "병합")
+    talk = run(capsys, "done", "--answer", "#3 주제 3")
+    assert talk["type"] == "talk" and "(#3 에 덧붙이기)" in talk["payload"]["opening"]
+    run_dir = next((package_home / "sessions" / "s" / "runs").iterdir())
+    state = files.read_json(run_dir / "state.json")
+    assert "choose_target_2" in json.dumps(state, ensure_ascii=False)  # 선언에는 있으나
+    assert not list(run_dir.glob("choose_target_2_*/result.json"))  # 결과는 없다 (건너뜀)
+
+
+def test_should_not_offer_merge_when_nothing_is_similar(capsys):
+    save_memories(())
+    first = run(capsys, "start", "plan_go")
+    assert first["payload"]["choices"] == ["새 지식으로 저장", "넣지 않기"]
+    assert "비슷한 지식이 없습니다." in first["payload"]["question"]
+
+
+def test_should_offer_new_save_when_only_one_is_similar(capsys):
+    save_memories(load_memories()[:1])
+    run(capsys, "start", "plan_go")
+    target = run(capsys, "done", "--answer", "병합")
+    assert target["payload"]["choices"] == ["#1 테이블 설계", "새 지식으로 저장"]
+    talk = run(capsys, "done", "--answer", "새 지식으로 저장")
+    assert "(새 지식)" in talk["payload"]["opening"]
+
+
+@pytest.mark.parametrize(("count", "pages"), [(10, [3, 3, 4]), (5, [3, 2]), (4, [4]), (1, [1])])
+def test_should_split_targets_into_pages(count, pages):
+    existing = [{"memory_id": number} for number in range(1, count + 1)]
+    sizes, page = [], 1
+    while True:
+        sizes.append(len(page_of(existing, page)))
+        if not has_next(existing, page):
+            break
+        page += 1
+    assert sizes == pages
+
+
+def _add_memories(count):
+    writer = MockMemoryApiWriter()
+    for number in range(3, 3 + count):
+        writer.create(NewMemory(MemoryKind.PLAN, f"주제 {number}", f"본문 {number}", (1,), ()))
+
+
 def test_should_not_save_when_user_decided_not_to(capsys, monkeypatch):
     monkeypatch.setenv("FAKE_SAVE", "false")
     run(capsys, "start", "plan_go")
@@ -129,3 +202,9 @@ def test_should_skip_refine_when_there_is_no_candidate(capsys, monkeypatch):
     monkeypatch.setenv("FAKE_CANDIDATES", "[]")
     notice = run(capsys, "start", "plan_go")
     assert notice["type"] == "finished" and "저장한 지식 0개" in notice["payload"]["text"]
+
+
+def test_should_fit_search_limit_into_declared_pages():
+    # 기존 지식 찾기의 상한을 바꾸면 선언의 쪽 단계 수(셋)도 맞춰야 한다
+    existing = [{"memory_id": number} for number in range(SEARCH_LIMIT)]
+    assert has_next(existing, len(TARGET_PAGES) - 1) and not has_next(existing, len(TARGET_PAGES))

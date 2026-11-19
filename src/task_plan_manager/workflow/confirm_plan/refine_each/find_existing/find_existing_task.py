@@ -15,7 +15,7 @@ from task_plan_manager.port.memory_api.dto.memory_search_query import MemorySear
 from task_plan_manager.port.memory_api.memory_api_choice import memory_api_reader
 from task_plan_manager.workflow.confirm_plan.refine_each.candidate_kind import memory_kind
 
-SEARCH_LIMIT = 10
+SEARCH_LIMIT = 10  # 바꾸면 choose_target 쪽 수(선언의 단계 셋)도 맞춘다. 시험이 지킨다
 
 
 @TASKS.register_as("confirm_plan.find_existing")
@@ -35,7 +35,7 @@ class FindExistingTask(Task):
             persona_ids=tuple(context.read("find_plan")["persona_ids"]),
             limit=SEARCH_LIMIT,
         )
-        hits = memory_api_reader().search(query)
+        hits = memory_api_reader().search(query)[:SEARCH_LIMIT]  # 고르기 쪽은 이 수에 맞춰 셋이다
         existing = [
             {
                 "memory_id": hit.memory_id,

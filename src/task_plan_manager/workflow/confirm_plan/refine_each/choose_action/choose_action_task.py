@@ -1,7 +1,6 @@
 """choose_action (C 1·2 단계를 한 질문으로, 사용자 2026-11-19).
-후보마다 새로 저장 / 기존 지식에 덧붙이기 / 넣지 않기를 묻는다.
-선택지를 눌렀을 때 기존 지식을 옆에 보이는 기능이 없어,
-질문 글에 기존 지식 두 개를 KNOWLEDGE SEARCHED 모양으로 넣는다."""
+후보마다 질문 글에 비슷한 지식(10 개까지)을 한 줄씩 보이고, 병합 / 새로 저장 / 넣지 않기를 묻는다.
+병합할 지식은 다음 단계(choose_target)에서 고른다 (사용자, 2026-11-19)."""
 
 from __future__ import annotations
 
@@ -15,12 +14,9 @@ from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.question_request import QuestionRequest
 from task_plan_manager.workflow.confirm_plan.refine_each.candidate_kind import type_label
-from task_plan_manager.workflow.confirm_plan.refine_each.choose_action.action_choices import (
-    MAX_APPEND_TARGETS,
-    action_choices,
-)
+from task_plan_manager.workflow.confirm_plan.refine_each.choose_action.action_choices import action_choices
 
-BODY_PREVIEW_CHARS = 200  # 질문 글에 보일 기존 지식 본문 길이
+BODY_PREVIEW_CHARS = 80  # 질문 글의 목록 한 줄에 보일 기존 지식 본문 길이
 
 
 @TASKS.register_as("confirm_plan.choose_action")
@@ -29,7 +25,7 @@ class ChooseActionTask(Task):
     output_kind = OutputKind.DATA
 
     def build_request(self, context: FlowContext) -> QuestionRequest:
-        # 후보와 기존 지식 두 개를 보이고, 새로 저장 / 덧붙이기 / 넣지 않기 가운데 하나를 고르게 한다
+        # 후보와 비슷한 지식 목록을 보이고, 병합 / 새로 저장 / 넣지 않기 가운데 하나를 고르게 한다
         existing = context.read("find_existing")["existing"]
         total = len(context.read("extract_knowledge")["candidates"])
         question = build_question(context.current_item(), existing, context.item_key or "1", total)
@@ -48,9 +44,19 @@ def build_question(candidate: dict[str, Any], existing: list[dict[str, Any]], nu
         f"지식 후보 {number}/{total}: {type_label(candidate['type'])} {candidate['theme']}",
         candidate["content"],
         f"근거: {quotes}",
+        "",
     ]
-    for order, memory in enumerate(existing[:MAX_APPEND_TARGETS], start=1):
-        body = memory["body"][:BODY_PREVIEW_CHARS] + ("…" if len(memory["body"]) > BODY_PREVIEW_CHARS else "")
-        lines += ["", f"****** KNOWLEDGE SEARCHED {order} ********", f"#{memory['memory_id']} {memory['theme']}", body]
-    lines += ["", "이 후보를 어떻게 할까요?"]
+    if existing:
+        lines.append(f"비슷한 지식 {len(existing)}개")
+        lines += [f"{order:>2}. {_one_line(memory)}" for order, memory in enumerate(existing, start=1)]
+        lines += ["", "병합하시겠습니까?"]
+    else:
+        lines += ["비슷한 지식이 없습니다.", "", "이 후보를 어떻게 할까요?"]
     return "\n".join(lines)
+
+
+def _one_line(memory: dict[str, Any]) -> str:
+    """목록 한 줄: id, 작업 이름, 본문 앞부분 (줄바꿈은 공백으로)."""
+    body = " ".join(memory["body"].split())
+    short = body[:BODY_PREVIEW_CHARS] + ("…" if len(body) > BODY_PREVIEW_CHARS else "")
+    return f"#{memory['memory_id']} {memory['theme']} — {short}"

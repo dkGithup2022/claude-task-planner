@@ -1,7 +1,7 @@
 # C: 병합할 지식을 비슷한 지식 10개 가운데 고르기
 
 C(refine_each)의 고르기를 두 단계로 나눈다. 먼저 "병합하시겠습니까?"를 묻고, 병합이면 비슷한 지식 10개 가운데 대상을 세 개씩 넘겨 보며 고른다.
-진행 방식: 계획 → 만들기 → 시험 → 별도 에이전트 리뷰 → 단계 기록. 상태: 확답 전.
+진행 방식: 계획 → 만들기 → 시험 → 별도 에이전트 리뷰 → 단계 기록. 상태: 만듦 (사용자, 2026-11-19: "커밋하고 단계 수행". 9 절 확인할 것은 적은 대로 진행).
 
 ## 요청
 
@@ -126,9 +126,8 @@ tests/workflow/confirm_plan/test_refine_each.py  시험을 고치고 더함
 
 `target_pages.py`
 ```python
-PAGE_SIZE = 3      # 한 쪽에 보일 지식 수. 넷째 자리는 "다음 3개 보기"
+PAGE_SIZE = 3  # 한 쪽에 보일 지식 수. 넷째 자리는 "다음 3개 보기"
 NEXT_PAGE = "다음 3개 보기"
-PAGE_COUNT = 3     # 기존 지식 10개(find_existing 의 SEARCH_LIMIT) → 3 / 3 / 4
 
 
 def page_of(existing: list[dict], page: int) -> list[dict]:
@@ -161,21 +160,21 @@ class ChooseTargetTask(Task):
 
 `merge_target.py`
 ```python
-CHOICE_NODES = ("choose_action", "choose_target_1", "choose_target_2", "choose_target_3")
+TARGET_PAGES = ("choose_target_1", "choose_target_2", "choose_target_3")
 
 
 def merge_target_id(context: FlowContext) -> int | None:
     """고른 병합 대상의 id. 병합이 아니거나 새로 저장을 골랐으면 None."""
-    for node_name in CHOICE_NODES[1:]:
+    for node_name in TARGET_PAGES:
         try:
             memory_id = context.read(node_name)["memory_id"]
-        except OutputMissingError:   # 건너뛴 쪽
+        except OutputMissingError:  # 건너뛴 쪽
             continue
         if memory_id is not None:
             return int(memory_id)
     return None
 ```
-- 뒤 단계 셋(write, review, save)은 지금 `append_target_id(context.read("choose_action")["answer"])` 를 부르는 줄만 `merge_target_id(context)` 로 바꾼다. 선언의 reads 에는 `*CHOICE_NODES` 를 넣는다.
+- 뒤 단계 셋(write, review, save)은 지금 `append_target_id(context.read("choose_action")["answer"])` 를 부르는 줄만 `merge_target_id(context)` 로 바꾼다. 선언의 reads 에는 `*TARGET_PAGES` 를 넣는다.
 - `keeps_candidate`(넣지 않기가 아니면 계속)는 그대로 둔다.
 
 선언 (`confirm_plan_flows.py` 의 `_refine_each`)
@@ -209,6 +208,20 @@ choose_target = group("choose_target", ChildRun.IN_ORDER,
 2. 비슷한 지식이 하나뿐일 때 `새 지식으로 저장` 을 더하는 것 (2 절)
 3. 마지막 쪽에서 되돌아가기("처음 3개 보기")는 두지 않는다. 고르지 않으려면 선택 창의 직접 입력으로 다른 말을 쓰면 같은 질문이 다시 나온다
 4. 종류를 넘는 병합은 이번 범위 밖 (1 절)
+
+## 진행 기록
+
+- 2026-11-19 만듦. 계획과 다른 점: engine 이 한 흐름에서 같은 등록 키를 두 번 쓰지 못하게 해서(`check_definition.py`), 고르기 클래스 하나를 `confirm_plan.choose_target_1`~`_3` 세 키로 등록했다. 쪽 번호는 지금처럼 등록 키 인자로 넘긴다.
+- 확인 대화의 첫 말은 "(#2 에 덧붙이기)" 그대로 두었다. "병합"으로 맞출지는 사용자 판단 (문구 바꿈).
+- 시험: test_refine_each.py 12개 (병합·새로·넣지 않기, 세 쪽 넘겨 마지막 쪽에서 고르기, 첫 쪽에서 고르면 뒤 쪽 건너뜀, 비슷한 지식 없음, 하나뿐, 쪽 나누기 4가지). 전체 pytest 146개, ruff, mypy, lint-imports 통과
+
+## 단계 기록
+
+1. 입력: 그대로 (`/plan-go`, `/plan-cancel`). 기존 지식 찾기도 같은 종류 10개 그대로.
+2. 출력: 후보마다 "병합하시겠습니까?" (병합 / 새로 / 넣지 않기, 질문 글에 비슷한 지식 10개). 병합이면 쪽마다 대상 고르기 (3 / 3 / 4, "다음 3개 보기").
+3. 파일: `choose_target/` 새로 (choose_target_task, target_pages, merge_target). choose_action 두 파일, 흐름 선언, 본문 쓰기·확인 대화·저장 단계의 한 줄씩, find_existing 의 상한 자르기, 시험.
+4. 별도 에이전트 리뷰: (1) 검색 결과가 10개를 넘으면 셋째 쪽에도 "다음"이 붙고, 고르면 넷째 쪽이 없어 병합이 새로 저장으로 바뀜 → 찾기 결과를 상한으로 자르고, 상한과 쪽 수가 맞는지 보는 시험을 둠. 쓰지 않는 PAGE_COUNT 를 뺌. (2) 이 변경 전에 시작해 멈춘 plan_go 실행은 이어 가면 실패함 (실행 상태에 옛 단계 목록이 남음) → 코드는 그대로, 반영 전에 진행 중인 실행을 끝내거나 취소. (3) 병합 대상을 읽는 단계의 reads 에 쓰지 않는 choose_action 이 들어감 → 뺌.
+5. 남은 것: 실제 Claude Code 에서 쪽 넘기기 확인 (e2e), 확인 대화 첫 말의 "덧붙이기"를 "병합"으로 맞출지 (사용자 판단).
 
 ## C 마무리 조건
 

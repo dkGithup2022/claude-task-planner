@@ -14,7 +14,7 @@ from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.conversation_request import ConversationRequest
 from task_plan_manager.workflow.confirm_plan.refine_each.candidate_kind import type_label
-from task_plan_manager.workflow.confirm_plan.refine_each.choose_action.action_choices import append_target_id
+from task_plan_manager.workflow.confirm_plan.refine_each.choose_target.merge_target import merge_target_id
 
 GOAL = (Path(__file__).parent / "review_goal.md").read_text(encoding="utf-8").strip()
 ASK_LINE = "이대로 저장할까요? 고칠 곳이나, 예시로 넣을 실제 사례가 있으면 말씀해 주세요."
@@ -28,7 +28,7 @@ class ReviewKnowledgeTask(Task):
     def build_request(self, context: FlowContext) -> ConversationRequest:
         # 초안을 보이는 글로 대화를 시작한다. 다듬는 대화는 run 스킬 글을 따르는 메인 세션이 한다
         draft = context.read("write_knowledge")
-        target_id = append_target_id(context.read("choose_action")["answer"])
+        target_id = merge_target_id(context)
         opening = build_opening(context.current_item(), draft, target_id)
         return ConversationRequest(goal=GOAL, opening=opening)
 

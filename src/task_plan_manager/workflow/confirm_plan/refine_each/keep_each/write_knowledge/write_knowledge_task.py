@@ -14,7 +14,7 @@ from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.prompt_request import PromptRequest
 from task_plan_manager.workflow.confirm_plan.refine_each.candidate_kind import memory_kind
-from task_plan_manager.workflow.confirm_plan.refine_each.choose_action.action_choices import append_target_id
+from task_plan_manager.workflow.confirm_plan.refine_each.choose_target.merge_target import merge_target_id
 from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.write_knowledge.prompt_write_knowledge_output import (  # noqa: E501
     WriteKnowledgeOutput,
 )
@@ -37,7 +37,7 @@ class WriteKnowledgeTask(Task):
         # 후보, 그 근거가 나온 대화, 덧붙이기면 그 기존 지식을 입력 글로 넘긴다
         candidate = context.current_item()
         found = context.read("find_plan")
-        target_id = append_target_id(context.read("choose_action")["answer"])
+        target_id = merge_target_id(context)
         target = next((m for m in context.read("find_existing")["existing"] if m["memory_id"] == target_id), None)
         conversation = quoted_context(Path(found["transcript"]), found["shown_at"], candidate["quotes"])
         return PromptRequest(WRITE_KNOWLEDGE, build_write_input(candidate, conversation, target))
