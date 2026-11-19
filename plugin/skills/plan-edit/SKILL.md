@@ -19,10 +19,9 @@ argument-hint: <계획 id> <사용자 말>
    | update | node_id, 바꿀 것만: title, scope, kind, persona_ids, output, add_note |
    | link / unlink | from, to |
 
+   - kind 는 document / research / code / hitl 가운데 하나입니다. hitl 은 사용자가 확인하는 노드입니다.
    - scope 는 이 노드가 하는 일 한두 줄, output 은 산출물 한 줄입니다. 사용자가 말한 조건은 note 나 add_note 에 넣습니다.
    - 앞뒤 간선은 넘기지 않습니다. 명령이 다시 잇습니다.
-3. 넘깁니다.
-       task_plan_manager plan edit <id> <<'EOF'
-       {"ops": [...]}
-       EOF
+3. JSON 한 줄을 작은따옴표로 감싸 넘깁니다. JSON 안에는 작은따옴표(')를 쓰지 않습니다.
+       task_plan_manager plan edit <id> --ops '{"ops": [...]}'
 4. 결과의 `changes` 와 `summary`(새 계획 표)를 그대로 돌려줍니다. `ok: false` 면 이유를 그대로 돌려줍니다.

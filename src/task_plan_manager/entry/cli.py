@@ -68,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     plan = sub.add_parser("plan")  # 흐름 밖에서 계획을 읽고 고친다 (plan-edit 스킬이 부름)
     plan.add_argument("action", choices=["show", "edit"])
     plan.add_argument("plan_id", type=int)
+    plan.add_argument("--ops", help='edit 의 {"ops": [...]} JSON. 없으면 표준 입력에서 읽는다')
     a = p.parse_args(argv)
 
     if a.cmd == "hook":
@@ -76,7 +77,7 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(out, ensure_ascii=False))
         return 0
     if a.cmd == "plan":
-        return _print(_plan_command(a.action, a.plan_id))
+        return _print(_plan_command(a.action, a.plan_id, a.ops))
     runner, instructions = build_runner(), InstructionConverter()
     session = _session(a.session)
     if a.cmd == "start":
@@ -91,12 +92,12 @@ def main(argv: list[str] | None = None) -> int:
     return _print(instructions.to_json(runner.cancel(session)))
 
 
-def _plan_command(action: str, plan_id: int) -> dict[str, Any]:
-    """plan show 는 계획 JSON, plan edit 는 표준 입력의 {"ops": [...]} 를 적용한 결과."""
+def _plan_command(action: str, plan_id: int, ops_text: str | None) -> dict[str, Any]:
+    """plan show 는 계획 JSON, plan edit 는 --ops (없으면 표준 입력)의 {"ops": [...]} 를 적용한 결과."""
     if action == "show":
         return show_plan(plan_id)
     try:
-        data = json.loads(sys.stdin.read() or "{}")
+        data = json.loads(ops_text if ops_text is not None else (sys.stdin.read() or "{}"))
     except json.JSONDecodeError as error:
         return {"ok": False, "reason": f"표준 입력이 JSON 이 아닙니다: {error}"}
     return edit_plan(plan_id, data)

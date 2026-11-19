@@ -84,6 +84,7 @@ def test_should_show_and_edit_plan_through_cli():
     finally:
         sys.stdin = old_in
     assert edited["ok"] is True and edited["changes"] == [f"뺌: {node_id} README 작성 (앞뒤를 바로 이음)"]
+    assert run("plan", "edit", str(plan_id), "--ops", '{"ops": [{"op": "remove", "node_id": 999}]}')["ok"] is False
     sys.stdin = io.StringIO("not json")
     try:
         assert run("plan", "edit", str(plan_id))["ok"] is False

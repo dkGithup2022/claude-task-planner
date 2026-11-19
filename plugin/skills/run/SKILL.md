@@ -14,7 +14,7 @@ argument-hint: <흐름 이름>
    - `ask`: AskUserQuestion 으로 `payload.question` 과 `payload.choices` 를 그대로 묻습니다. 사용자의 답(고른 라벨 또는 직접 입력한 글)을 바꾸지 않고 `task_plan_manager done --answer "<답>"` 으로 넘깁니다.
    - `talk`: `payload.opening` 으로 대화를 시작해 `payload.goal` 을 향해 사용자와 이야기합니다. 충분하면 AskUserQuestion 으로 "정리할까요?" (예 / 더 이야기) 를 묻고, 예면 `task_plan_manager done` 을 부릅니다.
    - `spawn`: Agent 도구로 `payload.agent` 를 `payload.message` 그대로 띄웁니다. 백그라운드로 시작되면 완료 알림이 올 때까지 기다립니다. 서브에이전트가 끝난 뒤에 `task_plan_manager done` 을 부릅니다. 파일이 생긴 것만 보고 부르지 않습니다.
-   - `finished`: `payload.text` 를 보이고 끝냅니다. `payload.skill` 이 있으면 이어서 Skill 도구로 그 스킬을 부릅니다.
+   - `finished`: `payload.text` 를 보이고 끝냅니다. `payload.skill` 이 있으면, 먼저 `payload.text` 를 답변에 그대로 적은 뒤 Skill 도구로 그 스킬을 부릅니다. 글을 적지 않고 스킬부터 부르면 사용자는 그 글을 보지 못합니다.
    - `wait`: 다른 명령이 단계를 실행 중입니다. `payload.text` 를 보이고 아무 명령도 부르지 않습니다. 앞 명령의 완료 알림이 오면 그 결과(지시)대로 이어 갑니다.
    - `failed`: `payload.text` 를 보이고 멈춥니다. 사용자가 다시 하자고 하면 `task_plan_manager next` 를 부릅니다.
 3. `done` 의 결과도 다음 지시입니다. 2 를 반복합니다.

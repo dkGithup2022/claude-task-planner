@@ -302,5 +302,9 @@ argument-hint: <계획 id> <사용자 말>
   - (2) merge 에 같은 id 가 두 번 오면 명령이 오류로 멈춤 → 겹친 id 는 한 번만 씀
   - (3) 확인 노드를 작업 노드로 바꿀 때 담당이 비어 거절됨 → 담당을 주지 않았으면 계획의 첫 페르소나. 시험 추가
 - 검증: pytest 138개, ruff, ruff format, lint-imports, mypy 통과
+- 2026-11-19 e2e(edit1, 계획 7)에서 찾아 고침 (사용자 승인):
+  - heredoc 을 붙인 명령은 허용 규칙 `Bash(task_plan_manager:*)` 에 맞지 않아 거부됨 → `plan edit <id> --ops '<JSON>'` 인자를 받고, 스킬은 이 인자를 씀. 표준 입력도 그대로 받음
+  - 스킬이 kind 에 `doc` 을 넣음 → plan-edit 스킬에 kind 값 목록(document / research / code / hitl)
+  - 메인 세션이 끝 지시의 계획 표를 보이지 않고 바로 plan-feedback 을 부름 → run 스킬: skill 이 있으면 먼저 글을 그대로 적은 뒤 스킬을 부름
 
 ## 단계 기록
