@@ -92,7 +92,10 @@ def test_should_save_new_merge_and_skip_by_choice(capsys, package_home):
 
     talk = run(capsys, "done", "--answer", "새 지식으로 저장")  # 고르기 쪽은 건너뜀
     assert talk["type"] == "talk" and talk["payload"]["opening"].startswith("[계획] UI/UX 설계 (새 지식)\n본문:\n")
-    second = run(capsys, "done")
+    saved = run(capsys, "done")  # 대화 끝 → 최종 본문 → 저장 → 저장 결과를 보인다
+    assert saved["type"] == "show"
+    assert saved["payload"]["text"] == '지식 #3 "UI/UX 설계" 을 새로 저장했습니다.\n\nUI/UX 설계 확인한 본문'
+    second = run(capsys, "next")
     assert second["type"] == "ask" and second["payload"]["question"].startswith("지식 후보 2/3")
     target = run(capsys, "done", "--answer", "병합")
     # 1 번 후보로 방금 저장한 #3 도 비슷한 지식으로 나온다 (mock 검색은 저장한 순서대로)
@@ -100,7 +103,9 @@ def test_should_save_new_merge_and_skip_by_choice(capsys, package_home):
     assert target["payload"]["choices"] == ["#1 테이블 설계", "#2 테이블 설계", "#3 UI/UX 설계"]
     talk = run(capsys, "done", "--answer", "#2 테이블 설계")
     assert talk["payload"]["opening"].startswith("[도메인] 테이블 설계 (#2 에 덧붙이기)\n덧붙일 내용:\n")
-    third = run(capsys, "done")
+    saved = run(capsys, "done")
+    assert saved["payload"]["text"].startswith('지식 #2 "테이블 설계" 에 덧붙였습니다.\n덧붙인 내용:\n\n')
+    third = run(capsys, "next")
     assert third["payload"]["question"].startswith("지식 후보 3/3")
     notice = run(capsys, "done", "--answer", "넣지 않기")
     assert notice["type"] == "finished"  # 마지막 알림 글은 끝 지시에 실림

@@ -34,6 +34,7 @@ from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.review_knowle
     review_knowledge_task,
 )
 from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.save_knowledge import save_knowledge_task  # noqa: F401
+from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.show_saved import show_saved_task  # noqa: F401
 from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.write_knowledge import (  # noqa: F401
     write_knowledge_task,
 )
@@ -65,7 +66,7 @@ def _units(decision: str) -> list[Unit]:
 
 def _refine_each() -> Unit:
     """C: 지식 후보마다 기존 지식 찾기 → 병합할지 묻기 → (병합이면) 대상 고르기
-    → (넣지 않기가 아니면) 본문 쓰기 → 대화로 확인 → 최종 본문 → 저장."""
+    → (넣지 않기가 아니면) 본문 쓰기 → 대화로 확인 → 최종 본문 → 저장 → 저장 결과 보이기."""
     keep_each = group("keep_each", ChildRun.IN_ORDER,
         task("write_knowledge", PerformedBy.CLAUDE_P, Ref("confirm_plan.write_knowledge"),
              reads=("find_plan", "find_existing", *TARGET_PAGES)),
@@ -75,6 +76,8 @@ def _refine_each() -> Unit:
              reads=("write_knowledge", "review_knowledge")),
         task("save_knowledge", PerformedBy.CODE, Ref("confirm_plan.save_knowledge"),
              reads=("finalize_knowledge", "find_plan", *TARGET_PAGES)),
+        task("show_saved", PerformedBy.MAIN_SESSION_SHOW, Ref("confirm_plan.show_saved"),
+             reads=("save_knowledge", "finalize_knowledge")),
         run_if=Ref("confirm_plan.keeps_candidate"), reads=("choose_action",))  # fmt: skip
     return group("refine_each", ChildRun.FOR_EACH_ITEM,
         task("find_existing", PerformedBy.CODE, Ref("confirm_plan.find_existing"), reads=("find_plan",)),

@@ -36,5 +36,5 @@ class NotifyTask(Task):
 def build_notice(decision: str, plan_id: int, title: str, new_count: int, append_count: int) -> str:
     saved = f"저장한 지식 {new_count + append_count}개 (새로 {new_count}, 덧붙이기 {append_count})."
     if decision == "approved":
-        return f'계획 {plan_id} "{title}" 을 승인했습니다. {saved}\n실행은 /plan-run {plan_id}'
+        return f'계획 {plan_id} "{title}" 을 승인했습니다. {saved}\n실행은 /task_plan_manager:plan-run {plan_id}'
     return f'계획 {plan_id} "{title}" 을 불허했습니다. 이 계획은 끝났습니다. {saved}'

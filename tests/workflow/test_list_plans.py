@@ -40,7 +40,7 @@ def test_should_show_plans_of_this_work_folder_and_finish(capsys):
     shown = run(capsys, "start", "list_plans")
     assert shown["type"] == "finished"  # 마지막 보이기 글은 끝 지시에 실림
     assert shown["payload"]["text"] == (
-        "명령 뒤에 계획 id 를 넣어 다시 불러 주세요. 예: /plan-go 7\n\n"
+        "명령 뒤에 계획 id 를 넣어 다시 불러 주세요. 예: /task_plan_manager:plan-go 7\n\n"
         "| id | 제목 | 상태 |\n|---|---|---|\n| 1 | 검색 기능 설계 | 검토 중 |\n| 2 | 로그인 개편 | 승인 |"
     )
 

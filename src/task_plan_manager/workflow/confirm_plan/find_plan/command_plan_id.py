@@ -20,4 +20,6 @@ def command_plan_id(transcript: Path) -> int:
         matched = COMMAND_LINE.match(line)
         if matched:
             return int(matched.group(1))
-    raise PlanNotConfirmableError("명령에서 계획 id 를 찾지 못했습니다. /plan-go <계획 id> 로 다시 불러 주세요")
+    raise PlanNotConfirmableError(
+        "명령에서 계획 id 를 찾지 못했습니다. /task_plan_manager:plan-go <계획 id> 로 다시 불러 주세요"
+    )

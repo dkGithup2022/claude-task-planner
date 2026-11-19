@@ -13,7 +13,7 @@ from task_plan_manager.engine.request.show_request import ShowRequest
 from task_plan_manager.workflow.list_plans.show_plans.plan_status_label import status_label
 
 # 계획서(specs/plans/workflow-list_plans.md) show_plans 의 보일 글 그대로
-GUIDE = "명령 뒤에 계획 id 를 넣어 다시 불러 주세요. 예: /plan-go 7"
+GUIDE = "명령 뒤에 계획 id 를 넣어 다시 불러 주세요. 예: /task_plan_manager:plan-go 7"
 NO_PLANS = "이 작업 폴더에 계획이 없습니다. /task_plan_manager:run make_plan 으로 계획을 만들어 주세요."
 
 

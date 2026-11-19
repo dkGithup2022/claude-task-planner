@@ -275,7 +275,8 @@ def test_should_notify_approval_with_next_command(tmp_path, capsys):
     _make_plan("검색 기능 설계")
     _session_with_commands(tmp_path, "/task_plan_manager:plan-go 1")
     assert _run_to_end(capsys, "plan_go") == (
-        '계획 1 "검색 기능 설계" 을 승인했습니다. 저장한 지식 0개 (새로 0, 덧붙이기 0).\n실행은 /plan-run 1'
+        '계획 1 "검색 기능 설계" 을 승인했습니다. 저장한 지식 0개 (새로 0, 덧붙이기 0).\n'
+        "실행은 /task_plan_manager:plan-run 1"
     )
 
 

@@ -6,7 +6,7 @@ argument-hint: <계획 id>
 계획 id 는 `$ARGUMENTS` 입니다.
 
 - 계획의 노드와 계획에 대한 피드백을 받습니다.
-- 만족하면 `/plan-go <id>`, 취소하려면 `/plan-cancel <id>` 를 입력하게 안내합니다.
+- 만족하면 `/task_plan_manager:plan-go <id>`, 취소하려면 `/task_plan_manager:plan-cancel <id>` 를 입력하게 안내합니다.
 - 이 단계는 확정 전에, 대화로 기존 계획과 노드를 바꾸거나 노드에 지시할 내용을 더하는 단계입니다.
 
 고치는 일은 아래 다섯 가지입니다.
@@ -71,5 +71,5 @@ plan-edit 6 에 사용자 말을 넘김
 ```
 대응
 ```
-고치지 않음. "/plan-go 6 을 입력하면 확정합니다" 라고 안내
+고치지 않음. "/task_plan_manager:plan-go 6 을 입력하면 확정합니다" 라고 안내
 ```
