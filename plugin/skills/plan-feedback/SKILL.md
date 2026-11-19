@@ -4,6 +4,7 @@ description: 검토 중인 계획에 대한 피드백을 받아 고친다. 계�
 argument-hint: <계획 id>
 ---
 계획 id 는 `$ARGUMENTS` 입니다.
+계획은 `task_plan_manager plan show <id>` 로 읽습니다.
 
 - 계획의 노드와 계획에 대한 피드백을 받습니다.
 - 만족하면 `/task_plan_manager:plan-go <id>`, 취소하려면 `/task_plan_manager:plan-cancel <id>` 를 입력하게 안내합니다.
