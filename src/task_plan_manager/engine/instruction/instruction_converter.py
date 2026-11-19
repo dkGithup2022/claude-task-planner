@@ -27,8 +27,8 @@ class InstructionConverter:
         return Instruction(kind, d["node_uuid"], d.get("item_key"), self._payload_to_data(kind, d["payload"]))
 
     def _payload_to_json(self, p: TaskRequest) -> dict[str, Any]:
-        if isinstance(p, ShowRequest):
-            return {"text": p.text}
+        if isinstance(p, ShowRequest):  # skill 은 있을 때만 싣는다
+            return {"text": p.text, "skill": p.skill} if p.skill else {"text": p.text}
         if isinstance(p, QuestionRequest):
             return {"question": p.question, "choices": list(p.choices)}
         if isinstance(p, ConversationRequest):
@@ -40,7 +40,7 @@ class InstructionConverter:
     def _payload_to_data(self, kind: InstructionType, d: dict[str, Any]) -> TaskRequest:
         expected = _PAYLOAD_TYPE[kind]
         if expected is ShowRequest:
-            return ShowRequest(d["text"])
+            return ShowRequest(d["text"], d.get("skill"))
         if expected is QuestionRequest:
             return QuestionRequest(d["question"], tuple(d["choices"]))
         if expected is ConversationRequest:

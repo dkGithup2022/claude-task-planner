@@ -33,8 +33,8 @@ class Instruction:
     payload: TaskRequest
 
     @classmethod
-    def finished(cls, root_uuid: str, text: str = "끝났습니다.") -> Instruction:
-        return cls(InstructionType.FINISHED, root_uuid, None, ShowRequest(text))
+    def finished(cls, root_uuid: str, text: str = "끝났습니다.", skill: str | None = None) -> Instruction:
+        return cls(InstructionType.FINISHED, root_uuid, None, ShowRequest(text, skill))
 
     @classmethod
     def failed(cls, text: str, node_uuid: str = "", item_key: str | None = None) -> Instruction:

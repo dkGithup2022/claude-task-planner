@@ -7,9 +7,9 @@ from task_plan_manager.model.plan.plan import Plan
 from task_plan_manager.model.plan.plan_node import PlanNode
 
 
-def build_summary(plan: Plan, warnings: list[str]) -> str:
-    """계획 머리 줄, 노드 표, 확인 노드 줄, 경고 줄을 빈 줄로 이은 글."""
-    head = f'계획 {plan.plan_id} "{plan.title}" 을 만들었습니다. 노드 {len(plan.nodes)}개, 간선 {len(plan.edges)}개.'
+def build_summary(plan: Plan, warnings: list[str], done: str = "만들었습니다") -> str:
+    """계획 머리 줄, 노드 표, 확인 노드 줄, 경고 줄을 빈 줄로 이은 글. done 은 머리 줄의 동사 (고칠 때 "고쳤습니다")."""
+    head = f'계획 {plan.plan_id} "{plan.title}" 을 {done}. 노드 {len(plan.nodes)}개, 간선 {len(plan.edges)}개.'
     return "\n\n".join([head, _node_table(plan), _hitl_lines(plan), _warning_lines(warnings)])
 
 

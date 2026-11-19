@@ -14,6 +14,7 @@ from task_plan_manager.engine.request.show_request import ShowRequest
 # 계획서(specs/plans/workflow-make_plan.md) show_plan 의 보일 글 그대로
 GUIDE = """고칠 곳이 있으면 대화로 말해 주세요.
 확정은 /plan-go {plan_id}, 불허는 /plan-cancel {plan_id}"""
+FEEDBACK_SKILL = "task_plan_manager:plan-feedback"
 
 
 @TASKS.register_as("make_plan.show_plan")
@@ -25,7 +26,8 @@ class ShowPlanTask(Task):
         # 보일 글 아래에 다음 명령을 계획 id 까지 넣어 붙인다 (사용자, 2026-11-19)
         summary = context.read("prepare_show")["summary"]
         plan_id = context.read("register_plan")["plan_id"]
-        return ShowRequest(f"{summary}\n\n{GUIDE.format(plan_id=plan_id)}")
+        # 보인 뒤 메인 세션이 고치기 대화 스킬을 부른다. 마지막 단계라 이 글과 스킬이 끝 지시에 실린다
+        return ShowRequest(f"{summary}\n\n{GUIDE.format(plan_id=plan_id)}", f"{FEEDBACK_SKILL} {plan_id}")
 
     def build_output(self, context: FlowContext, result: Any) -> TaskOutput:
         return TaskOutput({})

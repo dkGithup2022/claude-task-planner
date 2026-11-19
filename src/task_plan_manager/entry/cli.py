@@ -26,6 +26,7 @@ from task_plan_manager.engine.runner.child_run.default_strategies import default
 from task_plan_manager.engine.runner.flow.default_flow_runner import DefaultFlowRunner
 from task_plan_manager.engine.runner.flow.dict_flow_registry import DictFlowRegistry
 from task_plan_manager.engine.runner.unit.default_unit_runner import DefaultUnitRunner
+from task_plan_manager.workflow.plan_edit.edit_plan import edit_plan, show_plan
 from task_plan_manager.workflow.registry import FLOWS
 
 
@@ -64,6 +65,9 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("cancel")
     h = sub.add_parser("hook")
     h.add_argument("event", choices=["session-start", "stop"])
+    plan = sub.add_parser("plan")  # 흐름 밖에서 계획을 읽고 고친다 (plan-edit 스킬이 부름)
+    plan.add_argument("action", choices=["show", "edit"])
+    plan.add_argument("plan_id", type=int)
     a = p.parse_args(argv)
 
     if a.cmd == "hook":
@@ -71,6 +75,8 @@ def main(argv: list[str] | None = None) -> int:
         if out:
             print(json.dumps(out, ensure_ascii=False))
         return 0
+    if a.cmd == "plan":
+        return _print(_plan_command(a.action, a.plan_id))
     runner, instructions = build_runner(), InstructionConverter()
     session = _session(a.session)
     if a.cmd == "start":
@@ -83,6 +89,17 @@ def main(argv: list[str] | None = None) -> int:
         state = runner.read_state(session)
         return _print(RunStateFileConverter().to_file(state) if state else {"status": "none"})
     return _print(instructions.to_json(runner.cancel(session)))
+
+
+def _plan_command(action: str, plan_id: int) -> dict[str, Any]:
+    """plan show 는 계획 JSON, plan edit 는 표준 입력의 {"ops": [...]} 를 적용한 결과."""
+    if action == "show":
+        return show_plan(plan_id)
+    try:
+        data = json.loads(sys.stdin.read() or "{}")
+    except json.JSONDecodeError as error:
+        return {"ok": False, "reason": f"표준 입력이 JSON 이 아닙니다: {error}"}
+    return edit_plan(plan_id, data)
 
 
 def _session(session_id: str) -> ClaudeSession:

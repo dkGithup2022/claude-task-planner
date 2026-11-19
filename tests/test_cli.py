@@ -62,3 +62,30 @@ def test_should_record_transcript_path_when_session_starts():
 
     hook("session-start", {"session_id": SID, "transcript_path": "/x.jsonl"})
     assert DefaultSessionReader().load_session(SID).transcript_path == "/x.jsonl"
+
+
+def test_should_show_and_edit_plan_through_cli():
+    from task_plan_manager.model.plan.node_kind import NodeKind
+    from task_plan_manager.model.plan.plan_status import PlanStatus
+    from task_plan_manager.port.plan_api.dto.new_node import NewNode
+    from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
+    from task_plan_manager.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
+
+    writer = MockPlanApiWriter()
+    plan_id = writer.create_plan(NewPlan("메모 API", "# 명령", (1,))).plan_id
+    node_id = writer.add_node(plan_id, NewNode("README 작성", NodeKind.DOCUMENT, (1,), "### 하는 일\nREADME")).node_id
+    writer.set_plan_status(plan_id, PlanStatus.REVIEWING)
+    assert run("plan", "show", str(plan_id))["nodes"][0]["title"] == "README 작성"
+
+    old_in = sys.stdin
+    sys.stdin = io.StringIO(json.dumps({"ops": [{"op": "remove", "node_id": node_id}]}))
+    try:
+        edited = run("plan", "edit", str(plan_id))
+    finally:
+        sys.stdin = old_in
+    assert edited["ok"] is True and edited["changes"] == [f"뺌: {node_id} README 작성 (앞뒤를 바로 이음)"]
+    sys.stdin = io.StringIO("not json")
+    try:
+        assert run("plan", "edit", str(plan_id))["ok"] is False
+    finally:
+        sys.stdin = old_in

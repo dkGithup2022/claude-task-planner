@@ -291,4 +291,16 @@ argument-hint: <계획 id> <사용자 말>
 
 ## 진행 기록
 
+- 2026-11-19 단위 1 engine: 끝 지시에 skill 싣기 (ShowRequest.skill, 변환기는 skill 이 있을 때만 싣기, 마지막 보이기 → 끝 지시가 skill 도 옮김, run 스킬 한 줄). 시험 1개
+- 2026-11-19 단위 2 workflow/plan_edit/: op/ (동작 7개, NewPart, SplitOrder, JSON 읽기), edit_graph.py, node_spec.py, send_edit.py, edit_plan.py. 시험 9개 (나누기 차례로·동시에, 합치기, 넣기, 빼기, 고치기, 순환 거절, 상태·동작 거절, show)
+  - 계획과 다른 점: 정의서 md 만들기를 write_specs 와 같은 함수로 합치지 않고 plan_edit/node_spec.py 에 같은 형식으로 두었다 (make_plan 코드를 건드리지 않음)
+  - 바뀐 것 글은 조사가 이름에 붙지 않게 "나눔: 14 화면 설계 → …" 모양으로 함
+- 2026-11-19 단위 3 entry/cli.py: plan show, plan edit (표준 입력 JSON). 시험 1개
+- 2026-11-19 단위 4 make_plan show_plan 이 skill "task_plan_manager:plan-feedback <id>" 를 실음, 계획 표 머리 줄 동사 인자, 스킬 plan-feedback·plan-edit. make_plan 시험에 skill 확인 추가
+- 별도 에이전트 리뷰 (단위 1~4 함께):
+  - (1) 새 문제를 문제 글 그대로 비교해서, 원래 있던 문제가 간선 id 나 노드 제목이 바뀌면 새 문제로 잡혀 거절됨 → 원래 간선은 원래 id 를 쓰고, 제목을 지운 계획끼리 비교하게 고침. 시험 추가
+  - (2) merge 에 같은 id 가 두 번 오면 명령이 오류로 멈춤 → 겹친 id 는 한 번만 씀
+  - (3) 확인 노드를 작업 노드로 바꿀 때 담당이 비어 거절됨 → 담당을 주지 않았으면 계획의 첫 페르소나. 시험 추가
+- 검증: pytest 138개, ruff, ruff format, lint-imports, mypy 통과
+
 ## 단계 기록

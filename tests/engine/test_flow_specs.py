@@ -102,3 +102,15 @@ def test_should_refuse_payload_that_does_not_match_instruction_type():
                           (InstructionType.SPAWN, ShowRequest("x"))]:  # fmt: skip
         with pytest.raises(TypeError, match="넣을 수 없는 요청"):
             InstructionConverter().to_json(Instruction(kind, "u", None, payload))
+
+
+def test_should_carry_skill_on_show_payload_only_when_present():
+    from task_plan_manager.engine.instruction.instruction import Instruction
+    from task_plan_manager.engine.instruction.instruction_converter import InstructionConverter
+
+    converter = InstructionConverter()
+    with_skill = Instruction.finished("root", "계획 표", "task_plan_manager:plan-feedback 6")
+    as_json = converter.to_json(with_skill)
+    assert as_json["payload"] == {"text": "계획 표", "skill": "task_plan_manager:plan-feedback 6"}
+    assert converter.to_data(as_json) == with_skill
+    assert converter.to_json(Instruction.finished("root"))["payload"] == {"text": "끝났습니다."}

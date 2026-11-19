@@ -134,7 +134,7 @@ class DefaultUnitRunner(UnitRunner):
         if self._find_next(state) is not None:
             return show
         assert isinstance(show.payload, ShowRequest)
-        return Instruction.finished(state.scenario.uuid, show.payload.text)
+        return Instruction.finished(state.scenario.uuid, show.payload.text, show.payload.skill)
 
     def _mark_executing(self, state: FlowRunState, node: ScenarioNode, context: FlowContext) -> None:
         """단계를 실행하기 직전에 표시해 저장한다. 그동안 들어온 다른 명령은 이것을 보고 기다린다."""

@@ -175,6 +175,7 @@ def test_should_show_summary_with_next_commands_and_finish(tmp_path, monkeypatch
 
     shown = run(capsys, "done")
     assert shown["type"] == "finished"
+    assert shown["payload"]["skill"] == "task_plan_manager:plan-feedback 1"  # 보인 뒤 고치기 대화 스킬
     text = shown["payload"]["text"]
     assert text.startswith('계획 1 "밤만쥬 1인분 만들기" 을 만들었습니다.')
     assert text.endswith("고칠 곳이 있으면 대화로 말해 주세요.\n확정은 /plan-go 1, 불허는 /plan-cancel 1")
