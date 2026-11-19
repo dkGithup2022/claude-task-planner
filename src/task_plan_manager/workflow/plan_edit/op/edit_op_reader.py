@@ -11,9 +11,9 @@ from task_plan_manager.workflow.plan_edit.op.insert_op import InsertOp
 from task_plan_manager.workflow.plan_edit.op.link_op import LinkOp
 from task_plan_manager.workflow.plan_edit.op.merge_op import MergeOp
 from task_plan_manager.workflow.plan_edit.op.new_part import NewPart
+from task_plan_manager.workflow.plan_edit.op.node_output import NodeOutput
 from task_plan_manager.workflow.plan_edit.op.remove_op import RemoveOp
 from task_plan_manager.workflow.plan_edit.op.split_op import SplitOp
-from task_plan_manager.workflow.plan_edit.op.split_order import SplitOrder
 from task_plan_manager.workflow.plan_edit.op.unlink_op import UnlinkOp
 from task_plan_manager.workflow.plan_edit.op.update_op import UpdateOp
 from task_plan_manager.workflow.plan_edit.plan_edit_refused_error import PlanEditRefusedError
@@ -35,14 +35,31 @@ def _read_op(index: int, raw: Any) -> EditOp:
 
 
 def _part(raw: dict[str, Any]) -> NewPart:
-    return NewPart(str(raw["title"]), str(raw["scope"]), raw.get("output"), raw.get("note"))
+    """새 노드: {title, kind?, does, output?: {form, contents}, notes?}."""
+    kind = raw.get("kind")
+    return NewPart(
+        title=str(raw["title"]),
+        does=str(raw["does"]),
+        kind=None if kind is None else NodeKind(kind),
+        output=_output(raw.get("output")),
+        notes=raw.get("notes"),
+    )
+
+
+def _output(raw: Any) -> NodeOutput | None:
+    """산출물: {form, contents} 이거나, 형태만 적은 글."""
+    if raw is None:
+        return None
+    if isinstance(raw, str):
+        return NodeOutput(raw)
+    return NodeOutput(str(raw.get("form") or ""), str(raw.get("contents") or ""))
 
 
 def _split(raw: dict[str, Any]) -> SplitOp:
     parts = tuple(_part(item) for item in raw["into"])
     if len(parts) < 2:
         raise ValueError("split 의 into 는 둘 이상이어야 합니다")
-    return SplitOp(int(raw["node_id"]), SplitOrder(raw.get("order", "serial")), parts)
+    return SplitOp(int(raw["node_id"]), parts)
 
 
 def _merge(raw: dict[str, Any]) -> MergeOp:
@@ -54,20 +71,18 @@ def _merge(raw: dict[str, Any]) -> MergeOp:
 
 def _insert(raw: dict[str, Any]) -> InsertOp:
     after, before = raw.get("after"), raw.get("before")
-    return InsertOp(
-        None if after is None else int(after),
-        None if before is None else int(before),
-        NodeKind(raw["kind"]),
-        _part(raw),
-    )
+    part = _part(raw)
+    if part.kind is None:
+        raise ValueError("insert 의 새 노드에는 kind 가 있어야 합니다")
+    return InsertOp(None if after is None else int(after), None if before is None else int(before), part)
 
 
 def _update(raw: dict[str, Any]) -> UpdateOp:
     kind, persona_ids = raw.get("kind"), raw.get("persona_ids")
     return UpdateOp(
-        int(raw["node_id"]), raw.get("title"), raw.get("scope"), None if kind is None else NodeKind(kind),
+        int(raw["node_id"]), raw.get("title"), raw.get("does"), None if kind is None else NodeKind(kind),
         None if persona_ids is None else tuple(int(persona_id) for persona_id in persona_ids),
-        raw.get("output"), raw.get("add_note"),
+        _output(raw.get("output")), raw.get("add_note"),
     )  # fmt: skip
 
 

@@ -46,8 +46,8 @@ elif "# 대상 작업" in text:  # spec: 레시피 작성은 재료 준비의 �
     needs = [{"what": "재료 목록", "source": "재료 준비"}] if name == "레시피 작성" else []
     output = {"name": name, "does": name + " 을 한다", "needs": needs,
               "output": {"form": "표", "contents": "내용"}, "notes": "", "persona_ids": [1], "kind": "document"}
-elif "# 작업 목록" in text:  # edges
-    output = {"edges": [{"from_local_id": "n1", "to_local_id": "n2"}]}
+elif '"changed_nodes"' in text:  # 간선 다시 정하기: 1(재료 준비) → 2(레시피 작성)
+    output = {"edges": [{"from_id": 1, "to_id": 2}]}
 else:  # write_request
     output = {"title": "밤만쥬 1인분 만들기", "request": REQUEST_MD}
 print(json.dumps({"structured_output": output, "total_cost_usd": 0.01}, ensure_ascii=False))

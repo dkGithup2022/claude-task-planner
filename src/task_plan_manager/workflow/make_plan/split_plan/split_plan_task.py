@@ -37,7 +37,7 @@ class SplitPlanTask(Task):
         call_log = PromptCallLog(context.output_dir())
         split = split_tree(plan.title, plan.request, call_log)
         specs = write_specs(plan.request, split.tree, _participants(plan.persona_ids), call_log)
-        edges = write_edges(plan.request, specs.drafts, call_log)
+        edges = write_edges(specs.drafts, call_log)
         saved = save_graph(plan.plan_id, specs.drafts, edges.edges, plan_api_reader(), plan_api_writer())
         return TaskOutput(
             {

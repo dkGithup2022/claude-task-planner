@@ -15,3 +15,9 @@ def mock_data_dir(tmp_path, monkeypatch):
     d = tmp_path / ".mockData"
     monkeypatch.setenv("TASK_PLAN_MANAGER_MOCK_DIR", str(d))
     return d
+
+
+@pytest.fixture(autouse=True)
+def no_real_claude(monkeypatch):
+    """시험이 실제 claude 를 부르지 않게 한다. 가짜 claude 가 필요한 시험은 이 값을 다시 정한다."""
+    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", "false")

@@ -6,6 +6,8 @@ import re
 from dataclasses import replace
 from typing import Any
 
+from task_plan_manager.claude_utils.prompt.call_prompt import call_prompt
+from task_plan_manager.claude_utils.prompt.prompt_call_error import PromptCallError
 from task_plan_manager.model.plan.plan import Plan
 from task_plan_manager.model.plan.plan_status import PlanStatus
 from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
@@ -15,6 +17,7 @@ from task_plan_manager.workflow.plan_edit.edit_graph import EditGraph
 from task_plan_manager.workflow.plan_edit.op.edit_op_reader import read_ops
 from task_plan_manager.workflow.plan_edit.plan_edit_refused_error import PlanEditRefusedError
 from task_plan_manager.workflow.plan_edit.send_edit import send_edit
+from task_plan_manager.workflow.relink_edges.relink_edges import PromptCaller, relink_edges
 
 
 def show_plan(plan_id: int) -> dict[str, Any]:
@@ -32,10 +35,11 @@ def show_plan(plan_id: int) -> dict[str, Any]:
     }  # fmt: skip
 
 
-def edit_plan(plan_id: int, data: Any) -> dict[str, Any]:
-    """plan edit: 묶음 동작을 미리 적용해 점검하고, 통과하면 계획 저장소에 보낸 뒤 새 계획 표를 돌려준다."""
+def edit_plan(plan_id: int, data: Any, caller: PromptCaller = call_prompt) -> dict[str, Any]:
+    """plan edit: 묶음 동작을 미리 적용하고, 나누기·합치기·넣기·빼기가 있으면 간선을 다시 정해 점검한다.
+    통과하면 계획 저장소에 보낸 뒤 새 계획 표를 돌려준다."""
     try:
-        before, graph = _prepare(plan_id, data)
+        before, graph = _prepare(plan_id, data, caller)
     except PlanEditRefusedError as error:
         return {"ok": False, "reason": str(error)}
     sent: list[str] = []
@@ -52,8 +56,8 @@ def edit_plan(plan_id: int, data: Any) -> dict[str, Any]:
     }
 
 
-def _prepare(plan_id: int, data: Any) -> tuple[Plan, EditGraph]:
-    """계획을 읽고 동작을 메모리에서 적용한다. 검토 중이 아니거나 새 문제가 생기면 거절한다."""
+def _prepare(plan_id: int, data: Any, caller: PromptCaller) -> tuple[Plan, EditGraph]:
+    """계획을 읽고 동작을 메모리에서 적용한 뒤 간선을 다시 정한다. 검토 중이 아니거나 새 문제가 생기면 거절한다."""
     try:
         before = plan_api_reader().get_plan(plan_id)
     except PlanNotFoundError as error:
@@ -62,10 +66,40 @@ def _prepare(plan_id: int, data: Any) -> tuple[Plan, EditGraph]:
         raise PlanEditRefusedError(f"계획 {plan_id} 는 검토 중이 아니라({before.status.value}) 고치지 않습니다")
     graph = EditGraph(before)
     graph.apply_all(read_ops(data))
+    _relink(graph, caller)
+    graph.changes += _edge_changes(before, graph)
     new_problems = _new_problems(before, graph.as_plan())
     if new_problems:
         raise PlanEditRefusedError("고치면 생기는 문제: " + " / ".join(new_problems))
     return before, graph
+
+
+def _relink(graph: EditGraph, caller: PromptCaller) -> None:
+    """나누기·합치기·넣기·빼기가 있었으면 바뀐 노드와 앞뒤 노드 사이의 간선을 claude -p 로 다시 정한다.
+    호출이 실패하면 고치지 않고 거절한다 (사용자, 2026-11-19)."""
+    request = graph.relink_request()
+    if request is None:
+        return
+    try:
+        result = relink_edges(request, caller)
+    except PromptCallError as error:
+        raise PlanEditRefusedError(f"간선을 다시 정하지 못해 고치지 않았습니다: {error}") from error
+    graph.apply_relinked(request, result.edges)
+
+
+def _edge_changes(before: Plan, graph: EditGraph) -> list[str]:
+    """고치기 전과 후의 간선을 비교한 이음·끊음 줄. 새 노드의 임시 id 는 보낸 뒤 진짜 id 로 바뀐다."""
+    old = {(edge.from_node_id, edge.to_node_id) for edge in before.edges}
+    lines = []
+    for label, edges in (("이음", sorted(graph.edges - old, key=_edge_order)), ("끊음", sorted(old - graph.edges))):
+        if edges:
+            lines.append(f"{label}: " + ", ".join(f"{{{from_id}}} → {{{to_id}}}" for from_id, to_id in edges))
+    return lines
+
+
+def _edge_order(edge: tuple[int, int]) -> tuple[int, int]:
+    """기존 노드(양수 id)를 앞에, 새 노드(음수 임시 id)는 만든 순서(-1, -2, …)대로 뒤에."""
+    return tuple(node_id if node_id >= 0 else 10**9 - node_id for node_id in edge)  # type: ignore[return-value]
 
 
 def _new_problems(before: Plan, after: Plan) -> list[str]:

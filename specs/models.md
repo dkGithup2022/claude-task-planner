@@ -30,6 +30,19 @@
 
 선행 노드는 필드로 두지 않는다. `Plan.prerequisites` 로 간선에서 계산한다.
 
+### NodeSpec (`model/plan/node_spec.py`)
+노드의 정의서(`PlanNode.output_spec` md)를 절로 읽고 쓴다. 저장은 지금처럼 md 하나다.
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| does | str | 하는 일 |
+| output_form | str | 산출물 형태. 없으면 "" |
+| output_contents | str | 산출물에 담을 것. 없으면 "" |
+| notes | str | 그 외 설명. 없으면 "" |
+| extra_md | str | 세 절 밖의 절. md 로 되돌릴 때 뒤에 붙인다 |
+
+- `NodeSpec.from_md(md)`: `### 이름` 머리로 절을 나눈다. 산출물 첫 줄 `- 형태: ` 를 형태로 본다
+- `to_md()`: make_plan 과 같은 모양. 형태가 없으면 "(정하지 않음)", 설명이 없으면 "(없음)"
+
 ### PlanEdge (`model/plan/plan_edge.py`)
 | 필드 | 타입 | 뜻 |
 |---|---|---|

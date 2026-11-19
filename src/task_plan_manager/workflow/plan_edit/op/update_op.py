@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from task_plan_manager.model.plan.node_kind import NodeKind
+from task_plan_manager.workflow.plan_edit.op.node_output import NodeOutput
 
 
 @dataclass(frozen=True, slots=True)
@@ -13,8 +14,8 @@ class UpdateOp:
 
     node_id: int
     title: str | None = None
-    scope: str | None = None  # "하는 일" 절을 바꾼다
+    does: str | None = None  # "하는 일" 절을 바꾼다
     kind: NodeKind | None = None
     persona_ids: tuple[int, ...] | None = None
-    output: str | None = None  # "산출물" 절을 바꾼다
+    output: NodeOutput | None = None  # "산출물" 절을 바꾼다
     add_note: str | None = None  # "그 외 설명" 끝에 한 줄을 더한다
