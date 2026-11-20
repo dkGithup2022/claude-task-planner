@@ -519,6 +519,47 @@ def _next_question(plan, ran, past_deadline) -> dict[str, Any]:
 | claude -p 답의 요약, 비용, 걸린 시간, 실패 이유 | engine 실행 기록 `.task_plan_manager/sessions/<세션>/runs/<실행>/run_nodes_*/result.json` (그 차례에 돌린 노드마다) | engine (run_nodes 의 결과) | 묶음 4 |
 | 실행 중 진행 줄 | 미정 (묶음 5) | | |
 
+### 묶음 5-1: finish_plan (계획서, 2026-11-20)
+
+요청: "1,2 / 3&4 를 3번에 나눠서 할건데, 1번 같은 경우 먼저 dk-claude-tool-bundle 로 검사 & 계획 해줄 수 있나?" (사용자, 2026-11-20). 1 은 계획 끝내기, 2 는 끝 알림, 3·4 는 plan-run 스킬과 e2e.
+
+나누기 (tool-planner 형식)
+- 포트: 계획 조회, 계획 상태 바꾸기
+- 공통 기능: 없음
+- 워크플로로 넘길 것: finish_plan 단계 (tool-add-code-task)
+
+tool-assess-port
+- 판정: 충족
+| 필요한 접근 | 판정 | 포트 | 메서드 |
+|---|---|---|---|
+| 계획과 노드 상태 읽기 | 충족 | plan_api | PlanApiReader.get_plan(plan_id) -> Plan |
+| 계획 상태를 끝남으로 | 충족 | plan_api | PlanApiWriter.set_plan_status(plan_id, PlanStatus.DONE) -> Plan |
+- model 층 요청: 모든 노드가 끝났는지 판정
+
+tool-assess-model
+- 판정: 충족
+| 요청 | 판정 | model |
+|---|---|---|
+| 모든 노드가 완료·건너뜀인지 | 충족 | plan_schedule.plan_progress(plan).finished (묶음 3) |
+| 실행 중 → 끝남을 허용하는지 | 충족 | PlanStatus.can_move_to: RUNNING → (DONE,) |
+
+흐름도 (바뀌는 곳)
+```
+├─ rounds   …
+├─ finish_plan          [CODE]               새로. 모든 노드가 완료·건너뜀이면 실행 중 → 끝남
+└─ wip_notice           [MAIN_SESSION_SHOW]  임시 끝 단계. 묶음 5-2 에서 notify 로 바꾼다
+```
+
+### finish_plan
+- 종류: CODE
+- 결과 종류: DATA
+- 입력: ← find_plan.plan_id
+- 출력: → { finished: bool }
+- 상세: 계획을 읽고, 모든 노드가 완료·건너뜀이면 계획 상태를 실행 중에서 끝남으로 바꾼다. 끝나지 않았으면(멈춤, 막힘, 차례를 다 씀) 바꾸지 않는다. 쓸 model·port: PlanApiReader.get_plan, plan_progress, PlanApiWriter.set_plan_status
+- 조건: 없음. 끝나지 않았으면 쓰지 않으므로 조건을 따로 붙이지 않는다
+- 다시 수행: 안전 (이미 끝남이면 쓰지 않는다)
+- 상태: 확답 (사용자 "아 오키오키", 2026-11-20)
+
 ## 같이 쓰는 코드
 
 - 조건 함수: `workflow/plan_run/` 아래 (묶음 1 에서 위치 확정). 쓰는 단계: resume, prompts, rounds 안 묶음
@@ -598,4 +639,9 @@ def _next_question(plan, ran, past_deadline) -> dict[str, Any]:
   - 지적: 실패 이유와 요약을 그 차례의 run_nodes 결과에만 둬서, 같은 차례의 두 번째 실패 노드나 다음 /plan-run 에서 다시 묻는 노드는 "지난 실행에서 끝나지 못하고 남음"으로 보였다
   - 고침: NodeRun 과 run.json 에 failed_reason, failed_summary (기본 None, 키가 없는 기존 run.json 도 읽힘). finish_node 가 실패면 쓰고, start 가 비우고, _failure_detail 이 run.json 에서 읽는다. specs/models.md, 실행 데이터 (확정) 1 절 갱신
   - 시험: 다음 /plan-run 이 실제 이유를 보임(기대값 바꿈), 같은 차례 두 실패 뒤 둘째의 이유, start 가 비움, run.json 저장·옛 모양 읽기. pytest 221 통과
-
+- 2026-11-20 묶음 5-1 finish_plan (사용자 "아 오키오키"):
+  - 평가: port 충족 (PlanApiReader.get_plan, PlanApiWriter.set_plan_status), model 충족 (plan_progress, PlanStatus.can_move_to). 준비 단계 없음
+  - 단계: finish_plan/finish_plan_task.py (plan_run.finish_plan). 선언에서 rounds 다음, wip_notice 앞
+  - 바꿈: wip_notice 글 "(계획 끝내기와 결과 표는 아직 …)" → "(결과 표는 아직 …)". 시험 test_should_move_approved_plan_to_running 의 기대 상태 RUNNING → DONE (노드 없는 계획은 바로 끝남)
+  - 시험: 모든 노드를 마친 시험 3개와 끊긴 마지막 노드를 완료로 기록하는 시험에 계획 상태 끝남(리뷰 지적), 멈추기 시험에 실행 중 그대로
+  - 검증: ruff check, mypy, lint-imports 4/4, pytest 221 통과

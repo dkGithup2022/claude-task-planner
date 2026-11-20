@@ -135,7 +135,9 @@ def test_should_move_approved_plan_to_running(tmp_path, capsys):
     finished = run(capsys, "start", "plan_run")  # 마지막 보이기 단계의 글은 끝 지시에 실린다
     assert finished["type"] == "finished", finished
     assert finished["payload"]["text"].startswith(f'계획 {plan_id} "댓글 기능" 을 실행 중으로 두었습니다.')
-    assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.RUNNING
+    # 노드가 없으면 실행 중을 거쳐 바로 끝남이 된다.
+    # finish_plan 은 실행 중일 때만 끝남으로 바꾸므로, 끝남이면 실행 중을 거친 것이다
+    assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.DONE
 
 
 def test_should_record_done_and_rerun_broken_node_when_resuming(tmp_path, capsys, fake_agent):
@@ -154,6 +156,7 @@ def test_should_record_done_and_rerun_broken_node_when_resuming(tmp_path, capsys
 
     finished = run(capsys, "done", "--answer", "모두 다시 실행")  # 다시 실행한 노드는 이어서 실행된다
     assert "모든 노드를 마쳤습니다" in finished["payload"]["text"]
+    assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.DONE
 
     folder = DefaultPlanFolderReader()
     assert _node_status(plan_id, finished_id) is PlanNodeStatus.DONE
@@ -208,6 +211,7 @@ def test_should_make_first_round_when_finished_node_has_no_run_record(tmp_path, 
     assert run(capsys, "start", "plan_run")["type"] == "finished"
     recorded = DefaultPlanFolderReader().read_run(plan_id, node_id)
     assert recorded is not None and recorded.round == 1 and recorded.status is PlanNodeStatus.DONE
+    assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.DONE
 
 
 @pytest.mark.parametrize(
@@ -395,6 +399,7 @@ def test_should_run_simulation_with_retry_and_confirm(tmp_path, capsys, fake_age
     assert confirm["payload"]["question"] == f'노드 {check} "스테이징 확인": 다음으로 넘어가도 될까요?'
     finished = run(capsys, "done", "--answer", "허가")  # 차례 3: 5 → 끝
     assert finished["type"] == "finished" and "모든 노드를 마쳤습니다" in finished["payload"]["text"]
+    assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.DONE
 
     folder = DefaultPlanFolderReader()
     assert _statuses(plan_id) == ["done"] * 5
@@ -435,6 +440,7 @@ def test_should_skip_failed_node_and_followers(tmp_path, capsys, fake_agent, mon
     run(capsys, "start", "plan_run")
     finished = run(capsys, "done", "--answer", "건너뛰기")
     assert finished["type"] == "finished" and "모든 노드를 마쳤습니다" in finished["payload"]["text"]
+    assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.DONE
     assert _statuses(plan_id) == ["skipped"] * 5
     skipped_run = DefaultPlanFolderReader().read_run(plan_id, table)
     assert skipped_run is not None and skipped_run.skipped_reason == "사용자가 건너뜀"
@@ -452,6 +458,7 @@ def test_should_stop_and_ask_again_on_next_plan_run(tmp_path, capsys, fake_agent
         f'노드 {screen} "화면 설계" 에서 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}'
     )
     assert _statuses(plan_id) == ["done", "done", "failed", "todo", "todo"]
+    assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.RUNNING  # 멈추면 실행 중 그대로
 
     asked = run(capsys, "start", "plan_run")  # 다음 /plan-run 은 다시 묻는다. 이유는 run.json 에서
     assert asked["type"] == "ask"

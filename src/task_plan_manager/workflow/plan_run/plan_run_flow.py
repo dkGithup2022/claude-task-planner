@@ -19,6 +19,7 @@ from task_plan_manager.workflow.plan_run import (  # noqa: F401
     was_running,
 )
 from task_plan_manager.workflow.plan_run.find_plan import find_plan_task  # noqa: F401
+from task_plan_manager.workflow.plan_run.finish_plan import finish_plan_task  # noqa: F401
 from task_plan_manager.workflow.plan_run.prompts.ask_retry import ask_retry_task  # noqa: F401
 from task_plan_manager.workflow.plan_run.prompts.count_prompts import count_prompts_task  # noqa: F401
 from task_plan_manager.workflow.plan_run.prompts.retry_prompts import retry_prompts_task  # noqa: F401
@@ -89,6 +90,7 @@ PLAN_RUN_FLOW = FlowDefinition(
             for_each_item_in=Ref("plan_run.rounds"),
             run_if=Ref("plan_run.not_stopped", {"upto": "prompts"}),
             reads=("find_plan", "check_broken", "apply_rerun", "retry_prompts")),
+        task("finish_plan", PerformedBy.CODE, Ref("plan_run.finish_plan"), reads=("find_plan",)),
         task("wip_notice", PerformedBy.MAIN_SESSION_SHOW, Ref("plan_run.wip_notice"),
              reads=("find_plan", "check_broken", "apply_rerun", "write_prompts", "retry_prompts"))),
 )  # fmt: skip

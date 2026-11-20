@@ -38,7 +38,7 @@ class WipNoticeTask(Task):
         )
         progress = plan_progress(plan_api_reader().get_plan(found["plan_id"]))
         if progress.finished:
-            return ShowRequest(f"{head} 모든 노드를 마쳤습니다. (계획 끝내기와 결과 표는 아직 만들지 않았습니다)")
+            return ShowRequest(f"{head} 모든 노드를 마쳤습니다. (결과 표는 아직 만들지 않았습니다)")
         if progress.blocked:
             return ShowRequest(f"{head} 더 실행할 수 있는 노드가 없습니다. {again}")
         return ShowRequest(f"{head} 남은 노드가 있습니다. {again}")
