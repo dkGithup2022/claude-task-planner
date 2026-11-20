@@ -4,6 +4,8 @@ import type { NextConfig } from "next";
 import "./src/env.mjs";
 
 const nextConfig: NextConfig = {
+  // 도커 배포용. .next/standalone 에 실행에 필요한 파일만 모은다 (infra/docker-compose.yml)
+  output: "standalone",
   experimental: {
     optimizePackageImports: ["lucide-react"],
   },

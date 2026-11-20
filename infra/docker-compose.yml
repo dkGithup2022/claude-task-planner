@@ -1,0 +1,50 @@
+# postgres + 서버(be) + 웹(web) 배포. 저장소 맨 위에서: docker compose -f infra/docker-compose.yml up -d --build
+# 값은 infra/.env 에서 바꾼다 (infra/.env.example 참고).
+name: task-plan
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?infra/.env 에 POSTGRES_PASSWORD 를 정해 주세요}
+      POSTGRES_DB: ${POSTGRES_DB:-task_plan_server}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  be:
+    build: ../be
+    environment:
+      APP_ENV: prod
+      APP_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-task_plan_server}
+    ports:
+      - "${BE_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/personas')"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    build: ../web
+    environment:
+      BACKEND_API_URL: http://be:8000
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      be:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
