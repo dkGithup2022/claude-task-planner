@@ -1,0 +1,12 @@
+[project]
+name = "task-plan-server-infrastructure"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["task-plan-server-model", "task-plan-server-exception"]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/task_plan_server"]

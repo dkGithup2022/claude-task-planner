@@ -1,0 +1,12 @@
+[project]
+name = "task-plan-server-app"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["task-plan-server-api", "task-plan-server-service", "task-plan-server-persistence", "task-plan-server-infrastructure", "task-plan-server-transaction", "task-plan-server-my-logging", "task-plan-server-schema", "task-plan-server-exception", "task-plan-server-model", "fastapi>=0.115", "uvicorn[standard]>=0.30", "pydantic-settings>=2.5", "dishka>=1.4"]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/task_plan_server"]
