@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-# 이 파일에서 저장소까지: make_plan/ → workflow/ → task_plan_manager/ → src/ → 저장소 (common/mock_data.py 와 같은 방식)
-REPO_ROOT = Path(__file__).resolve().parents[4]
+# 이 파일에서 플러그인 폴더까지: make_plan/ → workflow/ → task_plan_manager/ → src/ → 플러그인 폴더
+# (common/mock_data.py 와 같은 방식). 마켓플레이스로 설치하면 플러그인 폴더가 버전 폴더로 복사된다
+PLUGIN_ROOT = Path(__file__).resolve().parents[4]
 
 
 def statusline_command() -> str:
-    """예: /…/task-plan-manager/plugin/bin/task_plan_manager statusline. 플러그인 버전 폴더가 바뀌면 경로도 바뀐다."""
-    return f"{REPO_ROOT / 'plugin' / 'bin' / 'task_plan_manager'} statusline"
+    """예: /…/plugin/bin/task_plan_manager statusline. 플러그인 버전 폴더가 바뀌면 경로도 바뀐다."""
+    return f"{PLUGIN_ROOT / 'bin' / 'task_plan_manager'} statusline"

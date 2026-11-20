@@ -1,0 +1,16 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "task-plan-manager",
+  "description": "대화로 작업 계획을 만들고 고치고 확정하며 지식을 쌓고, 계획을 실행하는 Claude Code 플러그인",
+  "owner": {
+    "name": "dkGithup2022"
+  },
+  "plugins": [
+    {
+      "name": "task_plan_manager",
+      "description": "작업 계획 만들기·고치기·확정·실행, 지식 저장, Claude Code 상태 줄 진행 표시",
+      "category": "productivity",
+      "source": "./plugin"
+    }
+  ]
+}

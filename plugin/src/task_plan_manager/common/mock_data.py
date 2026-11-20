@@ -1,5 +1,5 @@
 """mock 데이터 폴더와 mock id. 계획·페르소나·지식 mock 포트가 같이 쓴다.
-폴더는 task-plan-manager 저장소의 .mockData/ (사용자, 2026-11-19)."""
+폴더는 플러그인 폴더의 .mockData/ (사용자, 2026-11-19. 저장소를 합친 뒤 플러그인 폴더 아래)."""
 
 from __future__ import annotations
 
@@ -8,12 +8,12 @@ from pathlib import Path
 
 from task_plan_manager.common import files
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]  # common/ → task_plan_manager/ → src/ → 저장소
+_PLUGIN_ROOT = Path(__file__).resolve().parents[3]  # common/ → task_plan_manager/ → src/ → 플러그인 폴더
 
 
 def mock_dir() -> Path:
     """mock 데이터 폴더. TASK_PLAN_MANAGER_MOCK_DIR 이 있으면 그곳 (시험용)."""
-    return Path(os.environ.get("TASK_PLAN_MANAGER_MOCK_DIR") or _REPO_ROOT / ".mockData")
+    return Path(os.environ.get("TASK_PLAN_MANAGER_MOCK_DIR") or _PLUGIN_ROOT / ".mockData")
 
 
 def next_mock_id(id_kind: str) -> int:
