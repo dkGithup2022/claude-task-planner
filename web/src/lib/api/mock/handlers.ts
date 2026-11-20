@@ -1,6 +1,7 @@
-import { getMemoryList, toMemoryKind } from "@/lib/memory-data";
+import { deleteMemory, getMemoryDetail, getMemoryList, toMemoryKind, updateMemory } from "@/lib/memory-data";
 import { getPersonaList } from "@/lib/persona-data";
 import { getPlanDetail, getPlanList } from "@/lib/plan-data";
+import type { MemoryUpdateRequest } from "@/types/api/memory";
 import type { PlanStatus } from "@/types/data/domain/plan";
 import type { HttpMethod, QueryParams } from "../types";
 
@@ -51,4 +52,11 @@ export const mockHandlers: MockHandler[] = [
         limit: optionalNumber(params.limit),
       }),
   },
+  { method: "GET", path: "/api/memories/:id", resolve: ({ pathParams }) => getMemoryDetail(Number(pathParams.id)) },
+  {
+    method: "PATCH",
+    path: "/api/memories/:id",
+    resolve: ({ pathParams, body }) => updateMemory(Number(pathParams.id), body as MemoryUpdateRequest),
+  },
+  { method: "DELETE", path: "/api/memories/:id", resolve: ({ pathParams }) => deleteMemory(Number(pathParams.id)) },
 ];

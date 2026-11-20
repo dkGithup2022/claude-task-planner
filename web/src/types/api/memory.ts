@@ -1,4 +1,5 @@
-import type { MemoryKind, MemoryListItem } from "@/types/data/domain/memory";
+import type { MemoryDetail, MemoryKind, MemoryListItem } from "@/types/data/domain/memory";
+import type { MemorySource } from "@/types/data/domain/memory-source";
 
 /**
  * 지식 API. BE 확정 (be/specs/api.md 와 같다). docs/pages/home/api.md
@@ -16,4 +17,21 @@ export interface MemoryListParams {
 export interface MemoryListResponse {
   items: MemoryListItem[];
   total: number;
+}
+
+/** GET /api/memories/{memory_id} 응답. 없으면 404 — docs/pages/memory-detail/api.md */
+export type MemoryDetailResponse = MemoryDetail;
+
+/** PATCH /api/memories/{memory_id} 요청. 바꿀 필드만 보낸다. 웹은 source 를 보내지 않는다 */
+export interface MemoryUpdateRequest {
+  kind?: MemoryKind;
+  theme?: string;
+  body?: string;
+  persona_ids?: number[];
+  source?: MemorySource[];
+}
+
+/** POST·PATCH /api/memories 응답 */
+export interface MemoryIdResponse {
+  memory_id: number;
 }

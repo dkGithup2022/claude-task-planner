@@ -23,7 +23,7 @@ const components: Components = {
     </a>
   ),
   pre: ({ children }) => (
-    <pre className="m-0 overflow-x-auto bg-secondary-bg px-4 py-3.5 font-mono text-[13px] leading-normal">
+    <pre className="m-0 overflow-x-auto bg-secondary-bg px-4 py-3.5 font-mono text-[13px] leading-normal [&_code]:bg-transparent [&_code]:p-0">
       {children}
     </pre>
   ),
