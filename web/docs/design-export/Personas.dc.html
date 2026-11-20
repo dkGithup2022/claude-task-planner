@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>페르소나</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#111111;text-decoration:none}a:hover{color:#000000;text-decoration:underline}
+</style>
+</helmet>
+<div style="min-height: 700px; background: #ffffff; color: #111111; font-family: 'Noto Sans KR', system-ui, sans-serif; font-size: 14px; line-height: 1.6;">
+  <header style="border-bottom: 1px solid #e5e5e5;">
+    <nav aria-label="주 메뉴" style="max-width: 1120px; margin: 0 auto; padding: 18px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 28px;">
+      <a href="Main.dc.html" style="font-weight: 700; font-size: 15px; flex-grow: 1;">task plan manager</a>
+      <a href="Plans.dc.html" style="color: #555555;">계획</a>
+      <a href="Memories.dc.html" style="color: #555555;">지식</a>
+      <a href="Personas.dc.html" aria-current="page" style="color: #111111; font-weight: 700; border-bottom: 2px solid #111111;">페르소나</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1120px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+      <h1 style="margin: 0; font-size: 22px; font-weight: 700; flex-grow: 1;">페르소나</h1>
+      <button type="button" style="font: inherit; font-size: 13px; padding: 8px 16px; min-height: 40px; background: #111111; color: #ffffff; border: 1px solid #111111; cursor: pointer;">+ 새 페르소나</button>
+    </div>
+
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; min-width: 680px; border-collapse: collapse; font-variant-numeric: tabular-nums;">
+        <thead>
+          <tr style="border-bottom: 1px solid #111111; text-align: left;">
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555; width: 48px;">#</th>
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555; width: 200px;">이름</th>
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555;">설명</th>
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555; width: 80px;">지식 수</th>
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555; width: 80px;">계획 수</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #e5e5e5; background: #f5f5f5;">
+            <td style="padding: 12px 4px; color: #767676;">1</td>
+            <td style="padding: 12px 4px; font-weight: 700;">dankim-persona ▾</td>
+            <td style="padding: 12px 4px; color: #555555;">사용자의 기본 작업 역할</td>
+            <td style="padding: 12px 4px;">7</td>
+            <td style="padding: 12px 4px;">1</td>
+          </tr>
+          <tr>
+            <td colspan="5" style="padding: 0;">
+              <div style="margin: 0 0 12px; border: 1px solid #111111; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                  <span style="flex-grow: 1; font-size: 12px; color: #767676;">페르소나 1</span>
+                  <button type="button" style="font: inherit; font-size: 13px; padding: 6px 14px; min-height: 40px; background: #ffffff; color: #111111; border: 1px solid #111111; cursor: pointer;">수정</button>
+                  <button type="button" onClick="{{tryDelete}}" style="font: inherit; font-size: 13px; padding: 6px 14px; min-height: 40px; background: #ffffff; color: #111111; border: 1px solid #111111; cursor: pointer;">삭제</button>
+                </div>
+                <dl style="margin: 0; display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 6px 16px;">
+                  <dt style="color: #555555;">이름</dt><dd style="margin: 0;">dankim-persona</dd>
+                  <dt style="color: #555555;">설명</dt><dd style="margin: 0;">사용자의 기본 작업 역할</dd>
+                </dl>
+                <a href="Memories.dc.html" style="font-size: 13px;">이 페르소나의 지식 → (지식 목록을 이 페르소나로 거른 화면)</a>
+                <sc-if value="{{blocked}}" hint-placeholder-val="{{ false }}">
+                  <p role="alert" style="margin: 0; padding: 10px 12px; border: 2px solid #111111;">지울 수 없습니다. 지식 7개, 계획 1개가 이 페르소나를 씁니다.</p>
+                </sc-if>
+              </div>
+            </td>
+          </tr>
+          <tr style="border-bottom: 1px solid #e5e5e5;">
+            <td style="padding: 12px 4px; color: #767676;">2</td>
+            <td style="padding: 12px 4px;">be-developer</td>
+            <td style="padding: 12px 4px; color: #555555;">백엔드 개발 역할</td>
+            <td style="padding: 12px 4px;">1</td>
+            <td style="padding: 12px 4px;">0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin: 0; font-size: 13px; color: #767676;">계획 수는 참여 페르소나이거나 노드 담당인 계획을 센다. 이름은 페르소나마다 다르다.</p>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":700}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { blocked: false };
+  }
+  renderVals() {
+    return {
+      blocked: this.state.blocked,
+      tryDelete: () => this.setState({ blocked: true }),
+    };
+  }
+}
+</script>
+</body>
+</html>

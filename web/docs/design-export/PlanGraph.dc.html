@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>계획 그래프</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#111111;text-decoration:none}a:hover{color:#000000;text-decoration:underline}
+</style>
+</helmet>
+<div style="min-height: 1180px; background: #ffffff; color: #111111; font-family: 'Noto Sans KR', system-ui, sans-serif; font-size: 14px; line-height: 1.6;">
+  <header style="border-bottom: 1px solid #e5e5e5;">
+    <nav aria-label="주 메뉴" style="max-width: 1232px; margin: 0 auto; padding: 18px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 28px;">
+      <a href="Main.dc.html" style="font-weight: 700; font-size: 15px; flex-grow: 1;">task plan manager</a>
+      <a href="Plans.dc.html" aria-current="page" style="color: #111111; font-weight: 700; border-bottom: 2px solid #111111;">계획</a>
+      <a href="Memories.dc.html" style="color: #555555;">지식</a>
+      <a href="Personas.dc.html" style="color: #555555;">페르소나</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1232px; margin: 0 auto; padding: 28px 24px 48px; display: flex; flex-direction: column; gap: 20px;">
+    <section aria-label="계획 요약" style="display: flex; flex-direction: column; gap: 4px; padding-bottom: 16px; border-bottom: 1px solid #e5e5e5;">
+      <h1 style="margin: 0; font-size: 20px; font-weight: 700;"><span style="color: #767676; font-weight: 400; margin-right: 8px;">계획 11</span>계산기 웹 서비스 개발 전 문서 6종 작성 (기획, 와이어프레임, UI, API, 도메인, 백엔드 기술 추천)</h1>
+      <p style="margin: 0; color: #555555;">● 완료 · 2026-11-20 13:16 · dankim-persona</p>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 16px;">
+        <span style="flex-grow: 1; font-variant-numeric: tabular-nums;">완료 10 · 실행 중 0 · 할 일 0</span>
+        <span style="font-size: 12px; color: #767676;">끝난 계획이라 다시 읽지 않음</span>
+        <button type="button" onClick="{{toggleRequest}}" style="font: inherit; font-size: 13px; padding: 6px 12px; min-height: 36px; background: #ffffff; color: #111111; border: 1px solid #111111; cursor: pointer;">명령서 {{requestLabel}}</button>
+      </div>
+      <sc-if value="{{showRequest}}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top: 8px; padding: 16px; background: #f5f5f5; white-space: pre-line; color: #333333; font-size: 13px;"># 명령
+계산기 웹 서비스를 개발하기 전에 필요한 문서를 만듭니다. 코드는 만들지 않습니다.
+
+# 맥락
+- 프론트엔드는 Next.js입니다. 백엔드는 Python과 Spring/Java 가운데 아직 고르지 않았습니다.
+- 유저 인터뷰: 계산은 사칙연산(+ − × ÷), 소수점, 지우기(C)만 지원합니다.
+…</div>
+      </sc-if>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start;">
+      <section aria-label="그래프" style="flex: 999 1 560px; min-width: 0; border: 1px solid #e5e5e5; background: #fafafa; padding: 28px 16px; display: flex; flex-direction: column; align-items: center; gap: 0;">
+        <a href="PlanGraph.dc.html" style="width: 260px; box-sizing: border-box; padding: 8px 12px; background: #ffffff; border: 1px solid #111111; display: flex; flex-direction: column;"><span style="font-size: 12px; color: #767676;">54</span><span style="font-weight: 500;">상위 기획 작성</span><span style="display: flex; justify-content: space-between; font-size: 12px; color: #555555;"><span>document</span><span>● 완료</span></span></a>
+        <div aria-hidden="true" style="width: 1px; height: 20px; background: #767676;"></div>
+        <a href="PlanGraph.dc.html" style="width: 260px; box-sizing: border-box; padding: 8px 12px; background: #ffffff; border: 1px solid #111111; display: flex; flex-direction: column;"><span style="font-size: 12px; color: #767676;">55</span><span style="font-weight: 500;">하위 기획 작성</span><span style="display: flex; justify-content: space-between; font-size: 12px; color: #555555;"><span>document</span><span>● 완료</span></span></a>
+        <div aria-hidden="true" style="width: 1px; height: 20px; background: #767676;"></div>
+        <a href="PlanGraph.dc.html" style="width: 260px; box-sizing: border-box; padding: 8px 12px; background: #ffffff; border: 1px solid #111111; display: flex; flex-direction: column;"><span style="font-size: 12px; color: #767676;">47</span><span style="font-weight: 500;">와이어프레임 작성</span><span style="display: flex; justify-content: space-between; font-size: 12px; color: #555555;"><span>document</span><span>● 완료</span></span></a>
+        <div aria-hidden="true" style="width: 1px; height: 20px; background: #767676;"></div>
+        <a href="PlanGraph.dc.html" style="width: 260px; box-sizing: border-box; padding: 6px 10px; background: #ffffff; border: 4px double #111111; display: flex; flex-direction: column;"><span style="font-size: 12px; color: #767676;">48 · 확인</span><span style="font-weight: 500;">기획·와이어프레임 확인</span><span style="display: flex; justify-content: space-between; font-size: 12px; color: #555555;"><span>hitl</span><span>● 완료</span></span></a>
+        <div aria-hidden="true" style="width: 1px; height: 20px; background: #767676;"></div>
+        <a href="PlanGraph.dc.html" aria-current="true" style="width: 260px; box-sizing: border-box; padding: 7px 11px; background: #eeeeee; border: 2px solid #111111; display: flex; flex-direction: column;"><span style="font-size: 12px; color: #555555;">49 · 선택됨</span><span style="font-weight: 700;">도메인 문서 작성</span><span style="display: flex; justify-content: space-between; font-size: 12px; color: #555555;"><span>document</span><span>● 완료</span></span></a>
+        <div aria-hidden="true" style="width: 1px; height: 20px; background: #767676;"></div>
+        <a href="PlanGraph.dc.html" style="width: 260px; box-sizing: border-box; padding: 8px 12px; background: #ffffff; border: 1px solid #111111; display: flex; flex-direction: column;"><span style="font-size: 12px; color: #767676;">56</span><span style="font-weight: 500;">RDBMS 테이블 모델링</span><span style="display: flex; justify-content: space-between; font-size: 12px; color: #555555;"><span>document</span><span>● 완료</span></span></a>
+        <div aria-hidden="true" style="width: 1px; height: 20px; background: #767676;"></div>
+        <a href="PlanGraph.dc.html" style="width: 260px; box-sizing: border-box; padding: 8px 12px; background: #ffffff; border: 1px solid #111111; display: flex; flex-direction: column;"><span style="font-size: 12px; color: #767676;">50</span><span style="font-weight: 500;">API 문서 작성</span><span style="display: flex; justify-content: space-between; font-size: 12px; color: #555555;"><span>document</span><span>● 완료</span></span></a>
+        <div aria-hidden="true" style="width: 300px; height: 20px; border-top: 1px solid #767676; border-left: 1px solid #767676; border-right: 1px solid #767676; box-sizing: border-box; margin-top: 10px;"></div>
+        <div style="display: flex; gap: 40px;">
+          <a href="PlanGraph.dc.html" style="width: 260px; box-sizing: border-box; padding: 8px 12px; background: #ffffff; border: 1px solid #111111; display: flex; flex-direction: column;"><span style="font-size: 12px; color: #767676;">51</span><span style="font-weight: 500;">UI 문서 작성</span><span style="display: flex; justify-content: space-between; font-size: 12px; color: #555555;"><span>document</span><span>● 완료</span></span></a>
+          <a href="PlanGraph.dc.html" style="width: 260px; box-sizing: border-box; padding: 8px 12px; background: #ffffff; border: 1px solid #111111; display: flex; flex-direction: column;"><span style="font-size: 12px; color: #767676;">52</span><span style="font-weight: 500;">백엔드 기술 추천 문서 작성</span><span style="display: flex; justify-content: space-between; font-size: 12px; color: #555555;"><span>document</span><span>● 완료</span></span></a>
+        </div>
+        <div aria-hidden="true" style="width: 300px; height: 20px; border-bottom: 1px solid #767676; border-left: 1px solid #767676; border-right: 1px solid #767676; box-sizing: border-box; margin-bottom: 10px;"></div>
+        <a href="PlanGraph.dc.html" style="width: 260px; box-sizing: border-box; padding: 8px 12px; background: #ffffff; border: 1px solid #111111; display: flex; flex-direction: column;"><span style="font-size: 12px; color: #767676;">53</span><span style="font-weight: 500;">문서 간 정합성 검토</span><span style="display: flex; justify-content: space-between; font-size: 12px; color: #555555;"><span>document</span><span>● 완료</span></span></a>
+
+        <div style="margin-top: 28px; align-self: stretch; display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: center; font-size: 12px; color: #555555; border-top: 1px solid #e5e5e5; padding-top: 14px;">
+          <span>● 완료 (검정 테두리)</span>
+          <span>◐ 실행 중 (굵은 테두리)</span>
+          <span style="color: #767676;">○ 할 일 (회색 테두리·글자)</span>
+          <span>✕ 실패 (점선 테두리)</span>
+          <span style="text-decoration: line-through; color: #767676;">– 건너뜀</span>
+          <span>이중 테두리 = 확인 노드</span>
+        </div>
+        <p style="margin: 8px 0 0; font-size: 12px; color: #767676;">가안은 바로 이어진 층 사이만 선으로 그렸다. 실제 화면(React Flow)은 간선 29개를 모두 그린다.</p>
+      </section>
+
+      <aside aria-label="노드 49 자세히" style="flex: 1 1 360px; min-width: 0; border: 1px solid #111111; display: flex; flex-direction: column;">
+        <div style="padding: 16px 20px; border-bottom: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 12px; color: #767676;">노드 49</span>
+          <div style="display: flex; gap: 12px; align-items: baseline;"><h2 style="margin: 0; font-size: 17px; font-weight: 700; flex-grow: 1;">도메인 문서 작성</h2><span>● 완료</span></div>
+          <span style="color: #555555; font-size: 13px;">document · 담당 dankim-persona</span>
+        </div>
+        <div style="padding: 16px 20px; border-bottom: 1px solid #e5e5e5; display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
+          <h3 style="margin: 0; font-size: 12px; font-weight: 500; color: #555555;">받는 산출물 (앞 노드)</h3>
+          <a href="PlanGraph.dc.html" style="display: flex; gap: 8px;"><span style="color: #767676; width: 24px;">48</span><span style="flex-grow: 1;">기획·와이어프레임 확인</span><span>● 완료</span></a>
+          <a href="PlanGraph.dc.html" style="display: flex; gap: 8px;"><span style="color: #767676; width: 24px;">55</span><span style="flex-grow: 1;">하위 기획 작성</span><span>● 완료</span></a>
+          <h3 style="margin: 8px 0 0; font-size: 12px; font-weight: 500; color: #555555;">넘기는 곳 (뒤 노드)</h3>
+          <a href="PlanGraph.dc.html" style="display: flex; gap: 8px;"><span style="color: #767676; width: 24px;">56</span><span style="flex-grow: 1;">RDBMS 테이블 모델링</span><span>● 완료</span></a>
+          <a href="PlanGraph.dc.html" style="display: flex; gap: 8px;"><span style="color: #767676; width: 24px;">50</span><span style="flex-grow: 1;">API 문서 작성</span><span>● 완료</span></a>
+          <a href="PlanGraph.dc.html" style="display: flex; gap: 8px;"><span style="color: #767676; width: 24px;">51</span><span style="flex-grow: 1;">UI 문서 작성</span><span>● 완료</span></a>
+          <a href="PlanGraph.dc.html" style="display: flex; gap: 8px;"><span style="color: #767676; width: 24px;">52</span><span style="flex-grow: 1;">백엔드 기술 추천 문서 작성</span><span>● 완료</span></a>
+          <a href="PlanGraph.dc.html" style="display: flex; gap: 8px;"><span style="color: #767676; width: 24px;">53</span><span style="flex-grow: 1;">문서 간 정합성 검토</span><span>● 완료</span></a>
+        </div>
+        <div style="padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #333333;">
+          <h3 style="margin: 0; font-size: 12px; font-weight: 500; color: #555555;">하는 일</h3>
+          <p style="margin: 0;">계산기 서비스의 핵심 개념을 백엔드 기술과 상관없이 정의하는 Markdown 문서를 만든다. 계산 기록 모델, 브라우저별 익명 ID, 프론트엔드가 지켜야 할 계산 규칙, ID별 최근 50건 보관 규칙을 다룬다.</p>
+          <h3 style="margin: 10px 0 0; font-size: 12px; font-weight: 500; color: #555555;">산출물</h3>
+          <p style="margin: 0;">형태: 문서</p>
+          <p style="margin: 0;">작업 폴더에 둘 도메인 문서 Markdown 파일(예: domain.md). 용어집, 계산 기록 모델 표, 익명 사용자 구분, 계산 규칙 …</p>
+          <h3 style="margin: 10px 0 0; font-size: 12px; font-weight: 500; color: #555555;">그 외 설명</h3>
+          <ul style="margin: 0; padding-left: 18px;">
+            <li>이 문서가 필드 이름의 기준이다. API 문서는 이 이름을 그대로 쓴다.</li>
+            <li>특정 언어·프레임워크·DB 제품 이름이나 그 문법은 쓰지 않는다.</li>
+            <li>…</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1180}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { showRequest: false };
+  }
+  renderVals() {
+    const open = this.state.showRequest;
+    return {
+      showRequest: open,
+      requestLabel: open ? '접기 ▴' : '보기 ▾',
+      toggleRequest: () => this.setState({ showRequest: !open }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>메인</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#111111;text-decoration:none}a:hover{color:#000000;text-decoration:underline}
+</style>
+</helmet>
+<div style="min-height: 980px; background: #ffffff; color: #111111; font-family: 'Noto Sans KR', system-ui, sans-serif; font-size: 14px; line-height: 1.6;">
+  <header style="border-bottom: 1px solid #e5e5e5;">
+    <nav aria-label="주 메뉴" style="max-width: 1120px; margin: 0 auto; padding: 18px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 28px;">
+      <a href="Main.dc.html" style="font-weight: 700; font-size: 15px; letter-spacing: -0.01em; flex-grow: 1;">task plan manager</a>
+      <a href="Plans.dc.html" style="color: #555555;">계획</a>
+      <a href="Memories.dc.html" style="color: #555555;">지식</a>
+      <a href="Personas.dc.html" style="color: #555555;">페르소나</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1120px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 40px;">
+
+    <section style="display: flex; flex-direction: column; gap: 12px;">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #555555;">실행 중인 계획</h2>
+      <div style="border: 1px solid #e5e5e5; padding: 20px; color: #767676;">실행 중인 계획이 없습니다.</div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 12px;">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #555555;">확정을 기다리는 계획</h2>
+      <div style="border: 1px solid #e5e5e5; padding: 20px; color: #767676;">검토 중인 계획이 없습니다.</div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #555555; flex-grow: 1;">최근 계획</h2>
+        <a href="Plans.dc.html" style="font-size: 13px; color: #555555;">전체 보기 →</a>
+      </div>
+      <div style="border-top: 1px solid #111111;">
+        <a href="PlanGraph.dc.html" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 14px 4px; border-bottom: 1px solid #e5e5e5;">
+          <span style="width: 32px; color: #767676; font-variant-numeric: tabular-nums;">11</span>
+          <span style="flex: 999 1 360px; min-width: 0;">계산기 웹 서비스 개발 전 문서 6종 작성 (기획, 와이어프레임, UI, API, 도메인, 백엔드 기술 추천)</span>
+          <span style="width: 88px;">● 완료</span>
+          <span style="width: 64px; color: #555555; font-variant-numeric: tabular-nums;">10/10</span>
+          <span style="width: 96px; color: #767676; font-variant-numeric: tabular-nums;">11-20 13:16</span>
+        </a>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: baseline; gap: 12px;">
+        <h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #555555; flex-grow: 1;">최근 지식</h2>
+        <a href="Memories.dc.html" style="font-size: 13px; color: #555555;">전체 보기 →</a>
+      </div>
+      <div style="border-top: 1px solid #111111;">
+        <a href="MemoryDetail.dc.html" style="display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 4px; border-bottom: 1px solid #e5e5e5;">
+          <span style="width: 32px; color: #767676;">7</span><span style="flex: 999 1 280px;">서비스 설계 문서 작성</span><span style="width: 56px; color: #555555;">계획</span><span style="width: 72px; color: #555555;">새로 저장</span><span style="width: 96px; color: #767676;">11-20</span>
+        </a>
+        <a href="MemoryDetail.dc.html" style="display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 4px; border-bottom: 1px solid #e5e5e5;">
+          <span style="width: 32px; color: #767676;">6</span><span style="flex: 999 1 280px;">기획 문서 작성</span><span style="width: 56px; color: #555555;">계획</span><span style="width: 72px; color: #555555;">새로 저장</span><span style="width: 96px; color: #767676;">11-20</span>
+        </a>
+        <a href="MemoryDetail.dc.html" style="display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 4px; border-bottom: 1px solid #e5e5e5;">
+          <span style="width: 32px; color: #767676;">5</span><span style="flex: 999 1 280px;">문서 작성 계획</span><span style="width: 56px; color: #555555;">계획</span><span style="width: 72px; color: #555555;">새로 저장</span><span style="width: 96px; color: #767676;">11-20</span>
+        </a>
+        <a href="MemoryDetail.dc.html" style="display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 4px; border-bottom: 1px solid #e5e5e5;">
+          <span style="width: 32px; color: #767676;">4</span><span style="flex: 999 1 280px;">API 응답 설계</span><span style="width: 56px; color: #555555;">지식</span><span style="width: 72px; color: #555555;">새로 저장</span><span style="width: 96px; color: #767676;">11-20</span>
+        </a>
+        <a href="MemoryDetail.dc.html" style="display: flex; flex-wrap: wrap; gap: 16px; padding: 12px 4px; border-bottom: 1px solid #e5e5e5;">
+          <span style="width: 32px; color: #767676;">3</span><span style="flex: 999 1 280px;">API 서버 개발</span><span style="width: 56px; color: #555555;">계획</span><span style="width: 72px; color: #555555;">새로 저장</span><span style="width: 96px; color: #767676;">11-20</span>
+        </a>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; padding-top: 8px; border-top: 1px solid #e5e5e5;">
+      <span style="font-size: 13px; color: #555555;">지식</span>
+      <span style="font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums;">전체 7개</span>
+      <span style="color: #555555;">지식 3 · 태도 0 · 계획 4</span>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

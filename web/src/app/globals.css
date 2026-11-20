@@ -1,0 +1,40 @@
+@import "tailwindcss";
+@import "../styles/themes/monochrome.css";
+
+/* 디자인 토큰 값은 src/styles/themes/ 의 테마 파일에 있다 (지금: monochrome, 라이트 전용).
+   컴포넌트는 색을 직접 쓰지 않고 var(--token) 또는 아래 @theme 별칭만 쓴다. */
+
+/* Tailwind 별칭: bg-surface, text-secondary 처럼 유틸리티로 쓸 수 있다 */
+@theme inline {
+  --color-background: var(--bg-primary);
+  --color-foreground: var(--text-primary);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-tertiary: var(--bg-tertiary);
+  --color-secondary-bg: var(--bg-secondary);
+  --color-accent: var(--accent-primary);
+  --color-accent-secondary: var(--accent-secondary);
+  --color-accent-muted: var(--accent-muted);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-border: var(--border-default);
+  --color-border-subtle: var(--border-subtle);
+  --color-on-accent: var(--text-on-accent);
+  --color-quote: var(--text-quote);
+  --color-canvas: var(--bg-canvas);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-code);
+}
+
+body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent-muted); }

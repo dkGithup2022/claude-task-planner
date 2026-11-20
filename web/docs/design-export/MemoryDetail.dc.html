@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>지식 조회</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;family=Noto+Sans+Mono:wght@400&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#111111;text-decoration:none}a:hover{color:#000000;text-decoration:underline}
+</style>
+</helmet>
+<div style="min-height: 1120px; background: #ffffff; color: #111111; font-family: 'Noto Sans KR', system-ui, sans-serif; font-size: 14px; line-height: 1.7;">
+  <header style="border-bottom: 1px solid #e5e5e5;">
+    <nav aria-label="주 메뉴" style="max-width: 1120px; margin: 0 auto; padding: 18px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 28px;">
+      <a href="Main.dc.html" style="font-weight: 700; font-size: 15px; flex-grow: 1;">task plan manager</a>
+      <a href="Plans.dc.html" style="color: #555555;">계획</a>
+      <a href="Memories.dc.html" aria-current="page" style="color: #111111; font-weight: 700; border-bottom: 2px solid #111111;">지식</a>
+      <a href="Personas.dc.html" style="color: #555555;">페르소나</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 880px; margin: 0 auto; padding: 32px 24px 64px; display: flex; flex-direction: column; gap: 24px;">
+    <a href="Memories.dc.html" style="font-size: 13px; color: #555555;">← 지식 목록</a>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start;">
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 12px; color: #767676;">지식 #1</span>
+        <h1 style="margin: 0; font-size: 24px; font-weight: 700;">테이블 설계</h1>
+        <span style="color: #555555;">지식 · dankim-persona · 덧붙임 3</span>
+      </div>
+      <button type="button" onClick="{{toggleEdit}}" style="font: inherit; font-size: 13px; padding: 8px 16px; min-height: 40px; background: #111111; color: #ffffff; border: 1px solid #111111; cursor: pointer;">{{editLabel}}</button>
+      <button type="button" onClick="{{askDelete}}" style="font: inherit; font-size: 13px; padding: 8px 16px; min-height: 40px; background: #ffffff; color: #111111; border: 1px solid #111111; cursor: pointer;">삭제</button>
+    </div>
+
+    <sc-if value="{{confirming}}" hint-placeholder-val="{{ false }}">
+      <div role="alertdialog" aria-label="지식 지우기 확인" style="border: 2px solid #111111; padding: 16px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
+        <span style="flex-grow: 1;">지식 #1 "테이블 설계" 를 지웁니다. 되돌릴 수 없습니다.</span>
+        <button type="button" onClick="{{cancelDelete}}" style="font: inherit; font-size: 13px; padding: 8px 16px; min-height: 40px; background: #ffffff; color: #111111; border: 1px solid #767676; cursor: pointer;">취소</button>
+        <button type="button" onClick="{{cancelDelete}}" style="font: inherit; font-size: 13px; padding: 8px 16px; min-height: 40px; background: #111111; color: #ffffff; border: 1px solid #111111; cursor: pointer;">지우기</button>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{editing}}" hint-placeholder-val="{{ false }}">
+      <form aria-label="지식 수정" style="display: flex; flex-direction: column; gap: 16px; padding: 20px; background: #f5f5f5;">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+          <label style="flex: 999 1 280px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #555555;">작업 이름
+            <input type="text" value="테이블 설계" style="font: inherit; font-size: 14px; color: #111111; padding: 10px 12px; min-height: 44px; box-sizing: border-box; border: 1px solid #111111; background: #ffffff;">
+          </label>
+          <label style="flex: 1 1 140px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #555555;">종류
+            <select style="font: inherit; font-size: 14px; color: #111111; padding: 10px 12px; min-height: 44px; border: 1px solid #111111; background: #ffffff;"><option>지식</option><option>태도</option><option>계획</option></select>
+          </label>
+        </div>
+        <fieldset style="border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px;">
+          <legend style="font-size: 12px; color: #555555; margin-bottom: 4px;">페르소나</legend>
+          <label style="display: flex; gap: 6px; align-items: center; min-height: 44px;"><input type="checkbox" checked> dankim-persona</label>
+          <label style="display: flex; gap: 6px; align-items: center; min-height: 44px;"><input type="checkbox"> be-developer</label>
+        </fieldset>
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #555555;">본문 (덧붙임 머리는 그대로 둔다)
+          <textarea rows="8" style="font-family: 'Noto Sans Mono', monospace; font-size: 13px; color: #111111; padding: 10px 12px; border: 1px solid #111111; background: #ffffff;">최소 스펙부터, 꼭 필요한 스펙만 나열한다. …
+
+****** KNOWLEDGE APPENDED 1 ********
+원격 회고는 처음 5분을 …</textarea>
+        </label>
+        <div style="display: flex; gap: 8px; justify-content: flex-end;">
+          <button type="button" onClick="{{toggleEdit}}" style="font: inherit; font-size: 13px; padding: 8px 16px; min-height: 40px; background: #ffffff; color: #111111; border: 1px solid #767676; cursor: pointer;">취소</button>
+          <button type="button" onClick="{{toggleEdit}}" style="font: inherit; font-size: 13px; padding: 8px 16px; min-height: 40px; background: #111111; color: #ffffff; border: 1px solid #111111; cursor: pointer;">저장</button>
+        </div>
+      </form>
+    </sc-if>
+
+    <section aria-label="본문" style="display: flex; flex-direction: column; gap: 16px;">
+      <h2 style="margin: 0; font-size: 13px; font-weight: 500; color: #555555;">본문</h2>
+      <p style="margin: 0;">최소 스펙부터, 꼭 필요한 스펙만 나열한다. 기존 구조에 테이블을 추가한다면 기존 DB 를 먼저 조회해 컨벤션을 파악한다.</p>
+
+      <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: #767676;"><span>덧붙임 1</span><span aria-hidden="true" style="flex-grow: 1; height: 1px; background: #e5e5e5;"></span></div>
+      <p style="margin: 0;">원격 회고는 처음 5분을 각자 조용히 의견을 적는 시간으로 둔다. 이 시간이 없으면 말 많은 사람의 의견만 남는다.</p>
+
+      <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: #767676;"><span>덧붙임 2</span><span aria-hidden="true" style="flex-grow: 1; height: 1px; background: #e5e5e5;"></span></div>
+      <ol style="margin: 0; padding-left: 20px;">
+        <li>FK 제약은 걸지 않는다. 참조 컬럼은 가능하면 <code style="font-family: 'Noto Sans Mono', monospace; background: #f0f0f0; padding: 0 4px;">&lt;테이블&gt;_id</code> 이름의 키 값으로 두어 <code style="font-family: 'Noto Sans Mono', monospace; background: #f0f0f0; padding: 0 4px;">xx.id = yy.xx_id</code> 형태로 잇는다.</li>
+        <li>한 테이블에서 특정 역할의 컬럼이 많아지면 의미 단위로 묶어 별도 테이블로 나누고, 원래 테이블의 id로 잇는다.</li>
+      </ol>
+      <pre style="margin: 0; padding: 14px 16px; background: #f5f5f5; font-family: 'Noto Sans Mono', monospace; font-size: 13px; line-height: 1.5; overflow-x: auto;">article {
+  id
+  title
+  ...
+}
+
+article_popularity {
+  id
+  article_id   -- article.id 를 가리키지만 FK 는 걸지 않는다
+  views
+  likes
+  dislikes
+  followed
+}</pre>
+
+      <div style="display: flex; align-items: center; gap: 12px; font-size: 12px; color: #767676;"><span>덧붙임 3</span><span aria-hidden="true" style="flex-grow: 1; height: 1px; background: #e5e5e5;"></span></div>
+      <p style="margin: 0;">한 테이블에서 특정 역할을 하는 컬럼이 많아지면 그 컬럼들을 의미 단위로 별도 테이블로 나눈다. 예: article 의 인기도 지표 컬럼(views, likes, dislikes 등)이 많으면 article_id 를 가진 article_popularity 테이블로 나눈다.</p>
+    </section>
+
+    <section aria-label="근거" style="display: flex; flex-direction: column; gap: 0; border-top: 1px solid #111111;">
+      <h2 style="margin: 12px 0 4px; font-size: 13px; font-weight: 500; color: #555555;">근거</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 0; border-bottom: 1px solid #e5e5e5;"><q style="flex: 999 1 420px; color: #333333;">그리고 원격 회고는 처음 5분을 각자 조용히 의견을 적는 시간으로 둬야 해, 안 그러면 말 많은 사람 의견만 남아.</q><span style="color: #767676;">계획 3 (서버에 없음)</span></div>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 0; border-bottom: 1px solid #e5e5e5;"><q style="flex: 999 1 420px; color: #333333;">기본적으로 최소 스펙으로 개발, 그리고 fk 는 걸지 않지만 id 로서 이제 xx.id= yy.xx_id 이렇게 가능하면 키 값으로 했으면 좋겠고.</q><a href="PlanGraph.dc.html">계획 11 →</a></div>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 0; border-bottom: 1px solid #e5e5e5;"><q style="flex: 999 1 420px; color: #333333;">특정 테이블에서 특정 역할군의 칼럼이 커지면, 의미단위로 별도 테이블로 나누게?</q><a href="PlanGraph.dc.html">계획 11 →</a></div>
+      <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 10px 0; border-bottom: 1px solid #e5e5e5;"><q style="flex: 999 1 420px; color: #333333;">예를 들어서 어떤 article 의 인기도 지표 칼럼이 좀 많다 싶으면 …</q><a href="PlanGraph.dc.html">계획 11 →</a></div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1120}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { editing: false, confirming: false };
+  }
+  renderVals() {
+    const { editing, confirming } = this.state;
+    return {
+      editing,
+      confirming,
+      editLabel: editing ? '수정 닫기' : '수정',
+      toggleEdit: () => this.setState({ editing: !editing, confirming: false }),
+      askDelete: () => this.setState({ confirming: true, editing: false }),
+      cancelDelete: () => this.setState({ confirming: false }),
+    };
+  }
+}
+</script>
+</body>
+</html>

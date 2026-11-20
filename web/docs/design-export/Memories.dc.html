@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>지식 검색</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#ffffff}
+a{color:#111111;text-decoration:none}a:hover{color:#000000;text-decoration:underline}
+</style>
+</helmet>
+<div style="min-height: 720px; background: #ffffff; color: #111111; font-family: 'Noto Sans KR', system-ui, sans-serif; font-size: 14px; line-height: 1.6;">
+  <header style="border-bottom: 1px solid #e5e5e5;">
+    <nav aria-label="주 메뉴" style="max-width: 1120px; margin: 0 auto; padding: 18px 24px; display: flex; flex-wrap: wrap; align-items: center; gap: 28px;">
+      <a href="Main.dc.html" style="font-weight: 700; font-size: 15px; flex-grow: 1;">task plan manager</a>
+      <a href="Plans.dc.html" style="color: #555555;">계획</a>
+      <a href="Memories.dc.html" aria-current="page" style="color: #111111; font-weight: 700; border-bottom: 2px solid #111111;">지식</a>
+      <a href="Personas.dc.html" style="color: #555555;">페르소나</a>
+    </nav>
+  </header>
+
+  <main style="max-width: 1120px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 20px;">
+    <h1 style="margin: 0; font-size: 22px; font-weight: 700;">지식</h1>
+
+    <form role="search" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;">
+      <label style="flex: 999 1 320px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #555555;">검색어 (작업 이름·본문)
+        <input type="search" placeholder="예: 테이블 설계" style="font: inherit; font-size: 14px; color: #111111; padding: 10px 12px; min-height: 44px; box-sizing: border-box; border: 1px solid #111111; background: #ffffff;">
+      </label>
+      <label style="flex: 1 1 140px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #555555;">종류
+        <select style="font: inherit; font-size: 14px; color: #111111; padding: 10px 12px; min-height: 44px; border: 1px solid #111111; background: #ffffff;">
+          <option>전체</option><option>지식</option><option>태도</option><option>계획</option>
+        </select>
+      </label>
+      <label style="flex: 1 1 180px; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #555555;">페르소나
+        <select style="font: inherit; font-size: 14px; color: #111111; padding: 10px 12px; min-height: 44px; border: 1px solid #111111; background: #ffffff;">
+          <option>전체</option><option>dankim-persona</option><option>be-developer</option>
+        </select>
+      </label>
+    </form>
+
+    <p style="margin: 0; font-size: 13px; color: #767676;">7개 · 고친 시각 최근 것부터</p>
+
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; min-width: 760px; border-collapse: collapse; font-variant-numeric: tabular-nums;">
+        <thead>
+          <tr style="border-bottom: 1px solid #111111; text-align: left;">
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555; width: 48px;">#</th>
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555; width: 72px;">종류</th>
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555;">작업 이름</th>
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555; width: 220px;">페르소나</th>
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555; width: 72px;">덧붙임</th>
+            <th scope="col" style="padding: 10px 4px; font-size: 13px; font-weight: 500; color: #555555; width: 96px;">근거 계획</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid #e5e5e5;"><td style="padding: 12px 4px; color: #767676;">7</td><td style="padding: 12px 4px;">계획</td><td style="padding: 12px 4px;"><a href="MemoryDetail.dc.html">서비스 설계 문서 작성</a></td><td style="padding: 12px 4px; color: #555555;">dankim-persona</td><td style="padding: 12px 4px;">0</td><td style="padding: 12px 4px; color: #555555;">11</td></tr>
+          <tr style="border-bottom: 1px solid #e5e5e5;"><td style="padding: 12px 4px; color: #767676;">6</td><td style="padding: 12px 4px;">계획</td><td style="padding: 12px 4px;"><a href="MemoryDetail.dc.html">기획 문서 작성</a></td><td style="padding: 12px 4px; color: #555555;">dankim-persona</td><td style="padding: 12px 4px;">2</td><td style="padding: 12px 4px; color: #555555;">11</td></tr>
+          <tr style="border-bottom: 1px solid #e5e5e5;"><td style="padding: 12px 4px; color: #767676;">5</td><td style="padding: 12px 4px;">계획</td><td style="padding: 12px 4px;"><a href="MemoryDetail.dc.html">문서 작성 계획</a></td><td style="padding: 12px 4px; color: #555555;">dankim-persona</td><td style="padding: 12px 4px;">0</td><td style="padding: 12px 4px; color: #555555;">3</td></tr>
+          <tr style="border-bottom: 1px solid #e5e5e5;"><td style="padding: 12px 4px; color: #767676;">4</td><td style="padding: 12px 4px;">지식</td><td style="padding: 12px 4px;"><a href="MemoryDetail.dc.html">API 응답 설계</a></td><td style="padding: 12px 4px; color: #555555;">dankim-persona</td><td style="padding: 12px 4px;">0</td><td style="padding: 12px 4px; color: #555555;">2</td></tr>
+          <tr style="border-bottom: 1px solid #e5e5e5;"><td style="padding: 12px 4px; color: #767676;">3</td><td style="padding: 12px 4px;">계획</td><td style="padding: 12px 4px;"><a href="MemoryDetail.dc.html">API 서버 개발</a></td><td style="padding: 12px 4px; color: #555555;">dankim-persona</td><td style="padding: 12px 4px;">0</td><td style="padding: 12px 4px; color: #555555;">2</td></tr>
+          <tr style="border-bottom: 1px solid #e5e5e5;"><td style="padding: 12px 4px; color: #767676;">2</td><td style="padding: 12px 4px;">지식</td><td style="padding: 12px 4px;"><a href="MemoryDetail.dc.html">테이블 설계</a></td><td style="padding: 12px 4px; color: #555555;">dankim-persona, be-developer</td><td style="padding: 12px 4px;">0</td><td style="padding: 12px 4px; color: #555555;">1</td></tr>
+          <tr style="border-bottom: 1px solid #e5e5e5;"><td style="padding: 12px 4px; color: #767676;">1</td><td style="padding: 12px 4px;">지식</td><td style="padding: 12px 4px;"><a href="MemoryDetail.dc.html">테이블 설계</a></td><td style="padding: 12px 4px; color: #555555;">dankim-persona</td><td style="padding: 12px 4px;">3</td><td style="padding: 12px 4px; color: #555555;">3, 11</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
