@@ -134,7 +134,7 @@ def test_should_move_approved_plan_to_running(tmp_path, capsys):
 
     finished = run(capsys, "start", "plan_run")  # 마지막 보이기 단계의 글은 끝 지시에 실린다
     assert finished["type"] == "finished", finished
-    assert finished["payload"]["text"].startswith(f'계획 {plan_id} "댓글 기능" 을 실행 중으로 두었습니다.')
+    assert finished["payload"]["text"].startswith(f'계획 {plan_id} "댓글 기능" 을 마쳤습니다.')
     # 노드가 없으면 실행 중을 거쳐 바로 끝남이 된다.
     # finish_plan 은 실행 중일 때만 끝남으로 바꾸므로, 끝남이면 실행 중을 거친 것이다
     assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.DONE
@@ -155,7 +155,7 @@ def test_should_record_done_and_rerun_broken_node_when_resuming(tmp_path, capsys
     assert run(capsys, "done", "--answer", "글쎄")["type"] == "ask"  # 선택지 밖의 답은 다시 묻는다
 
     finished = run(capsys, "done", "--answer", "모두 다시 실행")  # 다시 실행한 노드는 이어서 실행된다
-    assert "모든 노드를 마쳤습니다" in finished["payload"]["text"]
+    assert "을 마쳤습니다" in finished["payload"]["text"]
     assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.DONE
 
     folder = DefaultPlanFolderReader()
@@ -200,7 +200,7 @@ def test_should_not_ask_when_resuming_without_broken_nodes(tmp_path, capsys):
     plan_id = _make_plan(PlanStatus.RUNNING)
     _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
     finished = run(capsys, "start", "plan_run")
-    assert finished["type"] == "finished" and "을 실행 중으로 두었습니다" in finished["payload"]["text"]
+    assert finished["type"] == "finished" and "을 마쳤습니다" in finished["payload"]["text"]
 
 
 def test_should_make_first_round_when_finished_node_has_no_run_record(tmp_path, capsys):
@@ -265,7 +265,7 @@ def test_should_write_prompts_with_spec_and_writing_rules(tmp_path, capsys, fake
     assert shown["payload"]["text"] == "노드 2개의 작업 지시를 만듭니다. 약 1분, $0.6~1.2 안팎"
     finished = run(capsys, "next")
     assert finished["type"] == "finished", finished
-    assert "작업 지시 2개를 새로 만들었습니다" in finished["payload"]["text"]
+    assert "을 마쳤습니다" in finished["payload"]["text"]
 
     prompt = DefaultPlanFolderReader().read_prompt(plan_id, api_id)
     assert prompt is not None
@@ -310,7 +310,7 @@ def test_should_ask_once_and_retry_failed_prompts(tmp_path, capsys, fake_agent, 
 
     fake_agent()  # 다시 만들면 맞게 답한다
     finished = run(capsys, "done", "--answer", "모두 다시 만들기")
-    assert "작업 지시 2개를 새로 만들었습니다" in finished["payload"]["text"]
+    assert "을 마쳤습니다" in finished["payload"]["text"]
     assert DefaultPlanFolderReader().read_prompt(plan_id, api_id) is not None
 
 
@@ -398,7 +398,13 @@ def test_should_run_simulation_with_retry_and_confirm(tmp_path, capsys, fake_age
     confirm = run(capsys, "done")
     assert confirm["payload"]["question"] == f'노드 {check} "스테이징 확인": 다음으로 넘어가도 될까요?'
     finished = run(capsys, "done", "--answer", "허가")  # 차례 3: 5 → 끝
-    assert finished["type"] == "finished" and "모든 노드를 마쳤습니다" in finished["payload"]["text"]
+    assert finished["type"] == "finished" and "을 마쳤습니다" in finished["payload"]["text"]
+    lines = finished["payload"]["text"].split("\n")
+    assert lines[0] == f'계획 {plan_id} "댓글 기능" 을 마쳤습니다. 노드 5개: 완료 5'
+    assert lines[2] == "| 노드 | 제목 | 상태 | 회차 | 결과 / 이유 |"
+    assert f"| {screen} | 화면 설계 | 완료 | 2 | .plan/{plan_id}/nodes/{screen}/result.md |" in lines
+    # 확인한 말은 시험의 대화 기록이 1초 안에 몰려 명령 줄까지 잡히므로, 칸의 시작만 본다
+    assert any(line.startswith(f"| {check} | 스테이징 확인 | 완료 | 1 | 확인: ") for line in lines)
     assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.DONE
 
     folder = DefaultPlanFolderReader()
@@ -439,7 +445,7 @@ def test_should_skip_failed_node_and_followers(tmp_path, capsys, fake_agent, mon
 
     run(capsys, "start", "plan_run")
     finished = run(capsys, "done", "--answer", "건너뛰기")
-    assert finished["type"] == "finished" and "모든 노드를 마쳤습니다" in finished["payload"]["text"]
+    assert finished["type"] == "finished" and "을 마쳤습니다" in finished["payload"]["text"]
     assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.DONE
     assert _statuses(plan_id) == ["skipped"] * 5
     skipped_run = DefaultPlanFolderReader().read_run(plan_id, table)

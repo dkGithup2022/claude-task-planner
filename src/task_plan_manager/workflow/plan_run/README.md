@@ -1,7 +1,7 @@
 # plan_run (D 계획 실행)
 
 승인된 계획의 계획 노드를 간선 순서대로 실행하는 워크플로. 계획서: `specs/plans/workflow-plan_run.md`.
-2026-11-20 기준으로 묶음 1(계획 찾기와 실행 시작), 묶음 2(작업 지시 만들기), 묶음 3(다음 노드 계산, model/plan/plan_schedule.py), 묶음 4(노드 실행 루프), 묶음 5-1(계획 끝내기)까지 만들었다. 묶음 5 의 나머지(끝 알림, plan-run 스킬)는 아직 없다.
+2026-11-20 기준으로 묶음 1(계획 찾기와 실행 시작), 묶음 2(작업 지시 만들기), 묶음 3(다음 노드 계산, model/plan/plan_schedule.py), 묶음 4(노드 실행 루프), 묶음 5-1(계획 끝내기), 묶음 5-2(끝 알림)까지 만들었다. plan-run 스킬(묶음 5-3)은 아직 없다.
 
 ## 지금 구성
 
@@ -30,7 +30,7 @@ plan_run
 │     ├─ ask_failed     [MAIN_SESSION_ASK]   다시 실행 / 작업 지시를 고쳐 다시 / 건너뛰기 / 멈추기
 │     └─ apply_failed   [CODE]               archive_round + todo / + 멈춤 표시 / 건너뜀 번짐 / 멈춤 표시
 ├─ finish_plan      [CODE]               모든 노드가 완료·건너뜀이면 계획을 실행 중 → 끝남
-└─ wip_notice       [MAIN_SESSION_SHOW]  임시 끝 단계. 묶음 5 에서 notify 로 바꾼다
+└─ notify           [MAIN_SESSION_SHOW]  멈춘 자리 / 끝남(노드별 표) / 막힘(표) / 남은 노드
 ```
 
 | 파일 | 하는 일 |
@@ -56,7 +56,9 @@ plan_run
 | `was_running.py`, `has_broken.py`, `has_missing_prompts.py`, `has_failed_prompts.py`, `not_stopped.py` | 조건 |
 | `stopped_node.py` | `stop_point(context, upto)`: 멈춘 자리(끊긴 노드 / 작업 지시 없음)와 노드 id. 조건과 알림이 같이 쓴다 |
 | `finish_plan/finish_plan_task.py` | 출력 `{finished}`. 끝났고 실행 중이면 계획 상태를 끝남으로 |
-| `wip_notice/wip_notice_task.py` | 임시 알림 |
+| `notify/notify_task.py` | 읽기(멈춘 자리, 계획, 노드마다 run.json) → 경우 고르기 (멈춤 → 끝남 → 막힘 → 남음) |
+| `notify/notify_messages.py` | 경우마다 글 하나 |
+| `notify/node_table.py` | 노드 수 줄 "노드 5개: 완료 4, 건너뜀 1" 과 표 (노드, 제목, 상태, 회차, 결과 / 이유) |
 
 쓰는 공통 기능: `claude_utils/agent/run_agent.py` (도구를 쓰는 claude -p. 작업 폴더에서, 켠 도구만 묻지 않고, 훅 끄고).
 
@@ -96,5 +98,6 @@ plan_run
 | 지난 회차 | 같은 폴더의 `runs/<회차>/` |
 | claude -p 답 요약, 비용, 걸린 시간, 실패 이유 | engine 실행 기록 `.task_plan_manager/sessions/<세션>/runs/<실행>/run_nodes_*/result.json` 의 차례마다 `ran` |
 | 이번 실행에서 멈춘 자리 | `.plan/<계획 id>/stop.json` |
-| 실행 중 진행 줄 | 미정 (묶음 5) |
+| 실행 중 진행 줄 | 차례 알림(continue_notice). 그 밖은 없음 |
+| 끝난 뒤 한눈에 | 끝 알림의 노드별 표 (notify) |
 

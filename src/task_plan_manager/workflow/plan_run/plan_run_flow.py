@@ -1,7 +1,6 @@
 """plan_run 워크플로 선언 (D 계획 실행). 계획서: specs/plans/workflow-plan_run.md
 
-지금은 묶음 1 (find_plan, start_run, resume), 묶음 2 (prompts), 묶음 4 (rounds) 까지와 임시 끝 단계(wip_notice)다.
-묶음 5 에서 finish_plan, notify 를 더한다.
+묶음 1 (find_plan, start_run, resume), 묶음 2 (prompts), 묶음 4 (rounds), 묶음 5 (finish_plan, notify).
 """
 
 from __future__ import annotations
@@ -20,6 +19,7 @@ from task_plan_manager.workflow.plan_run import (  # noqa: F401
 )
 from task_plan_manager.workflow.plan_run.find_plan import find_plan_task  # noqa: F401
 from task_plan_manager.workflow.plan_run.finish_plan import finish_plan_task  # noqa: F401
+from task_plan_manager.workflow.plan_run.notify import notify_task  # noqa: F401
 from task_plan_manager.workflow.plan_run.prompts.ask_retry import ask_retry_task  # noqa: F401
 from task_plan_manager.workflow.plan_run.prompts.count_prompts import count_prompts_task  # noqa: F401
 from task_plan_manager.workflow.plan_run.prompts.retry_prompts import retry_prompts_task  # noqa: F401
@@ -37,7 +37,6 @@ from task_plan_manager.workflow.plan_run.rounds.failed.apply_failed import apply
 from task_plan_manager.workflow.plan_run.rounds.failed.ask_failed import ask_failed_task  # noqa: F401
 from task_plan_manager.workflow.plan_run.rounds.run_nodes import run_nodes_task  # noqa: F401
 from task_plan_manager.workflow.plan_run.start_run import start_run_task  # noqa: F401
-from task_plan_manager.workflow.plan_run.wip_notice import wip_notice_task  # noqa: F401
 
 PLAN_RUN_FLOW = FlowDefinition(
     name="plan_run",
@@ -91,6 +90,6 @@ PLAN_RUN_FLOW = FlowDefinition(
             run_if=Ref("plan_run.not_stopped", {"upto": "prompts"}),
             reads=("find_plan", "check_broken", "apply_rerun", "retry_prompts")),
         task("finish_plan", PerformedBy.CODE, Ref("plan_run.finish_plan"), reads=("find_plan",)),
-        task("wip_notice", PerformedBy.MAIN_SESSION_SHOW, Ref("plan_run.wip_notice"),
-             reads=("find_plan", "check_broken", "apply_rerun", "write_prompts", "retry_prompts"))),
+        task("notify", PerformedBy.MAIN_SESSION_SHOW, Ref("plan_run.notify"),
+             reads=("find_plan", "check_broken", "apply_rerun", "retry_prompts", "finish_plan"))),
 )  # fmt: skip

@@ -560,6 +560,60 @@ tool-assess-model
 - 다시 수행: 안전 (이미 끝남이면 쓰지 않는다)
 - 상태: 확답 (사용자 "아 오키오키", 2026-11-20)
 
+### 묶음 5-2: notify 끝 알림 (계획서, 2026-11-20)
+
+요청: "ㅇㅇ 이 방향으로 계획 세워줘" (사용자, 2026-11-20). 방향: 임시 끝 단계(wip_notice)를 지우고 notify 로 바꾼다. 모두 끝남·막힘이면 노드별 표, 멈춤은 지금 글 그대로.
+
+나누기 (tool-planner 형식)
+- 포트: 계획 읽기, 노드마다 run.json 읽기, 결과 파일 위치
+- 공통 기능: 없음
+- 워크플로로 넘길 것: notify 단계 (tool-add-session-task), 표 만들기 함수 (단계 폴더)
+
+tool-assess-port
+- 판정: 충족
+| 필요한 접근 | 판정 | 포트 | 메서드 |
+|---|---|---|---|
+| 계획과 노드 상태 | 충족 | plan_api | PlanApiReader.get_plan(plan_id) -> Plan |
+| 노드의 회차, 확인한 말, 건너뛴·실패 이유 | 충족 | local/plan_folder | PlanFolderReader.read_run(plan_id, node_id) -> NodeRun \| None |
+| 결과 파일 위치 | 충족 | local/plan_folder | plan_folder_location.result_file(plan_id, node_id) |
+| 이번 실행의 멈춘 자리 | 충족 | local/plan_folder | PlanFolderReader.read_stop (stopped_node.stop_point 안에서) |
+
+tool-assess-model
+- 판정: 충족
+| 요청 | 판정 | model |
+|---|---|---|
+| 막힘 판정 | 충족 | plan_schedule.plan_progress(plan).blocked |
+| 노드 기록 | 충족 | NodeRun (round, confirm, skipped_reason, failed_reason) |
+- 상태의 한국어 이름(완료, 건너뜀 …)은 보이는 글이라 model 이 아니라 단계 폴더에 둔다
+
+흐름도 (바뀌는 곳)
+```
+├─ finish_plan          [CODE]
+└─ notify               [MAIN_SESSION_SHOW]  wip_notice 를 바꿈. 멈춤 / 끝남(표) / 막힘(표) / 남음
+```
+
+### notify
+- 종류: MAIN_SESSION_SHOW
+- 결과 종류: DATA
+- 입력: ← find_plan.plan_id, ← find_plan.title, ← check_broken, ← apply_rerun, ← retry_prompts (멈춘 자리, stop_point), ← finish_plan.finished
+- 출력: 없음
+- 보일 글 (위에서부터 처음 맞는 것):
+  1. 노드 실행 중 멈춤: 멈춤 표시의 글 그대로. 예: `노드 3 "화면 설계" 에서 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run 7`
+  2. 끊긴 노드에서 멈춤: `노드 {id, …} 에서 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}` (지금 글)
+  3. 작업 지시를 못 만듦: `노드 {id, …} 의 작업 지시를 만들지 못해 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}` (지금 글)
+  4. 끝남 (finish_plan.finished): `계획 {plan_id} "{title}" 을 마쳤습니다. {노드 수 줄}` + 빈 줄 + 표
+  5. 막힘: `계획 {plan_id} "{title}" 에서 더 실행할 수 있는 노드가 없습니다. {노드 수 줄}. 이어 하려면 /task_plan_manager:plan-run {plan_id}` + 빈 줄 + 표
+  6. 그 밖(차례를 다 씀): `계획 {plan_id} "{title}" 에 남은 노드가 있습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}`
+- 노드 수 줄: `노드 5개: 완료 4, 건너뜀 1` (0 인 상태는 뺌. 순서 완료, 건너뜀, 실패, 실행 중, 할 일)
+- 표: `| 노드 | 제목 | 상태 | 회차 | 결과 / 이유 |`, 계획의 노드 순서. 회차는 run.json 이 없으면 `-`
+- 결과 / 이유:
+  - 완료 + 확인한 말 있음: `확인: "<첫 줄 60자, 넘으면 …>"`
+  - 완료: 결과 파일 위치 (작업 폴더 기준, 예 `.plan/13/nodes/53/result.md`)
+  - 건너뜀: 건너뛴 이유. 실패 이유가 있으면 ` (실패 이유: 막힘)` 를 붙임
+  - 실패: `실패 이유: <failed_reason>`
+  - 할 일, 실행 중: 빈칸
+- 상태: 확답 (사용자 "ㅇㅇ 이대로 고고고", 2026-11-20. 의미 단위로 함수를 나눠 달라는 요청을 반영: notify_task 는 순서만, notify_messages 는 경우마다 글, node_table 은 칸마다 함수)
+
 ## 같이 쓰는 코드
 
 - 조건 함수: `workflow/plan_run/` 아래 (묶음 1 에서 위치 확정). 쓰는 단계: resume, prompts, rounds 안 묶음
@@ -645,3 +699,17 @@ tool-assess-model
   - 바꿈: wip_notice 글 "(계획 끝내기와 결과 표는 아직 …)" → "(결과 표는 아직 …)". 시험 test_should_move_approved_plan_to_running 의 기대 상태 RUNNING → DONE (노드 없는 계획은 바로 끝남)
   - 시험: 모든 노드를 마친 시험 3개와 끊긴 마지막 노드를 완료로 기록하는 시험에 계획 상태 끝남(리뷰 지적), 멈추기 시험에 실행 중 그대로
   - 검증: ruff check, mypy, lint-imports 4/4, pytest 221 통과
+- 2026-11-20 A~D 일괄 시험 3회 (별도 사본 b7ed3de + 임시 plan-run 스킬, 보고서 scratchpad/e2e/e2e-batch-report.md): 3회 모두 끝까지 감, 계획 상태 끝남. 사용자 판단:
+  - 계획을 만든 직후 표가 안 보임: 계획을 서버로 보내 웹 뷰어로 보일 것이라 해결로 봄
+  - 병합한 지식에 어긋나는 규칙이 같이 남음: 사용자가 고르는 것이라 두고, 나중에 웹 뷰어에서 확인
+  - 노드가 사람만 판단할 기준으로 막힘: 그대로 둠. 막힌 뒤 "작업 지시를 고쳐 다시" → 대화로 prompt.md 고침 → plan-run 다시 부르기로 이어 갈 수 있음 ("대화만 가능하면 상관이 없기는 해")
+  - 빈 작업 폴더에서 인터뷰가 이 도구 자신을 대상으로 권함: 대상을 물었으므로 고치지 않음 ("물어봤다면 상관없어. 100% 자동화 할 순 없거든")
+  - Stop 훅이 실행 시작 직후 끼어듦: 묶음 5-3 plan-run 스킬을 만들 때 같이 봄
+- 2026-11-20 묶음 5-2 notify (사용자 "ㅇㅇ 이대로 고고고"):
+  - 평가: port 충족 (get_plan, read_run, result_file, stop_point), model 충족 (plan_progress, NodeRun)
+  - 단계: notify/notify_task.py (plan_run.notify), notify_messages.py, node_table.py. wip_notice 지움. 선언 reads 에서 write_prompts 를 빼고 finish_plan 을 더함
+  - 시험 기대값: 끝 글 "실행 중으로 두었습니다", "모든 노드를 마쳤습니다", "작업 지시 2개를 새로 만들었습니다" → "을 마쳤습니다". 시뮬레이션 시험에 노드 수 줄·표 머리·회차 2 줄·확인 칸 확인 더함
+  - 새 시험: tests/workflow/plan_run/test_node_table.py (노드 수 줄, 상태별 칸), test_notify_messages.py (멈춤 세 경우, 막힘, 남음)
+  - 시험에서 본 것: 확인한 말을 대화 기록에서 초 단위로 자르므로, 1초 안에 몰린 시험 대화에서는 명령 줄 "/task_plan_manager:plan-run 1" 까지 확인한 말로 잡힌다. 실제 대화(명령과 확인이 몇 분 떨어짐)에서는 생기지 않음 (e2e9 의 run.json confirm 은 사용자 답만 담김). 시험은 확인 칸의 시작만 본다
+  - 리뷰 지적 (사용자 "넵"): claude -p 가 오류로 끝나 여러 줄 stderr 가 실패 이유로 남은 노드를 건너뛰면 표가 깨짐 → 표 칸의 실패 이유를 한 줄로, | 를 \| 로 (node_table.one_line). 시험 하나 더함
+  - 검증: ruff check, mypy, lint-imports 4/4, pytest 227 통과
