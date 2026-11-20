@@ -1,10 +1,11 @@
-"""지식 검색의 서버 구현. POST {서버 주소}/memories/search."""
+"""지식 읽기의 서버 구현. POST {서버 주소}/memories/search, GET {서버 주소}/memories/{memory_id}."""
 
 from __future__ import annotations
 
 from task_plan_manager.common.http.api_choice import api_url
 from task_plan_manager.common.http.http_json import request_json
 from task_plan_manager.common.http.http_json_error import HttpJsonError
+from task_plan_manager.model.memory.memory import Memory
 from task_plan_manager.port.memory_api.dto.memory_search_hit import MemorySearchHit
 from task_plan_manager.port.memory_api.dto.memory_search_query import MemorySearchQuery
 from task_plan_manager.port.memory_api.memory_api_converter import MemoryApiConverter
@@ -21,3 +22,11 @@ class DefaultMemoryApiReader(MemoryApiReader):
         except HttpJsonError as failed:
             raise MemoryApiError(str(failed)) from failed
         return converter.to_search_hits(body)
+
+    def get(self, memory_id: int) -> Memory:
+        # 지식 하나를 읽는다. 응답은 지식 spec 모양 그대로다
+        try:
+            body = request_json("GET", api_url(f"/memories/{memory_id}"))
+        except HttpJsonError as failed:
+            raise MemoryApiError(str(failed)) from failed
+        return MemoryApiConverter().to_memory(body)

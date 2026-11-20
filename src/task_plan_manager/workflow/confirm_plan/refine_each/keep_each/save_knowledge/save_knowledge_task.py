@@ -12,9 +12,8 @@ from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.code_request import CodeRequest
 from task_plan_manager.model.memory.memory_source import MemorySource
-from task_plan_manager.port.memory_api.dto.memory_addition import MemoryAddition
 from task_plan_manager.port.memory_api.dto.new_memory import NewMemory
-from task_plan_manager.port.memory_api.memory_api_choice import memory_api_writer
+from task_plan_manager.port.memory_api.memory_api_choice import memory_api_reader, memory_api_writer
 from task_plan_manager.workflow.confirm_plan.refine_each.candidate_kind import memory_kind
 from task_plan_manager.workflow.confirm_plan.refine_each.choose_target.merge_target import merge_target_id
 
@@ -37,7 +36,8 @@ class SaveKnowledgeTask(Task):
         sources = tuple(MemorySource(quote=quote, plan_id=found["plan_id"]) for quote in candidate["quotes"])
         target_id = merge_target_id(context)
         if target_id is not None:
-            memory_id = memory_api_writer().append(target_id, MemoryAddition(body=final["body"], sources=sources))
+            target = memory_api_reader().get(target_id)  # 읽어서 덧붙인 뒤 통째로 저장한다 (서버는 저장만)
+            memory_id = memory_api_writer().update(target.append(final["body"], sources))
             return TaskOutput({"saved": True, "action": "append", "memory_id": memory_id})
         new_memory = NewMemory(
             kind=memory_kind(candidate["type"]),

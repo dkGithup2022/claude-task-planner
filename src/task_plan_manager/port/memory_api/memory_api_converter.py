@@ -7,7 +7,6 @@ from typing import Any
 from task_plan_manager.model.memory.memory import Memory
 from task_plan_manager.model.memory.memory_kind import MemoryKind
 from task_plan_manager.model.memory.memory_source import MemorySource
-from task_plan_manager.port.memory_api.dto.memory_addition import MemoryAddition
 from task_plan_manager.port.memory_api.dto.memory_search_hit import MemorySearchHit
 from task_plan_manager.port.memory_api.dto.memory_search_query import MemorySearchQuery
 from task_plan_manager.port.memory_api.dto.new_memory import NewMemory
@@ -44,14 +43,15 @@ class MemoryApiConverter:
             "source": _sources_to_body(new_memory.sources),
         }
 
-    def to_append_body(self, addition: MemoryAddition) -> dict[str, Any]:
-        return {"body": addition.body, "source": _sources_to_body(addition.sources)}
+    def to_update_body(self, memory: Memory) -> dict[str, Any]:
+        """덧붙인 본문과 근거 목록 전체. 나머지(종류, 작업 이름, 페르소나)는 보내지 않아 그대로 남는다."""
+        return {"body": memory.body, "source": _sources_to_body(memory.sources)}
 
     def to_memory_id(self, body: dict[str, Any]) -> int:
         return int(body["memory_id"])
 
     def to_memory(self, item: dict[str, Any]) -> Memory:
-        """지식 spec 모양 하나 → Memory (mock 파일을 읽을 때)."""
+        """지식 spec 모양 하나 → Memory (서버의 지식 하나 응답, mock 파일)."""
         return Memory(
             memory_id=int(item["memory_id"]),
             kind=MemoryKind(item["kind"]),

@@ -64,12 +64,15 @@ dto: `ResultTarget(result_path, files_dir)`, `NodeOutput(round, result_path, fil
 | 인터페이스 | 메서드 | 돌려주는 값 | 없을 때·실패 |
 |---|---|---|---|
 | MemoryApiReader | search(query) | tuple[MemorySearchHit, ...] | 빈 튜플 / MemoryApiError |
+| MemoryApiReader | get(memory_id) | Memory | 없으면 MemoryApiError |
 | MemoryApiWriter | create(new_memory) | memory_id | MemoryApiError |
-| MemoryApiWriter | append(memory_id, addition) | memory_id | 지식이 없으면 MemoryApiError |
+| MemoryApiWriter | update(memory) | memory_id. 본문과 근거를 받은 그대로 저장 | 지식이 없으면 MemoryApiError |
 
-구현: `MockMemoryApiReader` (검색어와 상관없이 저장된 지식을 limit 개까지, 점수 1.0), `MockMemoryApiWriter` (`.mockData/memories.json`. 없으면 문서 예시의 "테이블 설계" 지식 두 개로 만듦), `DefaultMemoryApiReader`, `DefaultMemoryApiWriter` (POST /memories/search, /memories, /memories/{id}/append). 고르기: `memory_api_reader()`, `memory_api_writer()`
+구현: `MockMemoryApiReader` (검색어와 상관없이 저장된 지식을 limit 개까지, 점수 1.0), `MockMemoryApiWriter` (`.mockData/memories.json`. 없으면 문서 예시의 "테이블 설계" 지식 두 개로 만듦), `DefaultMemoryApiReader`, `DefaultMemoryApiWriter` (POST /memories/search, GET /memories/{id}, POST /memories, PATCH /memories/{id}). 고르기: `memory_api_reader()`, `memory_api_writer()`
 
-dto: `MemorySearchQuery(kind, query, persona_ids, theme?, limit)`, `MemorySearchHit(memory_id, kind, theme, body, score)`, `NewMemory(kind, theme, body, persona_ids, sources)`, `MemoryAddition(body, sources)`
+덧붙이기 (2026-11-20, 서버와 맞춤): 부르는 쪽이 `get` 으로 읽고 `Memory.append` 로 덧붙임 머리(`****** KNOWLEDGE APPENDED <n> ********`)와 글, 근거를 붙인 뒤 `update` 로 통째로 저장한다. 서버는 받은 것을 저장만 한다
+
+dto: `MemorySearchQuery(kind, query, persona_ids, theme?, limit)`, `MemorySearchHit(memory_id, kind, theme, body, score)`, `NewMemory(kind, theme, body, persona_ids, sources)`
 
 검색한 지식을 글로 보일 때는 `****** KNOWLEDGE SEARCHED <n> ********` 머리로 구분한다 (사용자, 2026-11-19. 보이는 쪽에서 만든다)
 
