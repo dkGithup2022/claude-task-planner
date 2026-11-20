@@ -1,4 +1,4 @@
-import type { PlanStatus, PlanSummary } from "@/types/data/domain/plan";
+import type { PlanDetail, PlanStatus, PlanSummary } from "@/types/data/domain/plan";
 
 /**
  * 계획 API. BE 확정 (be/specs/api.md 와 같다). docs/pages/home/api.md
@@ -14,3 +14,6 @@ export interface PlanListParams {
 export interface PlanListResponse {
   plans: PlanSummary[];
 }
+
+/** GET /api/plans/{plan_id} 응답. 노드는 node_id 순, 간선은 edge_id 순. 없으면 404 — docs/pages/plan-graph/api.md */
+export type PlanDetailResponse = PlanDetail;

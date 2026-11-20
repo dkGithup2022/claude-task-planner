@@ -57,3 +57,8 @@ export function getMemoryList(params: MemoryListParams): MemoryListResponse {
 export function toMemoryKind(value: unknown): MemoryKind | undefined {
   return value === "knowledge" || value === "attitude" || value === "plan" ? value : undefined;
 }
+
+/** 페르소나 mock 의 지식 수 세기에 쓴다 */
+export function getAllMemoryDetails(): MemoryDetail[] {
+  return memories;
+}

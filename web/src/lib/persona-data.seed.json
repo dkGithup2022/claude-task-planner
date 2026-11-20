@@ -1,0 +1,14 @@
+{
+ "personas": [
+  {
+   "persona_id": 1,
+   "name": "dankim-persona",
+   "description": "사용자의 기본 작업 역할"
+  },
+  {
+   "persona_id": 2,
+   "name": "be-developer",
+   "description": "백엔드 개발 역할"
+  }
+ ]
+}

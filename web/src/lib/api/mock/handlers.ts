@@ -1,5 +1,6 @@
 import { getMemoryList, toMemoryKind } from "@/lib/memory-data";
-import { getPlanList } from "@/lib/plan-data";
+import { getPersonaList } from "@/lib/persona-data";
+import { getPlanDetail, getPlanList } from "@/lib/plan-data";
 import type { PlanStatus } from "@/types/data/domain/plan";
 import type { HttpMethod, QueryParams } from "../types";
 
@@ -37,6 +38,8 @@ export const mockHandlers: MockHandler[] = [
     resolve: ({ params }) =>
       getPlanList({ status: params.status as PlanStatus | undefined, limit: optionalNumber(params.limit) }),
   },
+  { method: "GET", path: "/api/plans/:id", resolve: ({ pathParams }) => getPlanDetail(Number(pathParams.id)) },
+  { method: "GET", path: "/api/personas", resolve: () => getPersonaList() },
   {
     method: "GET",
     path: "/api/memories",

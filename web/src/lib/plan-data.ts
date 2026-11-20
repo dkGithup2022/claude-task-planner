@@ -1,3 +1,4 @@
+import { ApiError } from "@/lib/api/types";
 import type { PlanListParams, PlanListResponse } from "@/types/api/plan";
 import type { NodeCounts } from "@/types/data/domain/node-counts";
 import type { PlanDetail, PlanSummary } from "@/types/data/domain/plan";
@@ -46,4 +47,22 @@ export function getPlanList(params: PlanListParams): PlanListResponse {
     .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.plan_id - a.plan_id)
     .map(toSummary);
   return { plans: params.limit === undefined ? matched : matched.slice(0, params.limit) };
+}
+
+/**
+ * GET /api/plans/:id
+ * case 1: 인자 { id: 11 }
+ *   정상 응답: 계획 11, 노드 10개 (node_id 순), 간선 29개 (edge_id 순)
+ * case 2: 인자 { id: 없는 계획 }
+ *   예외: 404 "해당 리소스를 찾을 수 없습니다"
+ */
+export function getPlanDetail(id: number): PlanDetail {
+  const plan = plans.find((item) => item.plan_id === id);
+  if (!plan) throw new ApiError("해당 리소스를 찾을 수 없습니다", 404);
+  return plan;
+}
+
+/** 페르소나 mock 의 계획 수 세기에 쓴다 */
+export function getAllPlanDetails(): PlanDetail[] {
+  return plans;
 }

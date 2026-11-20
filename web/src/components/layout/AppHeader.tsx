@@ -8,10 +8,13 @@ const MENU: { section: AppSection; href: string; label: string }[] = [
   { section: "personas", href: "/personas", label: "페르소나" },
 ];
 
-export function AppHeader({ current }: AppHeaderProps) {
+export function AppHeader({ current, wide }: AppHeaderProps) {
   return (
     <header className="border-b border-border-subtle">
-      <nav aria-label="주 메뉴" className="mx-auto flex max-w-[1120px] flex-wrap items-center gap-7 px-6 py-[18px]">
+      <nav
+        aria-label="주 메뉴"
+        className={cn("mx-auto flex flex-wrap items-center gap-7 px-6 py-[18px]", wide ? "max-w-[1232px]" : "max-w-[1120px]")}
+      >
         <Link href="/" className="grow text-[15px] font-bold hover:underline">
           task plan manager
         </Link>

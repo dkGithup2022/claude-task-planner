@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchPlans } from "./plan-api";
+import { fetchPlan, fetchPlans } from "./plan-api";
 
 beforeEach(() => vi.stubEnv("NEXT_PUBLIC_USE_MOCK", "true"));
 
@@ -17,5 +17,18 @@ describe("계획 목록 API (mock)", () => {
 
   it("case 4: limit", async () => {
     expect((await fetchPlans({ limit: 1 })).plans).toHaveLength(1);
+  });
+});
+
+describe("계획 조회 API (mock)", () => {
+  it("case 1: 노드와 간선이 순서대로 온다", async () => {
+    const plan = await fetchPlan(11);
+    expect(plan.nodes).toHaveLength(10);
+    expect(plan.edges).toHaveLength(29);
+    expect(plan.nodes.map((node) => node.node_id)).toEqual([...plan.nodes.map((node) => node.node_id)].sort((a, b) => a - b));
+  });
+
+  it("case 2: 없는 계획은 404", async () => {
+    await expect(fetchPlan(999)).rejects.toMatchObject({ status: 404 });
   });
 });
