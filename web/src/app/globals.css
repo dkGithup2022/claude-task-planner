@@ -30,6 +30,8 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-body);
+  font-size: 14px; /* 가안의 본문 크기 */
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
