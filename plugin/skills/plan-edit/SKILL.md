@@ -13,11 +13,14 @@ argument-hint: <계획 id> <사용자 말>
    | op | 넘길 것 |
    |---|---|
    | split | node_id, into: [새 노드] |
-   | merge | node_ids, 새 노드 |
-   | insert | after?, before?, 새 노드 |
+   | merge | node_ids, 새 노드의 칸을 같은 층에 (title, kind, does, output, notes) |
+   | insert | after?, before?, 새 노드의 칸을 같은 층에 (title, kind, does, output, notes) |
    | remove | node_id |
    | update | node_id, 바꿀 것만: title, kind, persona_ids, does, output, add_note |
    | link / unlink | from, to |
+
+   merge 와 insert 는 새 노드를 `node` 같은 칸 아래에 묶지 않고 op 와 같은 층에 적습니다.
+       {"op": "merge", "node_ids": [63, 64], "title": "엔드포인트·에러 코드 설계", "kind": "document", "does": "…", "output": {"form": "표", "contents": "…"}, "notes": "…"}
 
    새 노드는 make_plan 의 정의서와 같은 칸으로 대략 적습니다.
    `{title, kind, does, output: {form, contents}, notes}`
