@@ -28,6 +28,7 @@ from task_plan_manager.engine.runner.flow.dict_flow_registry import DictFlowRegi
 from task_plan_manager.engine.runner.unit.default_unit_runner import DefaultUnitRunner
 from task_plan_manager.workflow.plan_edit.edit_plan import edit_plan, show_plan
 from task_plan_manager.workflow.registry import FLOWS
+from task_plan_manager.workflow.statusline.draw_statusline import draw_statusline
 
 
 def build_runner() -> DefaultFlowRunner:
@@ -69,12 +70,18 @@ def main(argv: list[str] | None = None) -> int:
     plan.add_argument("action", choices=["show", "edit"])
     plan.add_argument("plan_id", type=int)
     plan.add_argument("--ops", help='edit 의 {"ops": [...]} JSON. 없으면 표준 입력에서 읽는다')
+    sub.add_parser("statusline")  # Claude Code 상태 줄. 표준 입력의 세션 정보로 진행 기록을 그린다
     a = p.parse_args(argv)
 
     if a.cmd == "hook":
         out = hook(a.event, json.loads(sys.stdin.read() or "{}"))
         if out:
             print(json.dumps(out, ensure_ascii=False))
+        return 0
+    if a.cmd == "statusline":
+        lines = draw_statusline(sys.stdin.read())
+        if lines:
+            print("\n".join(lines))
         return 0
     if a.cmd == "plan":
         return _print(_plan_command(a.action, a.plan_id, a.ops))

@@ -14,9 +14,11 @@ from task_plan_manager.engine.definition.task.task import Task
 from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.prompt_request import PromptRequest
+from task_plan_manager.model.progress.reinforce_phase import ReinforcePhase
 from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.finalize_knowledge.prompt_finalize_knowledge_output import (  # noqa: E501
     FinalizeKnowledgeOutput,
 )
+from task_plan_manager.workflow.confirm_plan.show_progress import show_knowledge_step
 
 FINALIZE_KNOWLEDGE = PromptSpec(
     name="finalize_knowledge",
@@ -32,6 +34,7 @@ class FinalizeKnowledgeTask(Task):
     output_kind = OutputKind.DATA
 
     def build_request(self, context: FlowContext) -> PromptRequest:
+        show_knowledge_step(context, ReinforcePhase.FINALIZE)
         # 초안과, 초안을 다듬은 대화 구간을 입력 글로 넘긴다
         draft = context.read("write_knowledge")
         return PromptRequest(FINALIZE_KNOWLEDGE, build_finalize_input(draft, context.read("review_knowledge")))

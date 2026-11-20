@@ -131,3 +131,52 @@ quote: str, plan_id: int
 
 ### MemoryKind (`model/memory/memory_kind.py`)
 KNOWLEDGE = "knowledge", ATTITUDE = "attitude", PLAN = "plan"
+
+## progress
+
+진행 기록 한 줄. 계획 폴더의 `.plan/<plan_id>/progress.jsonl` 에 덧붙인다 (포트 `port/local/progress_log/`). Claude Code 상태 줄이 이 세션이 쓴 마지막 줄을 그린다. 화면에 나갈 글은 담지 않는다. 상태 줄이 단계와 과정으로 정해진 글을 고른다. 설계: `specs/plans/progress-display.md`
+
+### ProgressEvent (`model/progress/progress_event.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| at | str | 기록한 시각 (ISO 8601 UTC) |
+| session_id | str | 기록한 Claude Code 세션 |
+| plan_id | int | |
+| detail | ProgressDetail | 단계마다 다른 내용. 종류가 상태 줄 첫 줄의 지금 단계를 정한다 |
+
+`ProgressDetail = PlanningProgress | FeedbackProgress | ReinforceProgress | RunProgress | ClosedProgress`
+
+### PlanningProgress (`model/progress/planning_progress.py`)
+계획 세우기. started_at: str (계획 나누기를 시작한 시각)
+
+### FeedbackProgress (`model/progress/feedback_progress.py`)
+계획 피드백. editing_since: str \| None (고치는 중이면 시작 시각, 사용자 차례면 None)
+
+### ReinforceProgress (`model/progress/reinforce_progress.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| phase | ReinforcePhase | |
+| index | int \| None | 지금 후보 번호 (1 부터). 후보를 뽑는 중이면 None |
+| total | int \| None | 후보 수 |
+| theme | str \| None | 지금 후보의 작업 이름 |
+| started_at | str \| None | 도구가 일하는 과정이면 시작 시각 |
+
+### ReinforcePhase (`model/progress/reinforce_phase.py`)
+EXTRACT = "extract", CHOOSE = "choose", DRAFT = "draft", REVIEW = "review", FINALIZE = "finalize"
+
+### RunProgress (`model/progress/run_progress.py`)
+| 필드 | 타입 | 뜻 |
+|---|---|---|
+| phase | RunPhase | |
+| done | int | 끝난 노드 수 (완료·건너뜀) |
+| total | int | 노드 수 |
+| nodes | tuple[RunNode, ...] | 실행 중인 노드, 또는 확인·실패 처리를 기다리는 노드. 기본 () |
+
+### RunPhase (`model/progress/run_phase.py`)
+READY = "ready" (승인, 실행 전), PROMPTS = "prompts", NODES = "nodes", CONFIRM = "confirm", FAILED = "failed", FINISHED = "finished"
+
+### RunNode (`model/progress/run_node.py`)
+node_id: int, title: str, started_at: str \| None
+
+### ClosedProgress (`model/progress/closed_progress.py`)
+불허. 필드 없음. 상태 줄에 아무것도 보이지 않는다

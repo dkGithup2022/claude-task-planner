@@ -24,6 +24,7 @@ from task_plan_manager.port.persona_api.persona_api_choice import persona_api_re
 from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
 from task_plan_manager.workflow.plan_run.prompts.write_prompts.node_prompt_error import NodePromptError
 from task_plan_manager.workflow.plan_run.prompts.write_prompts.node_prompt_input import node_prompt_input
+from task_plan_manager.workflow.plan_run.show_progress import show_writing_prompts
 
 HERE = Path(__file__).parent
 FIRST_LINE = "## 전체 작업과 이 노드의 목표"
@@ -38,6 +39,7 @@ def write_node_prompts(plan_id: int, node_ids: list[int]) -> tuple[list[dict[str
     """노드마다 작업 지시를 만들어 prompt.md 에 쓴다. 3개씩 동시에. (만든 것, 실패한 것). 실패한 노드는 쓰지 않는다."""
     # 읽기: 계획, 명령서, 페르소나, 생성기 프롬프트
     plan = plan_api_reader().get_plan(plan_id)
+    show_writing_prompts(plan)
     command_md = DefaultPlanFolderReader().read_command(plan_id)
     personas = {persona.persona_id: persona for persona in persona_api_reader().list_personas()}
     system_prompt = generator_prompt()

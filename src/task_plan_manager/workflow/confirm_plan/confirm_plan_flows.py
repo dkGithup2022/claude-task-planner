@@ -69,11 +69,11 @@ def _refine_each() -> Unit:
     → (넣지 않기가 아니면) 본문 쓰기 → 대화로 확인 → 최종 본문 → 저장 → 저장 결과 보이기."""
     keep_each = group("keep_each", ChildRun.IN_ORDER,
         task("write_knowledge", PerformedBy.CLAUDE_P, Ref("confirm_plan.write_knowledge"),
-             reads=("find_plan", "find_existing", *TARGET_PAGES)),
+             reads=("find_plan", "find_existing", "extract_knowledge", *TARGET_PAGES)),
         task("review_knowledge", PerformedBy.MAIN_SESSION_TALK, Ref("confirm_plan.review_knowledge"),
-             reads=("write_knowledge", *TARGET_PAGES)),
+             reads=("write_knowledge", "find_plan", "extract_knowledge", *TARGET_PAGES)),
         task("finalize_knowledge", PerformedBy.CLAUDE_P, Ref("confirm_plan.finalize_knowledge"),
-             reads=("write_knowledge", "review_knowledge")),
+             reads=("write_knowledge", "review_knowledge", "find_plan", "extract_knowledge")),
         task("save_knowledge", PerformedBy.CODE, Ref("confirm_plan.save_knowledge"),
              reads=("finalize_knowledge", "find_plan", *TARGET_PAGES)),
         task("show_saved", PerformedBy.MAIN_SESSION_SHOW, Ref("confirm_plan.show_saved"),
@@ -82,7 +82,7 @@ def _refine_each() -> Unit:
     return group("refine_each", ChildRun.FOR_EACH_ITEM,
         task("find_existing", PerformedBy.CODE, Ref("confirm_plan.find_existing"), reads=("find_plan",)),
         task("choose_action", PerformedBy.MAIN_SESSION_ASK, Ref("confirm_plan.choose_action"),
-             reads=("find_existing", "extract_knowledge")),
+             reads=("find_existing", "extract_knowledge", "find_plan")),
         _choose_target(),
         keep_each,
         for_each_item_in=Ref("confirm_plan.candidates"), reads=("extract_knowledge",))  # fmt: skip

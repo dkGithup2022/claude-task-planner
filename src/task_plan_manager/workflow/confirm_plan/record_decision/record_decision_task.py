@@ -14,6 +14,7 @@ from task_plan_manager.engine.request.code_request import CodeRequest
 from task_plan_manager.model.plan.plan_status import PlanStatus
 from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
 from task_plan_manager.workflow.confirm_plan.record_decision.decision_not_allowed_error import DecisionNotAllowedError
+from task_plan_manager.workflow.confirm_plan.show_progress import show_decision
 from task_plan_manager.workflow.list_plans.show_plans.plan_status_label import status_label
 
 
@@ -37,4 +38,5 @@ class RecordDecisionTask(Task):
                 f"계획 {plan_id} 은 {status_label(plan.status.value)} 상태라 다시 확정할 수 없습니다"
             )
         plan_api_writer().set_plan_status(plan_id, self.decision)
+        show_decision(plan_id, self.decision, len(plan.nodes))
         return TaskOutput({"plan_id": plan_id, "status": self.decision.value})

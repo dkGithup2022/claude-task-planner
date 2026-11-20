@@ -13,8 +13,10 @@ from task_plan_manager.engine.definition.task.task import Task
 from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.question_request import QuestionRequest
+from task_plan_manager.model.progress.reinforce_phase import ReinforcePhase
 from task_plan_manager.workflow.confirm_plan.refine_each.candidate_kind import type_label
 from task_plan_manager.workflow.confirm_plan.refine_each.choose_action.action_choices import action_choices
+from task_plan_manager.workflow.confirm_plan.show_progress import show_knowledge_step
 
 BODY_PREVIEW_CHARS = 80  # 질문 글의 목록 한 줄에 보일 기존 지식 본문 길이
 
@@ -25,6 +27,7 @@ class ChooseActionTask(Task):
     output_kind = OutputKind.DATA
 
     def build_request(self, context: FlowContext) -> QuestionRequest:
+        show_knowledge_step(context, ReinforcePhase.CHOOSE)
         # 후보와 비슷한 지식 목록을 보이고, 병합 / 새로 저장 / 넣지 않기 가운데 하나를 고르게 한다
         existing = context.read("find_existing")["existing"]
         total = len(context.read("extract_knowledge")["candidates"])

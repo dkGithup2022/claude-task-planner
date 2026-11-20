@@ -328,3 +328,16 @@ def test_should_give_persona_when_confirm_node_becomes_work_and_merge_same_id_on
         "does": "s",
     }
     assert edit_plan(plan_id, {"ops": [merge]}, FakeRelink())["ok"] is True
+
+
+def test_should_show_editing_then_feedback_turn_even_when_refused(tmp_path, monkeypatch):
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s")
+    monkeypatch.chdir(tmp_path)
+    plan_id, ids = _plan_with_chain()
+    (tmp_path / ".plan" / str(plan_id)).mkdir(parents=True)  # 이 작업 폴더에서 등록한 계획
+    edit_plan(plan_id, {"ops": [{"op": "update", "node_id": ids["화면 설계"], "title": "화면 설계 v2"}]}, _not_called)
+    edit_plan(plan_id, {"ops": [{"op": "없는 동작"}]}, _not_called)
+
+    records = (tmp_path / ".plan" / str(plan_id) / "progress.jsonl").read_text(encoding="utf-8").splitlines()
+    editing = [json.loads(line)["detail"]["editing_since"] is not None for line in records]
+    assert editing == [True, False, True, False]

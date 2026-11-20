@@ -16,6 +16,7 @@ from task_plan_manager.port.persona_api.persona_api_choice import persona_api_re
 from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
 from task_plan_manager.port.plan_api.plan_api_choice import plan_api_writer
 from task_plan_manager.workflow.make_plan.register_plan.no_persona_error import NoPersonaError
+from task_plan_manager.workflow.make_plan.show_progress import show_planning_started
 
 
 @TASKS.register_as("make_plan.register_plan")
@@ -27,11 +28,12 @@ class RegisterPlanTask(Task):
         return CodeRequest()
 
     def build_output(self, context: FlowContext, result: Any) -> TaskOutput:
-        # 명령서로 계획을 등록하고, 받은 id 로 이 작업 폴더에 계획 폴더를 만든다
+        # 명령서로 계획을 등록하고, 받은 id 로 이 작업 폴더에 계획 폴더를 만든 뒤 상태 줄에 진행을 보이기 시작한다
         written = context.read("write_request")
         new_plan = NewPlan(title=written["title"], request=written["request"], persona_ids=_default_persona_ids())
         plan = plan_api_writer().create_plan(new_plan)
         DefaultPlanFolderWriter().create_plan(plan.plan_id, written["request"])
+        show_planning_started(plan.plan_id)
         return TaskOutput({"plan_id": plan.plan_id})
 
 

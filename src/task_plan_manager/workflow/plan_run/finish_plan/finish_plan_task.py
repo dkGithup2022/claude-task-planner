@@ -13,6 +13,7 @@ from task_plan_manager.engine.request.code_request import CodeRequest
 from task_plan_manager.model.plan.plan_schedule import plan_progress
 from task_plan_manager.model.plan.plan_status import PlanStatus
 from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
+from task_plan_manager.workflow.plan_run.show_progress import show_finished
 
 
 @TASKS.register_as("plan_run.finish_plan")
@@ -32,4 +33,6 @@ class FinishPlanTask(Task):
         # 쓰기: 끝났고 아직 실행 중이면 끝남으로. 이미 끝남이면 쓰지 않는다
         if finished and plan.status is PlanStatus.RUNNING:
             plan_api_writer().set_plan_status(plan_id, PlanStatus.DONE)
+        if finished:
+            show_finished(plan)
         return TaskOutput({"finished": finished})

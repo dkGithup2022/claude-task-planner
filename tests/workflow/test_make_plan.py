@@ -179,3 +179,19 @@ def test_should_show_summary_with_next_commands_and_finish(tmp_path, monkeypatch
     text = shown["payload"]["text"]
     assert text.startswith('계획 1 "밤만쥬 1인분 만들기" 을 만들었습니다.')
     assert text.endswith("고칠 곳이 있으면 대화로 말해 주세요.\n확정은 /plan-go 1, 불허는 /plan-cancel 1")
+
+
+def test_should_turn_on_statusline_and_show_planning_then_feedback(tmp_path, monkeypatch, capsys, work_dir):
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s")
+    _fake_claude(tmp_path, monkeypatch)
+    transcript_path = tmp_path / "transcript.jsonl"
+    hook("session-start", {"session_id": "s", "transcript_path": str(transcript_path)})
+    run(capsys, "start", "make_plan")
+    _write_interview_transcript(transcript_path)
+    assert _done_until_finished(capsys)
+
+    records = (work_dir / ".plan" / "1" / "progress.jsonl").read_text(encoding="utf-8").splitlines()
+    assert [json.loads(line)["detail"]["kind"] for line in records] == ["planning", "feedback"]
+    settings = files.read_json(work_dir / ".claude" / "settings.local.json")
+    assert settings["statusLine"]["command"].endswith("/plugin/bin/task_plan_manager statusline")
+    assert settings["statusLine"]["refreshInterval"] == 5

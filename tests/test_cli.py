@@ -90,3 +90,14 @@ def test_should_show_and_edit_plan_through_cli():
         assert run("plan", "edit", str(plan_id))["ok"] is False
     finally:
         sys.stdin = old_in
+
+
+def test_should_print_nothing_for_statusline_without_records(tmp_path, monkeypatch):
+    monkeypatch.setenv("CLAUDE_CONFIG_DIR", str(tmp_path / "user"))
+    monkeypatch.setattr(
+        sys, "stdin", io.StringIO(json.dumps({"session_id": "s1", "workspace": {"current_dir": str(tmp_path)}}))
+    )
+    out = io.StringIO()
+    monkeypatch.setattr(sys, "stdout", out)
+    assert cli.main(["statusline"]) == 0
+    assert out.getvalue() == ""

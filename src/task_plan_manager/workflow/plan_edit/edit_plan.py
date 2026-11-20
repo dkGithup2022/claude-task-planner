@@ -17,6 +17,7 @@ from task_plan_manager.workflow.plan_edit.edit_graph import EditGraph
 from task_plan_manager.workflow.plan_edit.op.edit_op_reader import read_ops
 from task_plan_manager.workflow.plan_edit.plan_edit_refused_error import PlanEditRefusedError
 from task_plan_manager.workflow.plan_edit.send_edit import send_edit
+from task_plan_manager.workflow.plan_edit.show_progress import showing_edit
 from task_plan_manager.workflow.relink_edges.relink_edges import PromptCaller, relink_edges
 
 
@@ -37,7 +38,12 @@ def show_plan(plan_id: int) -> dict[str, Any]:
 
 def edit_plan(plan_id: int, data: Any, caller: PromptCaller = call_prompt) -> dict[str, Any]:
     """plan edit: 묶음 동작을 미리 적용하고, 나누기·합치기·넣기·빼기가 있으면 간선을 다시 정해 점검한다.
-    통과하면 계획 저장소에 보낸 뒤 새 계획 표를 돌려준다."""
+    통과하면 계획 저장소에 보낸 뒤 새 계획 표를 돌려준다. 도는 동안 상태 줄에 "계획을 고치는 중" 을 보인다."""
+    with showing_edit(plan_id):
+        return _edit_plan(plan_id, data, caller)
+
+
+def _edit_plan(plan_id: int, data: Any, caller: PromptCaller) -> dict[str, Any]:
     try:
         before, graph = _prepare(plan_id, data, caller)
     except PlanEditRefusedError as error:

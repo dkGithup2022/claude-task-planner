@@ -73,3 +73,29 @@ dto: `MemorySearchQuery(kind, query, persona_ids, theme?, limit)`, `MemorySearch
 
 검색한 지식을 글로 보일 때는 `****** KNOWLEDGE SEARCHED <n> ********` 머리로 구분한다 (사용자, 2026-11-19. 보이는 쪽에서 만든다)
 
+
+## progress_log (`port/local/progress_log/`)
+진행 기록. 계획 폴더의 `.plan/<plan_id>/progress.jsonl` (경로는 `plan_folder_location.progress_file`). 한 줄에 `ProgressEvent` 하나(JSON Lines, UTF-8), 덧붙이기만 한다. Claude Code 상태 줄이 읽는다. 설계: `specs/plans/progress-display.md`
+
+| 인터페이스 | 메서드 | 돌려주는 값 | 없을 때·실패 |
+|---|---|---|---|
+| ProgressLogWriter | append(event) | None. 한 줄을 한 번의 쓰기로 덧붙인다 | 파일이 없으면 만든다 |
+| ProgressLogWriter | report(plan_id, detail) | None. 지금 시각과 `CLAUDE_CODE_SESSION_ID` 로 한 줄을 남긴다 | 세션 id 가 없거나 이 작업 폴더에 그 계획 폴더(`.plan/<id>/`)가 없으면 남기지 않는다. 쓰지 못하면(OSError) 삼킨다. 흐름은 이것을 부른다 |
+| ProgressLogReader | latest_for_session(session_id) | ProgressEvent. 이 작업 폴더의 모든 계획 기록 가운데 이 세션이 쓴 가장 최근 줄 (at 기준) | None. 계획마다 파일 끝 64KB 만 읽고, 반쯤 쓴 줄은 건너뛴다 |
+
+구현: `DefaultProgressLogWriter`, `DefaultProgressLogReader`. 변환: `ProgressEventFileConverter` (`detail` 에 `kind`: planning | feedback | reinforce | run | closed)
+
+```jsonc
+{"at": "2026-11-20T04:36:55Z", "session_id": "89e072a9-…", "plan_id": 11,
+ "detail": {"kind": "reinforce", "phase": "draft", "index": 3, "total": 7, "theme": "하위 기획 작성", "started_at": "2026-11-20T04:36:55Z"}}
+```
+
+## claude_settings (`port/local/claude_settings/`)
+Claude Code 설정 파일. 작업 폴더의 `.claude/settings.local.json` 과 사용자 설정 `~/.claude/settings.json` (`CLAUDE_CONFIG_DIR` 이 있으면 그 아래). 경로는 `claude_settings_location.py`
+
+| 인터페이스 | 메서드 | 돌려주는 값 | 없을 때·실패 |
+|---|---|---|---|
+| ClaudeSettingsWriter | ensure_statusline(command, refresh_seconds) | StatuslineSetup: WRITTEN (넣음), ALREADY (이미 같은 명령), LEFT_ALONE (다른 상태 줄이 있거나, 읽지 못하거나, 쓰지 못해 건드리지 않음) | 파일이 없으면 만든다. 다른 키는 그대로. 명령이 `/bin/task_plan_manager statusline` 으로 끝나는 예전 버전의 우리 줄은 지금 명령으로 바꾼다 (플러그인 버전 폴더가 바뀌어서) |
+| ClaudeSettingsReader | user_statusline_command() | 사용자 설정의 statusLine.command | 없거나 읽지 못하면 None |
+
+구현: `DefaultClaudeSettingsWriter`, `DefaultClaudeSettingsReader`. dto: `StatuslineSetup` (StrEnum)

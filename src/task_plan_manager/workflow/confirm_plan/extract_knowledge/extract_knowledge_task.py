@@ -14,6 +14,7 @@ from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.prompt_request import PromptRequest
 from task_plan_manager.model.plan.plan import Plan
+from task_plan_manager.model.progress.reinforce_phase import ReinforcePhase
 from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
 from task_plan_manager.workflow.confirm_plan.extract_knowledge.feedback_dialogue import feedback_dialogue
 from task_plan_manager.workflow.confirm_plan.extract_knowledge.knowledge_candidate import KnowledgeCandidate
@@ -21,6 +22,7 @@ from task_plan_manager.workflow.confirm_plan.extract_knowledge.prompt_extract_kn
     ExtractKnowledgeOutput,
 )
 from task_plan_manager.workflow.confirm_plan.find_plan.plan_not_confirmable_error import PlanNotConfirmableError
+from task_plan_manager.workflow.confirm_plan.show_progress import show_knowledge_step
 
 MAX_CANDIDATES = 16  # 후보가 많으면 앞의 16 개만 다룬다 (사용자, 2026-11-18)
 CANDIDATE_TYPES = ("plan", "domain")
@@ -39,6 +41,7 @@ class ExtractKnowledgeTask(Task):
     output_kind = OutputKind.DATA
 
     def build_request(self, context: FlowContext) -> PromptRequest:
+        show_knowledge_step(context, ReinforcePhase.EXTRACT)
         # 계획의 노드 목록과, 계획을 보여 준 뒤의 피드백 대화를 입력 글로 넘긴다
         found = context.read("find_plan")
         plan = plan_api_reader().get_plan(found["plan_id"])

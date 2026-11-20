@@ -11,7 +11,8 @@ from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.code_request import CodeRequest
 from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.port.plan_api.plan_api_choice import plan_api_writer
+from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
+from task_plan_manager.workflow.plan_run.show_progress import show_run_started
 
 
 @TASKS.register_as("plan_run.start_run")
@@ -28,4 +29,5 @@ class StartRunTask(Task):
         was_running = PlanStatus(found["status"]) is PlanStatus.RUNNING
         if not was_running:
             plan_api_writer().set_plan_status(found["plan_id"], PlanStatus.RUNNING)
+        show_run_started(plan_api_reader().get_plan(found["plan_id"]))
         return TaskOutput({"was_running": was_running})

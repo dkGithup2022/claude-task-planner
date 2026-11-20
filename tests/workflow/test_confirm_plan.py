@@ -286,3 +286,13 @@ def test_should_notify_rejection_as_end(tmp_path, capsys):
     assert _run_to_end(capsys, "plan_cancel") == (
         '계획 1 "검색 기능 설계" 을 불허했습니다. 이 계획은 끝났습니다. 저장한 지식 0개 (새로 0, 덧붙이기 0).'
     )
+
+
+def test_should_close_statusline_on_plan_cancel(tmp_path, capsys, monkeypatch, work_dir):
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s")
+    _make_plan("계획")
+    _session_with_commands(tmp_path, "/task_plan_manager:plan-cancel 1")
+    _run_to_end(capsys, "plan_cancel")
+    records = (work_dir / ".plan" / "1" / "progress.jsonl").read_text(encoding="utf-8").splitlines()
+    rows = [json.loads(line)["detail"] for line in records]
+    assert [row["kind"] for row in rows] == ["reinforce", "closed"]  # 후보 뽑기(후보 없음) → 닫힘

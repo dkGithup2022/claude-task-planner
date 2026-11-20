@@ -540,3 +540,50 @@ def test_should_continue_in_next_round_after_cutoff(tmp_path, capsys, fake_agent
     run_dir = next((package_home / "sessions" / "s" / "runs").iterdir())
     by_item = json.loads(next(run_dir.glob("run_nodes_*/result.json")).read_text())["by_item"]
     assert by_item["1"]["stop_at"] == "continue" and [r["node_id"] for r in by_item["1"]["ran"]] == [first]
+
+
+def _progress_rows(tmp_path, plan_id: int) -> list[dict]:
+    records = (tmp_path / "work" / ".plan" / str(plan_id) / "progress.jsonl").read_text(encoding="utf-8").splitlines()
+    return [json.loads(line)["detail"] for line in records]
+
+
+def _phases_without_repeats(rows: list[dict]) -> list[str]:
+    """같은 과정이 이어서 여러 번 남은 것(노드마다 남김)은 하나로 본다."""
+    phases: list[str] = []
+    for row in rows:
+        if not phases or phases[-1] != row["phase"]:
+            phases.append(row["phase"])
+    return phases
+
+
+def test_should_record_run_steps_from_start_to_finish(tmp_path, capsys, fake_agent, monkeypatch):
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s")
+    plan_id, (table, api, screen, check, deploy) = _simulation_plan()
+    monkeypatch.setenv("FAKE_NODE_FAIL", str(screen))
+    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    run(capsys, "start", "plan_run")  # 차례 1: 화면 설계가 막혀 실패 처리를 묻는다
+    monkeypatch.delenv("FAKE_NODE_FAIL")
+    run(capsys, "done", "--answer", "다시 실행")  # 차례 2: 확인 노드
+    run(capsys, "done")
+    assert run(capsys, "done", "--answer", "허가")["type"] == "finished"  # 차례 3: 배포 문서 → 끝
+
+    rows = _progress_rows(tmp_path, plan_id)
+    assert _phases_without_repeats(rows) == ["nodes", "failed", "nodes", "confirm", "nodes", "finished"]
+    assert rows[0]["nodes"] == [] and rows[0]["total"] == 5  # 실행 시작: 첫 줄만
+    failed_at = next(index for index, row in enumerate(rows) if row["phase"] == "failed")
+    assert rows[failed_at - 1]["phase"] == "nodes" and rows[failed_at - 1]["nodes"] == []  # 차례가 끝나 정리한 기록
+    failed = rows[failed_at]
+    assert [node["node_id"] for node in failed["nodes"]] == [screen]
+    running = [row for row in rows if row["phase"] == "nodes" and row["nodes"]]
+    assert running and all(node["started_at"] for row in running for node in row["nodes"])
+    assert rows[-1] == {"kind": "run", "phase": "finished", "done": 5, "total": 5, "nodes": []}
+
+
+def test_should_record_writing_prompts(tmp_path, capsys, fake_agent, monkeypatch):
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s")
+    plan_id = _make_plan(PlanStatus.APPROVED)
+    _add_todo_node(plan_id, "테이블 설계")
+    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    run(capsys, "start", "plan_run")
+    run(capsys, "next")
+    assert "prompts" in _phases_without_repeats(_progress_rows(tmp_path, plan_id))

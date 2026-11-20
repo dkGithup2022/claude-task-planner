@@ -11,9 +11,11 @@ from task_plan_manager.engine.definition.task.task import Task
 from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.question_request import QuestionRequest
+from task_plan_manager.model.progress.run_phase import RunPhase
 from task_plan_manager.port.local.plan_folder.default_plan_folder_reader import DefaultPlanFolderReader
 from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
 from task_plan_manager.workflow.plan_run.rounds.failed.failed_choices import FAILED_CHOICES
+from task_plan_manager.workflow.plan_run.show_progress import show_waiting_answer
 
 
 @TASKS.register_as("plan_run.ask_failed")
@@ -24,7 +26,9 @@ class AskFailedTask(Task):
     def build_request(self, context: FlowContext) -> QuestionRequest:
         plan_id = context.read("find_plan")["plan_id"]
         stopped = context.read("run_nodes")
-        node = plan_api_reader().get_plan(plan_id).node(int(stopped["node_id"]))
+        plan = plan_api_reader().get_plan(plan_id)
+        node = plan.node(int(stopped["node_id"]))
+        show_waiting_answer(plan, RunPhase.FAILED, node)
         output = DefaultPlanFolderReader().read_output(plan_id, node.node_id)
         lines = [f'노드 {node.node_id} "{node.title}" 이 끝나지 못했습니다.', f"이유: {stopped['detail']['reason']}"]
         if stopped["detail"]["summary"]:

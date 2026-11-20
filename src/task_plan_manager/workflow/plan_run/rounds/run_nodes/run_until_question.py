@@ -25,6 +25,7 @@ from task_plan_manager.port.local.plan_folder.default_plan_folder_reader import 
 from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
 from task_plan_manager.workflow.plan_run.rounds.run_nodes.node_outcome import NodeOutcome
 from task_plan_manager.workflow.plan_run.rounds.run_nodes.node_steps import execute_node, finish_node, start_node
+from task_plan_manager.workflow.plan_run.show_progress import show_running_nodes
 
 PARALLEL = 3
 LAUNCH_CUTOFF_SECONDS = 1800  # 이 뒤로는 새 노드를 띄우지 않는다
@@ -40,6 +41,7 @@ def run_until_question(plan_id: int, run_id: str) -> dict[str, Any]:
     install_child_cleanup()  # 명령이 끊기면 돌던 노드 실행도 끝낸다
     deadline = time.monotonic() + LAUNCH_CUTOFF_SECONDS
     running: dict[Future[NodeOutcome], PlanNode] = {}
+    started_at: dict[int, str] = {}  # 실행 중인 노드 id → 띄운 시각 (상태 줄이 걸린 시간을 센다)
     ran: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=PARALLEL) as pool:
         while True:
@@ -47,14 +49,20 @@ def run_until_question(plan_id: int, run_id: str) -> dict[str, Any]:
             if time.monotonic() < deadline:
                 for node in pick_nodes(plan, running.values()):
                     start_node(plan, node.node_id)  # 쓰기: 이 스레드에서만
+                    started_at[node.node_id] = utc_now()
                     running[pool.submit(execute_node, plan, node)] = node
             if not running:
                 break
+            show_running_nodes(
+                plan, started_at
+            )  # 실행 중인 노드가 있을 때만 남긴다. 노드 사이에 빈 목록을 남기면 깜박인다
             finished = next(as_completed(running))
-            running.pop(finished)
+            started_at.pop(running.pop(finished).node_id)
             ran.append(finish_node(plan_id, finished.result()))  # 쓰기: 끝나는 대로 바로
     past_deadline = time.monotonic() >= deadline
-    return _next_question(plan_api_reader().get_plan(plan_id), ran, past_deadline)
+    plan = plan_api_reader().get_plan(plan_id)
+    show_running_nodes(plan, {})  # 이번 차례가 끝남: 끝난 노드가 계속 "실행 중" 으로 보이지 않게
+    return _next_question(plan, ran, past_deadline)
 
 
 def pick_nodes(plan: Plan, running: Iterable[PlanNode]) -> list[PlanNode]:

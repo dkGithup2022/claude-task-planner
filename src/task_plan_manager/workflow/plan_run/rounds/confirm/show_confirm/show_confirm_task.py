@@ -11,9 +11,11 @@ from task_plan_manager.engine.definition.task.task import Task
 from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.conversation_request import ConversationRequest
+from task_plan_manager.model.progress.run_phase import RunPhase
 from task_plan_manager.port.local.plan_folder.plan_folder_location import prompt_file
 from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
 from task_plan_manager.workflow.plan_run.rounds.run_nodes.node_run_input import previous_results
+from task_plan_manager.workflow.plan_run.show_progress import show_waiting_answer
 
 
 @TASKS.register_as("plan_run.show_confirm")
@@ -24,6 +26,7 @@ class ShowConfirmTask(Task):
     def build_request(self, context: FlowContext) -> ConversationRequest:
         plan = plan_api_reader().get_plan(context.read("find_plan")["plan_id"])
         node = plan.node(int(context.read("run_nodes")["node_id"]))
+        show_waiting_answer(plan, RunPhase.CONFIRM, node)
         prompt_path = prompt_file(plan.plan_id, node.node_id).resolve()
         goal = (
             f'확인 노드 {node.node_id} "{node.title}" 의 작업 지시 {prompt_path} 를 읽고, '

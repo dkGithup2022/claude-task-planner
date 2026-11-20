@@ -23,6 +23,11 @@ def stop_file(plan_id: int) -> Path:
     return plan_dir(plan_id) / "stop.json"
 
 
+def progress_file(plan_id: int) -> Path:
+    """진행 기록. 주요 상황마다 한 줄씩 덧붙인다 (port/local/progress_log/)."""
+    return plan_dir(plan_id) / "progress.jsonl"
+
+
 def shown_file(plan_id: int) -> Path:
     """계획을 보여 준 기록."""
     return plan_dir(plan_id) / "shown.json"

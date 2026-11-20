@@ -13,12 +13,14 @@ from task_plan_manager.engine.definition.task.task import Task
 from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.prompt_request import PromptRequest
+from task_plan_manager.model.progress.reinforce_phase import ReinforcePhase
 from task_plan_manager.workflow.confirm_plan.refine_each.candidate_kind import memory_kind
 from task_plan_manager.workflow.confirm_plan.refine_each.choose_target.merge_target import merge_target_id
 from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.write_knowledge.prompt_write_knowledge_output import (  # noqa: E501
     WriteKnowledgeOutput,
 )
 from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.write_knowledge.quoted_context import quoted_context
+from task_plan_manager.workflow.confirm_plan.show_progress import show_knowledge_step
 
 WRITE_KNOWLEDGE = PromptSpec(
     name="write_knowledge",
@@ -34,6 +36,7 @@ class WriteKnowledgeTask(Task):
     output_kind = OutputKind.DATA
 
     def build_request(self, context: FlowContext) -> PromptRequest:
+        show_knowledge_step(context, ReinforcePhase.DRAFT)
         # 후보, 그 근거가 나온 대화, 덧붙이기면 그 기존 지식을 입력 글로 넘긴다
         candidate = context.current_item()
         found = context.read("find_plan")

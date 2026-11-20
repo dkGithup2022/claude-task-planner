@@ -4,6 +4,7 @@ mock 지식에 저장되는지 본다."""
 import json
 import stat
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -213,3 +214,29 @@ def test_should_fit_search_limit_into_declared_pages():
     # 기존 지식 찾기의 상한을 바꾸면 선언의 쪽 단계 수(셋)도 맞춰야 한다
     existing = [{"memory_id": number} for number in range(SEARCH_LIMIT)]
     assert has_next(existing, len(TARGET_PAGES) - 1) and not has_next(existing, len(TARGET_PAGES))
+
+
+def test_should_record_each_knowledge_step_then_ready_to_run(capsys, monkeypatch):
+    monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s")
+    run(capsys, "start", "plan_go")
+    run(capsys, "done", "--answer", "새 지식으로 저장")
+    run(capsys, "done")  # 확인 대화 끝 → 최종 정리 → 저장 → 저장 결과
+    run(capsys, "next")
+    run(capsys, "done", "--answer", "넣지 않기")
+    assert run(capsys, "done", "--answer", "넣지 않기")["type"] == "finished"
+
+    records = Path(".plan/1/progress.jsonl").read_text(encoding="utf-8").splitlines()
+    rows = [json.loads(line)["detail"] for line in records]
+    steps = [(row["kind"], row["phase"], row.get("index")) for row in rows]
+    assert steps == [
+        ("reinforce", "extract", None),
+        ("reinforce", "choose", 1),
+        ("reinforce", "draft", 1),
+        ("reinforce", "review", 1),
+        ("reinforce", "finalize", 1),
+        ("reinforce", "choose", 2),
+        ("reinforce", "choose", 3),
+        ("run", "ready", None),
+    ]
+    assert rows[2]["total"] == 3 and rows[2]["theme"] == "UI/UX 설계" and rows[2]["started_at"].endswith("Z")
+    assert rows[1]["started_at"] is None  # 사용자 차례는 걸린 시간을 세지 않는다
