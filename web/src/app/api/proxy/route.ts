@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     return response;
   } catch (error) {
     if (error instanceof HTTPError) {
-      const data = await error.response.json().catch(() => null);
+      const data = error.data ?? null; // ky 가 오류 본문을 미리 읽어 data 에 둔다 (response.json() 은 이미 비어 있다)
       const message = (data as Record<string, string> | null)?.message;
       return NextResponse.json(
         {

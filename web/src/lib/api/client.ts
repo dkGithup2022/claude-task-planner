@@ -71,7 +71,7 @@ async function callBackendDirect(request: ProxyRequest): Promise<unknown> {
     return { data, status: 200 };
   } catch (err) {
     if (!(err instanceof HTTPError)) throw err;
-    const data = await err.response.json().catch(() => null);
+    const data = err.data ?? null; // ky 가 오류 본문을 미리 읽어 data 에 둔다 (response.json() 은 이미 비어 있다)
     const record = data as Record<string, string> | null;
     return { error: record?.message || record?.error || err.message, status: err.response.status, data };
   }
@@ -103,7 +103,7 @@ async function callApi<T>(request: ProxyRequest): Promise<T> {
       throw error;
     }
     if (error instanceof HTTPError) {
-      const data = await error.response.json().catch(() => null);
+      const data = error.data ?? null; // ky 가 오류 본문을 미리 읽어 data 에 둔다 (response.json() 은 이미 비어 있다)
       const apiError = new ApiError(
         (data as Record<string, string> | null)?.error || error.message,
         error.response.status,

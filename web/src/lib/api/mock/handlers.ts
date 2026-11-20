@@ -1,7 +1,8 @@
 import { deleteMemory, getMemoryDetail, getMemoryList, toMemoryKind, updateMemory } from "@/lib/memory-data";
-import { getPersonaList } from "@/lib/persona-data";
+import { createPersona, deletePersona, getPersonaList, updatePersona } from "@/lib/persona-data";
 import { getPlanDetail, getPlanList } from "@/lib/plan-data";
 import type { MemoryUpdateRequest } from "@/types/api/memory";
+import type { PersonaCreateRequest, PersonaUpdateRequest } from "@/types/api/persona";
 import type { PlanStatus } from "@/types/data/domain/plan";
 import type { HttpMethod, QueryParams } from "../types";
 
@@ -59,4 +60,11 @@ export const mockHandlers: MockHandler[] = [
     resolve: ({ pathParams, body }) => updateMemory(Number(pathParams.id), body as MemoryUpdateRequest),
   },
   { method: "DELETE", path: "/api/memories/:id", resolve: ({ pathParams }) => deleteMemory(Number(pathParams.id)) },
+  { method: "POST", path: "/api/personas", resolve: ({ body }) => createPersona(body as PersonaCreateRequest) },
+  {
+    method: "PATCH",
+    path: "/api/personas/:id",
+    resolve: ({ pathParams, body }) => updatePersona(Number(pathParams.id), body as PersonaUpdateRequest),
+  },
+  { method: "DELETE", path: "/api/personas/:id", resolve: ({ pathParams }) => deletePersona(Number(pathParams.id)) },
 ];

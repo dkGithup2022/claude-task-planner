@@ -6,3 +6,20 @@ import type { Persona } from "@/types/data/domain/persona";
 export interface PersonaListResponse {
   personas: Persona[];
 }
+
+/** POST /api/personas 요청. 같은 이름 409, 빈 이름 400 */
+export interface PersonaCreateRequest {
+  name: string;
+  description: string;
+}
+
+/** PATCH /api/personas/{persona_id} 요청. 바꿀 필드만 */
+export interface PersonaUpdateRequest {
+  name?: string;
+  description?: string;
+}
+
+/** POST·PATCH /api/personas 응답 */
+export interface PersonaIdResponse {
+  persona_id: number;
+}
