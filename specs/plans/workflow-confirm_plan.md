@@ -156,12 +156,20 @@ list_plans                                           /plan-go, /plan-cancel, /pl
            plan_id = command_plan_id(_current_transcript(context))
            plan = _reviewing_plan(plan_id)
            shown = _shown_record(plan_id)
-           return TaskOutput({"plan_id": plan_id, "title": plan.title, "persona_ids": list(plan.persona_ids),
-                              "shown_at": shown.shown_at, "transcript": shown.transcript})
+           return TaskOutput(
+               {
+                   "plan_id": plan_id,
+                   "title": plan.title,
+                   "persona_ids": list(plan.persona_ids),
+                   "shown_at": shown.shown_at,
+                   "transcript": shown.transcript,
+               }
+           )
 
 
    # command_plan_id.py
    COMMAND_LINE = re.compile(r"^/\S*plan-(go|cancel)\s+(\d+)")
+
 
    def command_plan_id(transcript: Path) -> int:
        """대화에서 사용자가 마지막으로 친 /plan-go·/plan-cancel 줄의 계획 id. 없으면 PlanNotConfirmableError."""
