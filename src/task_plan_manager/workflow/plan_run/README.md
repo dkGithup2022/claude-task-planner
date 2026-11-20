@@ -1,7 +1,7 @@
 # plan_run (D 계획 실행)
 
 승인된 계획의 계획 노드를 간선 순서대로 실행하는 워크플로. 계획서: `specs/plans/workflow-plan_run.md`.
-2026-11-20 기준으로 묶음 1(계획 찾기와 실행 시작), 묶음 2(작업 지시 만들기), 묶음 3(다음 노드 계산, model/plan/plan_schedule.py), 묶음 4(노드 실행 루프), 묶음 5-1(계획 끝내기), 묶음 5-2(끝 알림)까지 만들었다. plan-run 스킬(묶음 5-3)은 아직 없다.
+2026-11-20 기준으로 묶음 1(계획 찾기와 실행 시작), 묶음 2(작업 지시 만들기), 묶음 3(다음 노드 계산, model/plan/plan_schedule.py), 묶음 4(노드 실행 루프), 묶음 5(계획 끝내기, 끝 알림, plan-run 스킬)까지 만들었다.
 
 ## 지금 구성
 
@@ -68,7 +68,7 @@ plan_run
 
 ## 특이사항
 
-- **사용자는 아직 부를 수 없다.** plan-run 스킬은 묶음 5 에서 만든다. 지금은 CLI 시험으로만 돈다.
+- **사용자는 `/task_plan_manager:plan-run <id>` 로 부른다** (`plugin/skills/plan-run/SKILL.md`). id 없이 부르면 계획 목록(list_plans). 스킬은 명령을 백그라운드, 제한 70분으로 부른다. plan-go 스킬과 다른 곳의 맥락은 같은 폴더의 README.md 에 적었다 (SKILL.md 는 세션 컨텍스트에 그대로 들어가므로).
 - **계획 id 는 대화 기록의 명령 줄에서 읽는다.** run 스킬 방식으로는 흐름에 인자를 넘길 수 없기 때문이다 (confirm_plan 과 같은 방식). 대화 읽기 함수는 Claude 가 도구로 부른 스킬은 빼고 읽는다. 그래서 끝 지시가 다음 `/plan-run` 을 스스로 부르는 방식은 id 를 못 찾는다. 노드 실행의 반복을 흐름 안(우리 루프)에 두기로 한 이유 가운데 하나다.
 - **다른 워크플로의 코드를 가져오지 않는다** (번들 규칙). 명령 줄 읽기와 대화 기록 경로는 confirm_plan 의 것을 plan_run 에 따로 두었다 (정규식만 plan-run). 계획 상태를 한국어로 바꾸는 list_plans 의 `status_label` 은 쓰지 않고, 멈출 때의 글을 상태마다 직접 적었다.
 - **engine 의 항목마다 반복(FOR_EACH_ITEM)은 앞 항목의 답과 상관없이 모든 항목을 끝까지 돈다.** 첫 판은 끊긴 노드마다 물었다. 그랬더니 리뷰에서 "멈추기를 골라도 다음 노드를 또 묻고 상태를 바꾼다"가 나왔다. 그래서 한 질문에 모아 묻는 것으로 바꿨다. 반복 안에서 "앞에서 멈췄으면 건너뛰기"가 필요하면, 앞 번호의 결과만 보는 조건을 따로 둬야 한다.
@@ -83,7 +83,7 @@ plan_run
 - **`TASK_PLAN_MANAGER_CLAUDE_BIN`** 을 run_agent 도 쓴다. 시험의 가짜 claude 가 call_prompt 와 run_agent 를 함께 대신한다
 - **멈춤 표시 (`.plan/<id>/stop.json`)**: 바깥 차례 안의 단계는 앞 차례의 결과를 읽을 수 없다 (선언 검사, engine/runner/scenario/check_definition.py:64). 그래서 사용자가 멈추기·고쳐서 다시·허가하지 않음을 고르면 engine 실행 id 와 함께 계획 폴더에 남기고, 다음 차례의 run_nodes 가 읽고 바로 돌아온다. 다음 /plan-run 은 실행 id 가 달라 무시하고, 실패로 남은 노드를 다시 묻는다 (이유와 요약은 run.json 의 failed_reason, failed_summary)
 - **노드 실행**: run_agent(지시문을 기본 시스템 프롬프트에 덧붙임, 도구 Read Write Edit Glob Grep Bash WebSearch WebFetch 를 묻지 않고, 작업 폴더에서, opus, 30분). 입력은 작업 지시 본문 + 앞 노드 결과의 위치 + 쓸 곳. 판정은 답 첫 줄 "status: done" 과 result.md
-- **명령이 끊길 때**: 우리 프로세스가 SIGTERM·SIGINT 를 받거나 끝나면 돌던 claude -p 도 끝낸다 (install_child_cleanup). SIGKILL 이면 막지 못한다. plan-run 스킬은 next·done 을 백그라운드, 제한 70분으로 부른다 (묶음 5)
+- **명령이 끊길 때**: 우리 프로세스가 SIGTERM·SIGINT 를 받거나 끝나면 돌던 claude -p 도 끝낸다 (install_child_cleanup). SIGKILL 이면 막지 못한다. plan-run 스킬은 start·next·done 을 백그라운드, 제한 70분으로 부른다
 - **차례마다 next 를 끝낸다 (continue_notice)**: engine 은 알림·질문 단계를 만나야 next 를 끝내고 메인 세션에 넘긴다. run_nodes 가 30분 마감으로 "계속"을 돌려줄 때 알림 단계가 없으면, engine 이 같은 next 안에서 다음 차례를 바로 돌려 next 한 번이 70분 제한을 넘는다 (묶음 4 리뷰). 그래서 "계속"일 때 "노드 N개를 마쳤습니다. 남은 노드 M개를 이어서 실행합니다." 와 노드마다 결과 위치를 보이고 끝낸다. 실패·확인·끝남·막힘은 원래 질문이나 끝 알림으로 돌아간다
 - **확인 대화의 사용자 말**: engine 의 대화 결과 from 은 흐름 시작 시각이라, run_nodes 가 돌아온 시각부터 대화가 끝난 시각까지의 사용자 말을 읽는다
 - **검증 (2026-11-20)**: ruff check, mypy, lint-imports 4/4, pytest 218 통과.
