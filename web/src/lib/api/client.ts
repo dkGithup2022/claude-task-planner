@@ -134,3 +134,10 @@ export const apiPatch = <T>(path: string, body?: unknown, params?: QueryParams, 
   request<T>("PATCH")(path, body, params, options);
 export const apiDelete = <T>(path: string, body?: unknown, params?: QueryParams, options?: CallOptions) =>
   request<T>("DELETE")(path, body, params, options);
+
+/** 선택 파라미터 객체에서 undefined · null · "" 를 걷어내 QueryParams 로 만든다. */
+export function toQueryParams(params: object): QueryParams {
+  return Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ""),
+  ) as QueryParams;
+}

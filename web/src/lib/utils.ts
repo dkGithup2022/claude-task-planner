@@ -22,3 +22,25 @@ export function formatRelativeDate(createdAt: string | number, now: number = Dat
   const d = new Date(created);
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 }
+
+/**
+ * 서버의 UTC 문자열(2026-11-20T04:16:15Z)을 브라우저 시간대의 "MM-DD HH:mm" 으로. 예: "11-20 13:16" (한국)
+ * withYear 면 "YYYY-MM-DD HH:mm".
+ */
+export function formatShortDateTime(iso: string, withYear = false, timeZone?: string): string {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(new Date(iso))
+      .map((part) => [part.type, part.value]),
+  );
+  const date = `${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
+  return withYear ? `${parts.year}-${date}` : date;
+}

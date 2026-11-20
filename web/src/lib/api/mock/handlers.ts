@@ -1,4 +1,9 @@
+import { getMemoryList, toMemoryKind } from "@/lib/memory-data";
+import { getPlanList } from "@/lib/plan-data";
+import type { PlanStatus } from "@/types/data/domain/plan";
 import type { HttpMethod, QueryParams } from "../types";
+
+const optionalNumber = (value: unknown) => (value === undefined ? undefined : Number(value));
 
 export interface MockContext {
   /** "/api/items/:id" 의 :id 같은 경로 파라미터 */
@@ -26,4 +31,21 @@ export interface MockHandler {
  */
 export const mockHandlers: MockHandler[] = [
   { method: "GET", path: "/api/health", resolve: () => ({ status: "ok", mock: true }) },
+  {
+    method: "GET",
+    path: "/api/plans",
+    resolve: ({ params }) =>
+      getPlanList({ status: params.status as PlanStatus | undefined, limit: optionalNumber(params.limit) }),
+  },
+  {
+    method: "GET",
+    path: "/api/memories",
+    resolve: ({ params }) =>
+      getMemoryList({
+        q: params.q === undefined ? undefined : String(params.q),
+        kind: toMemoryKind(params.kind),
+        persona_id: optionalNumber(params.persona_id),
+        limit: optionalNumber(params.limit),
+      }),
+  },
 ];
