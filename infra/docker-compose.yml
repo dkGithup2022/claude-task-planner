@@ -4,7 +4,7 @@ name: task-plan
 
 services:
   db:
-    image: postgres:16-alpine
+    image: pgvector/pgvector:pg16  # 벡터 검색(vector) 확장이 든 PostgreSQL 16
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?infra/.env 에 POSTGRES_PASSWORD 를 정해 주세요}
