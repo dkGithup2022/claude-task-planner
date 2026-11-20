@@ -1,13 +1,14 @@
 import { cn } from "@/lib/utils";
-import type { PlanStatusMarkProps, PlanStatusValue } from "./PlanStatusMark.types";
+import { PLAN_STATUS_LABEL, type PlanStatus } from "@/types/data/domain/plan";
+import type { PlanStatusMarkProps } from "./PlanStatusMark.types";
 
-const MARK: Record<PlanStatusValue, { symbol: string; label: string; className: string }> = {
-  done: { symbol: "●", label: "완료", className: "text-foreground" },
-  running: { symbol: "◐", label: "실행 중", className: "text-foreground font-medium" },
-  approved: { symbol: "○", label: "승인", className: "text-foreground" },
-  reviewing: { symbol: "○", label: "검토 중", className: "text-foreground" },
-  drafting: { symbol: "○", label: "만드는 중", className: "text-text-tertiary" },
-  rejected: { symbol: "–", label: "불허", className: "text-text-tertiary" },
+const MARK: Record<PlanStatus, { symbol: string; className: string }> = {
+  done: { symbol: "●", className: "text-foreground" },
+  running: { symbol: "◐", className: "text-foreground font-medium" },
+  approved: { symbol: "○", className: "text-foreground" },
+  reviewing: { symbol: "○", className: "text-foreground" },
+  drafting: { symbol: "○", className: "text-text-tertiary" },
+  rejected: { symbol: "–", className: "text-text-tertiary" },
 };
 
 export function PlanStatusMark({ status }: PlanStatusMarkProps) {
@@ -15,7 +16,7 @@ export function PlanStatusMark({ status }: PlanStatusMarkProps) {
   return (
     <span className={cn("whitespace-nowrap", mark.className)}>
       <span aria-hidden="true">{mark.symbol} </span>
-      {mark.label}
+      {PLAN_STATUS_LABEL[status]}
     </span>
   );
 }
