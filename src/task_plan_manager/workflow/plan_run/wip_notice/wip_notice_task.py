@@ -1,4 +1,4 @@
-"""wip_notice: 시험용 임시 끝 단계. 묶음 5 의 notify 로 바꾼다 (계획서 workflow-plan_run.md)."""
+"""wip_notice: 임시 끝 단계. 묶음 5 의 notify 로 바꾼다 (계획서 workflow-plan_run.md)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,9 @@ from task_plan_manager.engine.definition.task.task import Task
 from task_plan_manager.engine.definition.task.task_output import TaskOutput
 from task_plan_manager.engine.registry.registries import TASKS
 from task_plan_manager.engine.request.show_request import ShowRequest
-from task_plan_manager.workflow.plan_run.stopped_node import BROKEN, stop_point
+from task_plan_manager.model.plan.plan_schedule import plan_progress
+from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
+from task_plan_manager.workflow.plan_run.stopped_node import BROKEN, IN_ROUNDS, stop_point
 
 
 @TASKS.register_as("plan_run.wip_notice")
@@ -25,13 +27,21 @@ class WipNoticeTask(Task):
         stopped = stop_point(context)
         if stopped is not None:
             node_ids = ", ".join(str(node_id) for node_id in stopped.node_ids)
+            if stopped.reason == IN_ROUNDS:
+                return ShowRequest(stopped.message)
             if stopped.reason == BROKEN:
                 return ShowRequest(f"노드 {node_ids} 에서 멈췄습니다. {again}")
             return ShowRequest(f"노드 {node_ids} 의 작업 지시를 만들지 못해 멈췄습니다. {again}")
-        return ShowRequest(
+        head = (
             f'계획 {found["plan_id"]} "{found["title"]}" 을 실행 중으로 두었습니다. '
-            f"작업 지시 {_made_count(context)}개를 새로 만들었습니다. (노드 실행부터는 아직 만들지 않았습니다)"
+            f"작업 지시 {_made_count(context)}개를 새로 만들었습니다."
         )
+        progress = plan_progress(plan_api_reader().get_plan(found["plan_id"]))
+        if progress.finished:
+            return ShowRequest(f"{head} 모든 노드를 마쳤습니다. (계획 끝내기와 결과 표는 아직 만들지 않았습니다)")
+        if progress.blocked:
+            return ShowRequest(f"{head} 더 실행할 수 있는 노드가 없습니다. {again}")
+        return ShowRequest(f"{head} 남은 노드가 있습니다. {again}")
 
     def build_output(self, context: FlowContext, result: Any) -> TaskOutput:
         return TaskOutput({})

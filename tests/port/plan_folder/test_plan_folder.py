@@ -49,6 +49,19 @@ def test_should_read_prompt_output_and_run_of_a_node(work_dir):
     assert reader.read_run(7, 11) == saved_run
 
 
+def test_should_save_and_read_failure_of_a_node(work_dir):
+    reader, writer = DefaultPlanFolderReader(), DefaultPlanFolderWriter()
+    writer.create_plan(7, "# 명령")
+    failed = NodeRun(1, PlanNodeStatus.FAILED, failed_reason="막힘", failed_summary="라이브러리 권한 없음")
+    writer.save_run(7, 11, failed)
+    assert reader.read_run(7, 11) == failed
+
+    # 실패 이유를 남기기 전의 run.json 도 읽힌다
+    run_path = work_dir / ".plan" / "7" / "nodes" / "11" / "run.json"
+    run_path.write_text('{"round": 1, "status": "failed"}', encoding="utf-8")
+    assert reader.read_run(7, 11) == NodeRun(1, PlanNodeStatus.FAILED)
+
+
 def test_should_archive_round_and_keep_prompt(work_dir):
     reader, writer = DefaultPlanFolderReader(), DefaultPlanFolderWriter()
     writer.create_plan(7, "# 명령")
@@ -90,3 +103,23 @@ def test_should_save_and_read_shown_record(work_dir):
     writer.save_shown(7, ShownRecord("2026-11-19T11:00:00Z", "/tmp/t.jsonl"))  # 덮어쓴다
     assert reader.read_shown(7) == ShownRecord("2026-11-19T11:00:00Z", "/tmp/t.jsonl")
     assert (work_dir / ".plan" / "7" / "shown.json").exists()
+
+
+def test_should_save_and_read_stop_mark(work_dir):
+    from task_plan_manager.port.local.plan_folder.dto.stop_mark import StopMark
+
+    reader, writer = DefaultPlanFolderReader(), DefaultPlanFolderWriter()
+    writer.create_plan(7, "# 명령")
+    assert reader.read_stop(7) is None
+    mark = StopMark("r_1", "failed_stop", (3,), "노드 3 에서 멈췄습니다.")
+    writer.save_stop(7, mark)
+    assert reader.read_stop(7) == mark
+    assert (work_dir / ".plan" / "7" / "stop.json").exists()
+
+
+def test_should_write_result_for_confirm_node(work_dir):
+    reader, writer = DefaultPlanFolderReader(), DefaultPlanFolderWriter()
+    writer.create_plan(7, "# 명령")
+    writer.write_result(7, 4, "# 확인")
+    output = reader.read_output(7, 4)
+    assert output is not None and output.result_path.read_text() == "# 확인"

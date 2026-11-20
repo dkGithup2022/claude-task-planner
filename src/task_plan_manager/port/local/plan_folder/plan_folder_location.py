@@ -18,6 +18,11 @@ def command_file(plan_id: int) -> Path:
     return plan_dir(plan_id) / "command.md"
 
 
+def stop_file(plan_id: int) -> Path:
+    """이번 실행에서 멈추기로 한 자리."""
+    return plan_dir(plan_id) / "stop.json"
+
+
 def shown_file(plan_id: int) -> Path:
     """계획을 보여 준 기록."""
     return plan_dir(plan_id) / "shown.json"

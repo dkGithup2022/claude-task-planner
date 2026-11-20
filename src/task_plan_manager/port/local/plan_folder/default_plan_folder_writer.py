@@ -9,6 +9,7 @@ from task_plan_manager.common import files
 from task_plan_manager.model.node_run.node_run import NodeRun
 from task_plan_manager.model.plan.plan_node_status import PlanNodeStatus
 from task_plan_manager.model.plan.shown_record import ShownRecord
+from task_plan_manager.port.local.plan_folder.dto.stop_mark import StopMark
 from task_plan_manager.port.local.plan_folder.node_run_file_converter import NodeRunFileConverter
 from task_plan_manager.port.local.plan_folder.plan_folder_exists_error import PlanFolderExistsError
 from task_plan_manager.port.local.plan_folder.plan_folder_location import (
@@ -19,9 +20,11 @@ from task_plan_manager.port.local.plan_folder.plan_folder_location import (
     round_dir,
     run_file,
     shown_file,
+    stop_file,
 )
 from task_plan_manager.port.local.plan_folder.plan_folder_writer import PlanFolderWriter
 from task_plan_manager.port.local.plan_folder.shown_record_file_converter import ShownRecordFileConverter
+from task_plan_manager.port.local.plan_folder.stop_mark_file_converter import StopMarkFileConverter
 
 
 class DefaultPlanFolderWriter(PlanFolderWriter):
@@ -38,6 +41,10 @@ class DefaultPlanFolderWriter(PlanFolderWriter):
         # 노드 폴더의 prompt.md 를 덮어쓴다. 노드 폴더는 여기서 처음 생긴다
         files.write_text(prompt_file(plan_id, node_id), text)
 
+    def write_result(self, plan_id: int, node_id: int, text: str) -> None:
+        # 노드 폴더의 result.md 를 덮어쓴다
+        files.write_text(result_file(plan_id, node_id), text)
+
     def save_run(self, plan_id: int, node_id: int, run: NodeRun) -> None:
         # 노드 폴더의 run.json 을 덮어쓴다
         files.write_json(run_file(plan_id, node_id), NodeRunFileConverter().to_file(run))
@@ -52,6 +59,10 @@ class DefaultPlanFolderWriter(PlanFolderWriter):
     def save_shown(self, plan_id: int, record: ShownRecord) -> None:
         # 계획 폴더의 shown.json 을 덮어쓴다
         files.write_json(shown_file(plan_id), ShownRecordFileConverter().to_file(record))
+
+    def save_stop(self, plan_id: int, mark: StopMark) -> None:
+        # 계획 폴더의 stop.json 을 덮어쓴다
+        files.write_json(stop_file(plan_id), StopMarkFileConverter().to_file(mark))
 
     def _save_next_round(self, plan_id: int, node_id: int, current_run: NodeRun) -> int:
         """회차를 올리고 상태를 todo 로 되돌려 저장한다. 다음 보관이 같은 폴더를 덮어쓰지 않게."""

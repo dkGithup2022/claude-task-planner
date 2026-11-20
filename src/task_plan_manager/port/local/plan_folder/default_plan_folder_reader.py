@@ -9,6 +9,7 @@ from task_plan_manager.model.node_run.node_run import NodeRun
 from task_plan_manager.model.plan.shown_record import ShownRecord
 from task_plan_manager.port.local.plan_folder.dto.node_output import NodeOutput
 from task_plan_manager.port.local.plan_folder.dto.result_target import ResultTarget
+from task_plan_manager.port.local.plan_folder.dto.stop_mark import StopMark
 from task_plan_manager.port.local.plan_folder.node_run_file_converter import NodeRunFileConverter
 from task_plan_manager.port.local.plan_folder.plan_folder_location import (
     command_file,
@@ -18,10 +19,12 @@ from task_plan_manager.port.local.plan_folder.plan_folder_location import (
     result_file,
     run_file,
     shown_file,
+    stop_file,
 )
 from task_plan_manager.port.local.plan_folder.plan_folder_missing_error import PlanFolderMissingError
 from task_plan_manager.port.local.plan_folder.plan_folder_reader import PlanFolderReader
 from task_plan_manager.port.local.plan_folder.shown_record_file_converter import ShownRecordFileConverter
+from task_plan_manager.port.local.plan_folder.stop_mark_file_converter import StopMarkFileConverter
 
 
 class DefaultPlanFolderReader(PlanFolderReader):
@@ -76,6 +79,13 @@ class DefaultPlanFolderReader(PlanFolderReader):
         if not shown_path.exists():
             return None
         return ShownRecordFileConverter().to_data(files.read_json(shown_path))
+
+    def read_stop(self, plan_id: int) -> StopMark | None:
+        # 계획 폴더의 stop.json 을 읽는다. 없으면 None
+        stop_path = stop_file(plan_id)
+        if not stop_path.exists():
+            return None
+        return StopMarkFileConverter().to_data(files.read_json(stop_path))
 
 
 def _list_result_files(result_files_dir: Path) -> tuple[Path, ...]:

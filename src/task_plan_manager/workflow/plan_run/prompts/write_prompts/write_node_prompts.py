@@ -14,7 +14,7 @@ from typing import Any
 
 from task_plan_manager.claude_utils.agent.agent_call_error import AgentCallError
 from task_plan_manager.claude_utils.agent.dto.agent_result import AgentResult
-from task_plan_manager.claude_utils.agent.run_agent import run_agent
+from task_plan_manager.claude_utils.agent.run_agent import install_child_cleanup, run_agent
 from task_plan_manager.model.persona.persona import Persona
 from task_plan_manager.model.plan.plan import Plan
 from task_plan_manager.model.plan.plan_node import PlanNode
@@ -41,6 +41,7 @@ def write_node_prompts(plan_id: int, node_ids: list[int]) -> tuple[list[dict[str
     command_md = DefaultPlanFolderReader().read_command(plan_id)
     personas = {persona.persona_id: persona for persona in persona_api_reader().list_personas()}
     system_prompt = generator_prompt()
+    install_child_cleanup()  # 명령이 끊기면 돌던 생성기도 끝낸다
     made: list[dict[str, Any]] = []
     failed: list[dict[str, Any]] = []
     with ThreadPoolExecutor(max_workers=PARALLEL) as pool:

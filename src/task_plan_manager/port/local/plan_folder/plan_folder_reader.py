@@ -8,6 +8,7 @@ from task_plan_manager.model.node_run.node_run import NodeRun
 from task_plan_manager.model.plan.shown_record import ShownRecord
 from task_plan_manager.port.local.plan_folder.dto.node_output import NodeOutput
 from task_plan_manager.port.local.plan_folder.dto.result_target import ResultTarget
+from task_plan_manager.port.local.plan_folder.dto.stop_mark import StopMark
 
 
 class PlanFolderReader(ABC):
@@ -38,3 +39,7 @@ class PlanFolderReader(ABC):
     @abstractmethod
     def read_shown(self, plan_id: int) -> ShownRecord | None:
         """계획을 보여 준 기록 (shown.json). 아직 보여 주지 않았으면 None."""
+
+    @abstractmethod
+    def read_stop(self, plan_id: int) -> StopMark | None:
+        """멈추기로 한 자리 (stop.json). 없으면 None. 어느 실행의 것인지는 부르는 쪽이 run_id 로 본다."""

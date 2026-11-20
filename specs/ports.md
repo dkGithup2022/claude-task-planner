@@ -39,8 +39,11 @@ dto: `NewPlan(title, request, persona_ids)`, `NewNode(title, kind, persona_ids, 
 | PlanFolderReader | read_run(plan_id, node_id) | NodeRun | None |
 | PlanFolderWriter | create_plan(plan_id, command_md) | None | 다른 명령서가 있으면 PlanFolderExistsError |
 | PlanFolderWriter | write_prompt(plan_id, node_id, text) | None. 노드 폴더를 이때 만듦 | |
+| PlanFolderWriter | write_result(plan_id, node_id, text) | None. 확인 노드처럼 우리 코드가 결과를 쓸 때 | |
 | PlanFolderWriter | save_run(plan_id, node_id, run) | None | |
 | PlanFolderWriter | archive_round(plan_id, node_id) | 새 회차 번호. prompt.md 는 복사, result.md·files/ 는 runs/<회차>/ 로 옮김. run.json 의 회차도 올려 저장 (상태 todo) | |
+| PlanFolderReader | read_stop(plan_id) | StopMark (run_id, reason, node_ids, message). `.plan/<id>/stop.json` | None |
+| PlanFolderWriter | save_stop(plan_id, mark) | None. 덮어씀. 이번 engine 실행에서 멈추기로 한 자리 (바깥 차례 안에서 앞 차례 결과를 못 읽어서) | |
 
 구현: `DefaultPlanFolderReader`, `DefaultPlanFolderWriter`
 

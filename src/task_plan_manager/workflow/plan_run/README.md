@@ -1,7 +1,7 @@
 # plan_run (D 계획 실행)
 
 승인된 계획의 계획 노드를 간선 순서대로 실행하는 워크플로. 계획서: `specs/plans/workflow-plan_run.md`.
-2026-11-20 기준으로 묶음 1(계획 찾기와 실행 시작), 묶음 2(작업 지시 만들기), 묶음 3(다음 노드 계산, model/plan/plan_schedule.py)까지 만들었다. 묶음 4~5 는 아직 없다. 묶음 3 의 계산은 아직 흐름에서 쓰지 않는다 (묶음 4 의 run_nodes 가 쓴다).
+2026-11-20 기준으로 묶음 1(계획 찾기와 실행 시작), 묶음 2(작업 지시 만들기), 묶음 3(다음 노드 계산, model/plan/plan_schedule.py), 묶음 4(노드 실행 루프)까지 만들었다. 묶음 5(계획 끝내기, 알림, plan-run 스킬)는 아직 없다.
 
 ## 지금 구성
 
@@ -19,6 +19,16 @@ plan_run
 │  ├─ write_prompts [CODE] [run_if: plan_run.has_missing_prompts]      run_agent(읽기 도구, opus) 3개씩 동시
 │  ├─ ask_retry     [MAIN_SESSION_ASK] [run_if: plan_run.has_failed_prompts]   한 질문에 모아: 모두 다시 만들기 / 멈추기
 │  └─ retry_prompts [CODE] [run_if: plan_run.has_failed_prompts]      한 번 더. 그래도 실패하면 멈춤
+├─ rounds           [FOR_EACH_ITEM: plan_run.rounds (노드 수 × 2 + 2)] [run_if: plan_run.not_stopped(upto=prompts)]
+│  ├─ run_nodes     [CODE]   멈춤 표시가 이번 실행 것이면 stopped. 아니면 우리 루프 (빈 자리 채우기, 코드 노드 하나씩, 30분 마감)
+│  ├─ continue_notice [MAIN_SESSION_SHOW] [run_if: plan_run.stopped_at(continue)]   마친 노드와 결과 위치. next 를 여기서 끝냄
+│  ├─ confirm       [run_if: plan_run.stopped_at(confirm)]
+│  │  ├─ show_confirm   [MAIN_SESSION_TALK]  확인 노드의 prompt.md 대로 앞 노드 결과에서 확인할 부분
+│  │  ├─ ask_confirm    [MAIN_SESSION_ASK]   허가 / 허가하지 않음
+│  │  └─ finish_confirm [CODE]               result.md, run.json confirm, done / 멈춤 표시
+│  └─ failed        [run_if: plan_run.stopped_at(failed)]
+│     ├─ ask_failed     [MAIN_SESSION_ASK]   다시 실행 / 작업 지시를 고쳐 다시 / 건너뛰기 / 멈추기
+│     └─ apply_failed   [CODE]               archive_round + todo / + 멈춤 표시 / 건너뜀 번짐 / 멈춤 표시
 └─ wip_notice       [MAIN_SESSION_SHOW]  임시 끝 단계. 묶음 5 에서 notify 로 바꾼다
 ```
 
@@ -48,7 +58,7 @@ plan_run
 
 쓰는 공통 기능: `claude_utils/agent/run_agent.py` (도구를 쓰는 claude -p. 작업 폴더에서, 켠 도구만 묻지 않고, 훅 끄고).
 
-쓰는 model·port: `Plan`, `PlanNode`, `Persona`, `PersonaApiReader.list_personas`, `PlanFolderReader.read_command·read_prompt`, `PlanFolderWriter.write_prompt`, `PlanStatus`, `PlanNodeStatus`, `NodeRun`(`back_to_todo` 를 이번에 더함), `PlanApiReader.get_plan`, `PlanApiWriter.set_plan_status·update_node`, `PlanFolderReader.list_plan_ids·read_output·read_run`, `PlanFolderWriter.save_run`.
+쓰는 model·port: `Plan`, `PlanNode`, `Persona`, `PersonaApiReader.list_personas`, `PlanFolderReader.read_command·read_prompt`, `PlanFolderWriter.write_prompt`, `PlanStatus`, `PlanNodeStatus`, `NodeRun`(`back_to_todo`, `failed_reason`·`failed_summary` 를 이번에 더함), `PlanApiReader.get_plan`, `PlanApiWriter.set_plan_status·update_node`, `PlanFolderReader.list_plan_ids·read_output·read_run`, `PlanFolderWriter.save_run`.
 
 시험: `tests/workflow/test_plan_run.py` (CLI 로 끝까지), `tests/workflow/plan_run/` (명령 줄 읽기, 상태별 판정), `tests/model/node_run/test_node_run.py`.
 
@@ -67,5 +77,22 @@ plan_run
 - **prompt.md 가 이미 있으면 만들지 않는다.** 사람이 고친 것을 지키려는 것이고, 해시는 남기지 않는다. 다시 만들고 싶으면 그 prompt.md 를 지우고 /plan-run 을 다시 부른다
 - **작업 지시 만들기는 한 단계 안에서 노드 전부를 만든다.** 노드 30개를 넘으면 10분(메인 세션이 명령을 기다리는 한도)을 넘길 수 있다. 백그라운드로 부르고 기다리기는 묶음 4 에서 확인한다
 - **`TASK_PLAN_MANAGER_CLAUDE_BIN`** 을 run_agent 도 쓴다. 시험의 가짜 claude 가 call_prompt 와 run_agent 를 함께 대신한다
-- **보류**: 지난 실행에서 실패로 남은 노드(멈추기를 고른 노드 등)를 다시 실패 처리로 묻는 자리가 없다. 묶음 3 의 다음 노드 계산에서 다룬다.
-- **검증 (2026-11-19)**: ruff check, mypy, lint-imports 4/4, pytest 189 통과.
+- **멈춤 표시 (`.plan/<id>/stop.json`)**: 바깥 차례 안의 단계는 앞 차례의 결과를 읽을 수 없다 (선언 검사, engine/runner/scenario/check_definition.py:64). 그래서 사용자가 멈추기·고쳐서 다시·허가하지 않음을 고르면 engine 실행 id 와 함께 계획 폴더에 남기고, 다음 차례의 run_nodes 가 읽고 바로 돌아온다. 다음 /plan-run 은 실행 id 가 달라 무시하고, 실패로 남은 노드를 다시 묻는다 (이유와 요약은 run.json 의 failed_reason, failed_summary)
+- **노드 실행**: run_agent(지시문을 기본 시스템 프롬프트에 덧붙임, 도구 Read Write Edit Glob Grep Bash WebSearch WebFetch 를 묻지 않고, 작업 폴더에서, opus, 30분). 입력은 작업 지시 본문 + 앞 노드 결과의 위치 + 쓸 곳. 판정은 답 첫 줄 "status: done" 과 result.md
+- **명령이 끊길 때**: 우리 프로세스가 SIGTERM·SIGINT 를 받거나 끝나면 돌던 claude -p 도 끝낸다 (install_child_cleanup). SIGKILL 이면 막지 못한다. plan-run 스킬은 next·done 을 백그라운드, 제한 70분으로 부른다 (묶음 5)
+- **차례마다 next 를 끝낸다 (continue_notice)**: engine 은 알림·질문 단계를 만나야 next 를 끝내고 메인 세션에 넘긴다. run_nodes 가 30분 마감으로 "계속"을 돌려줄 때 알림 단계가 없으면, engine 이 같은 next 안에서 다음 차례를 바로 돌려 next 한 번이 70분 제한을 넘는다 (묶음 4 리뷰). 그래서 "계속"일 때 "노드 N개를 마쳤습니다. 남은 노드 M개를 이어서 실행합니다." 와 노드마다 결과 위치를 보이고 끝낸다. 실패·확인·끝남·막힘은 원래 질문이나 끝 알림으로 돌아간다
+- **확인 대화의 사용자 말**: engine 의 대화 결과 from 은 흐름 시작 시각이라, run_nodes 가 돌아온 시각부터 대화가 끝난 시각까지의 사용자 말을 읽는다
+- **검증 (2026-11-20)**: ruff check, mypy, lint-imports 4/4, pytest 218 통과.
+
+## 노드 수행 이력이 남는 곳
+
+| 무엇 | 어디 |
+|---|---|
+| 노드 상태 (원본) | 계획 저장소의 PlanNode.status (지금 `.mockData/`) |
+| 회차, 시작·끝 시각, 읽은 선행 노드와 회차, 확인한 말, 건너뛴 이유, 실패 이유와 요약 | `<작업 폴더>/.plan/<계획 id>/nodes/<노드 id>/run.json` |
+| 작업 지시 / 결과 | 같은 폴더의 `prompt.md` / `result.md`, `files/` |
+| 지난 회차 | 같은 폴더의 `runs/<회차>/` |
+| claude -p 답 요약, 비용, 걸린 시간, 실패 이유 | engine 실행 기록 `.task_plan_manager/sessions/<세션>/runs/<실행>/run_nodes_*/result.json` 의 차례마다 `ran` |
+| 이번 실행에서 멈춘 자리 | `.plan/<계획 id>/stop.json` |
+| 실행 중 진행 줄 | 미정 (묶음 5) |
+

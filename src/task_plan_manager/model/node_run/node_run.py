@@ -17,10 +17,20 @@ class NodeRun:
     read_inputs: tuple[ReadInput, ...] = ()
     confirm: str | None = None  # 확인 노드면 사용자가 한 말
     skipped_reason: str | None = None  # 건너뛰었으면 사용자와 정한 이유
+    failed_reason: str | None = None  # 실패했으면 이유. 예: "막힘", "결과 파일 없음"
+    failed_summary: str | None = None  # 실패했을 때 claude -p 답의 요약
 
     def start(self, now: str, read_inputs: tuple[ReadInput, ...]) -> NodeRun:
-        """실행 중으로 바꾸고 이 회차에 읽은 선행 노드를 남긴 새 기록."""
-        return replace(self, status=PlanNodeStatus.RUNNING, started_at=now, finished_at=None, read_inputs=read_inputs)
+        """실행 중으로 바꾸고 이 회차에 읽은 선행 노드를 남긴 새 기록. 지난 실패 이유는 비운다."""
+        return replace(
+            self,
+            status=PlanNodeStatus.RUNNING,
+            started_at=now,
+            finished_at=None,
+            read_inputs=read_inputs,
+            failed_reason=None,
+            failed_summary=None,
+        )
 
     def finish(self, status: PlanNodeStatus, now: str) -> NodeRun:
         """끝난 상태(완료, 실패, 건너뜀)와 끝난 시각을 넣은 새 기록."""

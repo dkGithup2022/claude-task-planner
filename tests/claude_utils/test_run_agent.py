@@ -50,3 +50,46 @@ def test_should_raise_on_timeout(tmp_path, monkeypatch):
     _fake_claude(tmp_path, monkeypatch, "sleep 5")
     with pytest.raises(AgentCallError, match="시간 초과"):
         run_agent("시스템", "입력", ("Read",), tmp_path, model="opus", timeout_seconds=1)
+
+
+def test_should_append_system_prompt_when_asked(tmp_path, monkeypatch):
+    out = {"result": "status: done\n요약", "total_cost_usd": 0.1}
+    _fake_claude(tmp_path, monkeypatch, f"cat > /dev/null\necho '{json.dumps(out, ensure_ascii=False)}'")
+    run_agent("지시문", "입력", ("Read",), tmp_path, model="opus", timeout_seconds=5, append=True)
+    args = (tmp_path / "args.txt").read_text().splitlines()
+    assert args[args.index("--append-system-prompt") + 1] == "지시문" and "--system-prompt" not in args
+
+
+CHILD_DRIVER = r"""
+import sys, threading, time
+from pathlib import Path
+from task_plan_manager.claude_utils.agent.run_agent import install_child_cleanup, run_agent
+install_child_cleanup()
+threading.Thread(target=run_agent, args=("s", "u", ("Read",), Path(sys.argv[1]), "opus", 60), daemon=True).start()
+time.sleep(60)
+"""
+
+
+def test_should_kill_child_when_parent_gets_sigterm(tmp_path, monkeypatch):
+    import os
+    import signal
+    import subprocess
+    import sys
+    import time
+
+    # 가짜 claude: 자기 pid 를 남기고 오래 잔다
+    _fake_claude(tmp_path, monkeypatch, f"echo $$ > {tmp_path}/child.pid\nsleep 60")
+    driver = tmp_path / "driver.py"
+    driver.write_text(CHILD_DRIVER)
+    parent = subprocess.Popen([sys.executable, str(driver), str(tmp_path)])
+    pid_file = tmp_path / "child.pid"
+    for _ in range(100):
+        if pid_file.exists() and pid_file.read_text().strip():
+            break
+        time.sleep(0.05)
+    child_pid = int(pid_file.read_text())
+    parent.send_signal(signal.SIGTERM)
+    parent.wait(timeout=10)
+    time.sleep(0.2)
+    with pytest.raises(ProcessLookupError):
+        os.kill(child_pid, 0)

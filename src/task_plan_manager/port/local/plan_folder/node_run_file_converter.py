@@ -21,6 +21,8 @@ class NodeRunFileConverter:
             ],
             "confirm": run.confirm,
             "skipped_reason": run.skipped_reason,
+            "failed_reason": run.failed_reason,
+            "failed_summary": run.failed_summary,
         }
 
     def to_data(self, run_json: dict[str, Any]) -> NodeRun:
@@ -35,4 +37,6 @@ class NodeRunFileConverter:
             ),
             confirm=run_json.get("confirm"),
             skipped_reason=run_json.get("skipped_reason"),
+            failed_reason=run_json.get("failed_reason"),
+            failed_summary=run_json.get("failed_summary"),
         )

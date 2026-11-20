@@ -351,6 +351,174 @@ tool-assess-model: **부분 충족**
 
 앞 노드 결과를 노드 실행에 넘기는 방식 (정할 것 A, 2026-11-20 사용자 질문 "result 하위의 자료들을 전부 텍스트로 읽어오는게 필요할까?"): 정할 것 4 로 묶음 4 에서
 
+### 묶음 4: 노드 실행 루프 (정한 것, 계획서는 확인 시험 뒤)
+
+사용자 결정 (2026-11-20):
+- 노드 실행 입력: 작업 지시(prompt.md)는 본문을 넣고, 앞 노드 결과는 위치만 넘긴다 (실행 데이터 (확정) 3 절의 조회 결과: 노드 id, 제목, 상태, 회차, result.md 경로, files 목록, 건너뛴 이유). 노드가 Read 로 필요한 만큼 읽는다 ("아 오케이 이렇게 합시다")
+- 코드 노드(kind code)는 순차로 실행한다. 같은 저장소를 동시에 고치면 서로 덮을 수 있어서다 ("순차적으로 수행하게 해야 할듯")
+- 노드 실행 도구: Read Write Edit Glob Grep Bash WebSearch WebFetch 를 켜고 묻지 않고 쓴다 ("보여준 것 그대로 허용")
+- 노드 실행은 Claude Code 기본 시스템 프롬프트에 지시문을 덧붙인다 (--append-system-prompt). run_agent 에 덮어쓸지 덧붙일지 고르는 인자를 더한다 ("동의")
+- 진행 화면 표시는 묶음 5 로 ("다음 묶음에 둡시다")
+- 확인 노드: 메인 세션이 확인 노드의 prompt.md 대로 앞 노드 결과에서 확인할 부분을 골라 보이고 질문에 답한 뒤(MAIN_SESSION_TALK), 허가 / 허가하지 않음을 묻는다(MAIN_SESSION_ASK) ("오키 나로 고고"). 예전 plan-run SKILL.md:35 와 같은 방식
+- 10분 한도: 메인 세션의 Bash 는 앞에서 기다릴 때 최대 10분이다. 백그라운드로 부르면 한도가 없다. engine 의 "기다림" 지시와 멈춤 훅(engine/hook/stop_hook.py:25)이 이 경우를 받친다. 실제 Claude Code 에서 맞물리는지 작은 시험 흐름으로 먼저 확인한다
+
+### 묶음 4: 계획서 (2026-11-20)
+
+더 정한 것 (사용자, 2026-11-20):
+- 명령 시간: 백그라운드 명령에도 기본 10분 제한이 있다 (시험 slow720: 10분에 [killed], engine 이 단계를 처음부터 다시 돌림). 제한 시간을 직접 주면 넘길 수 있다 (2시간으로 준 명령이 12분 동안 끊기지 않음)
+- run_nodes 한 번은 시작하고 30분이 지나면 새 노드를 띄우지 않고, 돌던 노드가 끝나면 "계속"으로 돌아온다 ("마감 30분으로 하고"). 그래서 명령 한 번은 길어야 30분 + 노드 하나 30분 + 여유. plan-run 스킬은 next·done 을 백그라운드, 제한 70분(4200000)으로 부른다 (묶음 5 스킬 전문에서 검수)
+
+준비 평가 (tool-planner 형식)
+- 나누기: 공통 기능 run_agent 바꿈, 포트 plan_folder 에 멈춤 표시 더함, model 없음
+- tool-assess-port: 부분 충족
+  - [기존 확장] PlanFolderWriter.save_stop(plan_id, StopMark), PlanFolderReader.read_stop(plan_id) -> StopMark | None. 파일 `.plan/<id>/stop.json`
+  - 이유: 바깥 차례(rounds) 안의 단계는 앞 차례의 결과를 읽을 수 없다 (선언 검사: reads 의 노드는 먼저 실행되어야 함. engine/runner/scenario/check_definition.py:64). 그래서 "이번 실행에서 사용자가 멈추기를 골랐다"를 다음 차례의 run_nodes 가 알 길이 없어, 실패한 노드를 차례마다 다시 묻게 된다. 멈춤 표시를 engine 실행 id 와 함께 계획 폴더에 남기고, run_nodes 가 처음에 읽는다. 다음 /plan-run 은 실행 id 가 달라 표시를 무시한다
+  - 사용자 확인: 대기
+- tool-assess-model: 충족 (NodeRun.start·finish, plan_schedule). 새 dto StopMark(run_id, reason, node_ids, message) 는 port/local/plan_folder/dto 에
+- 공통 기능: [기존 확장] run_agent 에 system_prompt 를 덮어쓸지 덧붙일지 (append: bool). 자식 프로세스 그룹을 기록해 우리 프로세스가 SIGTERM·SIGINT 를 받거나 끝날 때 함께 끝낸다 (리뷰 지적 2). 사용자 확인: 대기
+
+흐름도
+```
+├─ rounds               [FOR_EACH_ITEM: plan_run.rounds] [run_if: plan_run.not_stopped(upto=prompts)]
+│  ├─ run_nodes         [CODE]    멈춤 표시가 있으면 바로 stopped. 아니면 우리 루프
+│  ├─ continue_notice   [MAIN_SESSION_SHOW] [run_if: plan_run.stopped_at("continue")]   마친 노드와 결과 위치. next 를 여기서 끝냄
+│  ├─ confirm           [IN_ORDER] [run_if: plan_run.stopped_at("confirm")]
+│  │  ├─ show_confirm   [MAIN_SESSION_TALK]
+│  │  ├─ ask_confirm    [MAIN_SESSION_ASK]   허가 / 허가하지 않음
+│  │  └─ finish_confirm [CODE]
+│  └─ failed            [IN_ORDER] [run_if: plan_run.stopped_at("failed")]
+│     ├─ ask_failed     [MAIN_SESSION_ASK]   다시 실행 / 작업 지시를 고쳐 다시 / 건너뛰기 / 멈추기
+│     └─ apply_failed   [CODE]
+```
+- 차례 수: 노드 수 × 2 + 2. 차례마다 노드 하나 이상이 끝나거나, 사용자 답 하나가 기록되거나, 30분 마감으로 "계속"이다. 끝남·막힘·멈춤 뒤의 차례는 run_nodes 가 바로 돌아오고 confirm·failed 는 건너뛴다
+- stopped_at 조건은 같은 차례의 run_nodes 결과만 읽는다 (앞 형제라 읽을 수 있음)
+
+run_nodes 출력: { stop_at: "failed" | "confirm" | "finished" | "blocked" | "continue" | "stopped", node_id: int | None, ran: list[{node_id, status, summary, reason, cost_usd, seconds}] }
+
+노드 실행 지시문 (rounds/run_nodes/node_run_message.md, --append-system-prompt 로 덧붙임, 전문 검수 대상):
+```
+너는 계획 노드 하나를 실행한다. 입력의 "작업 지시"를 그대로 수행한다.
+앞 노드의 결과는 "앞 노드의 결과"에 위치가 있다. 작업 지시의 "앞 노드에서 받는 것"에 맞춰 필요한 파일을 읽는다.
+결과 본문 전체는 "결과를 쓸 곳"의 본문 파일에 쓴다. 결과가 여러 파일이면 그 아래 files/ 에 두고 본문에서 가리킨다.
+앞 노드의 결과가 작업 지시의 예상과 다르면 받은 결과를 따르고, 다른 점을 본문에 적는다.
+실행으로 확인하지 못한 완료 기준은 "확인 못 함"으로 적는다. 그런 기준이 있으면 막힘으로 끝낸다.
+마지막 답은 첫 줄에 "status: done" 또는 "status: blocked", 그다음 세 줄 이내 요약만 쓴다. 결과 본문을 답에 붙이지 않는다.
+```
+
+노드 실행 입력 (user):
+```
+# 작업 지시
+{prompt.md 전문}
+
+# 앞 노드의 결과
+- 노드 {id} "{title}": 완료, {round} 회차
+  - 결과: {result.md 절대 경로}
+  - 결과 파일: {files/ 아래 파일 절대 경로, 없으면 이 줄 없음}
+- 노드 {id} "{title}": 건너뜀. 이유: {skipped_reason}
+(없으면 "(없음. 계획의 첫 노드)")
+
+# 결과를 쓸 곳
+- 본문: {result.md 절대 경로}
+- 여러 파일이면: {files/ 절대 경로}
+```
+
+확인 노드 글 (사용자 화면, 검수 대상)
+- show_confirm (MAIN_SESSION_TALK)
+  - 목표: "확인 노드 {id} \"{title}\" 의 작업 지시 {prompt.md 경로} 를 읽고, 거기 적힌 대로 앞 노드 결과({result.md 경로들})에서 사용자가 확인할 부분만 골라 보인다. 사용자의 질문에 답한다. 질문이 없으면 바로 끝낸다. 넘어가도 되는지는 묻지 않는다 (다음 단계가 묻는다)."
+  - 첫 말: "노드 {id} \"{title}\" 을 확인할 차례입니다. 확인하실 부분을 모아 보여 드리겠습니다."
+- ask_confirm: "노드 {id} \"{title}\": 다음으로 넘어가도 될까요?" 허가 / 허가하지 않음
+- finish_confirm: 허가면 확인 노드 result.md(아래), run.json confirm(대화에서 사용자가 한 말), 노드 상태 done. 허가하지 않음이면 멈춤 표시 (reason confirm_denied)
+  ```
+  # 확인: {title}
+
+  사용자가 확인하고 다음으로 넘어가도 된다고 허가했다.
+
+  ## 사용자가 한 말
+  {확인 대화 구간의 사용자 말, 없으면 "(말하지 않음)"}
+
+  ## 확인한 앞 노드 결과
+  - 노드 {id} "{title}": {result.md 경로}
+  ```
+
+실패 처리 글 (검수 대상)
+- ask_failed: "노드 {id} \"{title}\" 이 끝나지 못했습니다.\n이유: {reason}\n요약: {summary, 없으면 줄 없음}\n결과: {result.md 경로, 없으면 \"없음\"}\n어떻게 할까요?" 다시 실행 / 작업 지시를 고쳐 다시 / 건너뛰기 / 멈추기
+- apply_failed
+  - 다시 실행: archive_round (runs/<회차>/ 로 보관, 회차 +1, run.json todo), 노드 상태 todo
+  - 작업 지시를 고쳐 다시: 위와 같고 멈춤 표시 (message "작업 지시 {prompt.md 경로} 를 고친 뒤 /task_plan_manager:plan-run {plan_id}")
+  - 건너뛰기: nodes_to_skip 의 노드마다 run.json finish(skipped) 와 skipped_reason "사용자가 건너뜀", 노드 상태 skipped
+  - 멈추기: 멈춤 표시 (reason failed_stop)
+
+우리 루프 (rounds/run_nodes/run_nodes_task.py 와 같은 폴더의 함수, 초안)
+```python
+PARALLEL = 3
+LAUNCH_CUTOFF_SECONDS = 1800      # 이 뒤로는 새 노드를 띄우지 않는다 (사용자, 2026-11-20)
+NODE_TIMEOUT_SECONDS = 1800       # 노드 하나 (사용자, 2026-11-19)
+
+def run_until_question(plan_id: int, run_id: str) -> dict[str, Any]:
+    if _stopped_in_this_run(plan_id, run_id):
+        return {"stop_at": "stopped", "node_id": None, "ran": []}
+    deadline = time.monotonic() + LAUNCH_CUTOFF_SECONDS
+    running: dict[Future[NodeOutcome], PlanNode] = {}
+    ran: list[dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=PARALLEL) as pool:
+        while True:
+            plan = plan_api_reader().get_plan(plan_id)
+            if time.monotonic() < deadline:
+                for node in _pick(plan, running.values()):          # 빈 자리, 코드 노드는 하나만
+                    start_node(plan, node.node_id)                    # run.json 시작, 노드 상태 running
+                    running[pool.submit(execute_node, plan, node)] = node
+            if not running:
+                break
+            done = next(as_completed(running))
+            node = running.pop(done)
+            ran.append(finish_node(plan_id, node, done.result()))    # 끝나는 대로 바로 기록
+    return _next_question(plan_api_reader().get_plan(plan_id), ran, past_deadline=time.monotonic() >= deadline)
+
+
+def _pick(plan: Plan, running: Iterable[PlanNode]) -> list[PlanNode]:
+    """빈 자리만큼, 코드 노드는 도는 것이 없을 때 하나만 (사용자, 2026-11-20 "순차적으로")."""
+    running = list(running)
+    code_busy = any(node.kind is NodeKind.CODE for node in running)
+    picked: list[PlanNode] = []
+    for node in runnable_nodes(plan, len(plan.nodes)):
+        if len(running) + len(picked) >= PARALLEL:
+            break
+        if node.node_id in {r.node_id for r in running}:
+            continue
+        if node.kind is NodeKind.CODE:
+            if code_busy:
+                continue
+            code_busy = True
+        picked.append(node)
+    return picked
+
+
+def _next_question(plan, ran, past_deadline) -> dict[str, Any]:
+    """실패 > 확인 > 마감 지나 남은 일(계속) > 끝남 > 막힘."""
+```
+- execute_node (작업 스레드): 입력 글을 만들고 run_agent(지시문, 입력, 모든 도구, 작업 폴더, opus, 30분, append=True) → judge (답 첫 줄 "status: done" 이고 result.md 있음이면 done, 아니면 failed 와 이유). 기록은 하지 않는다
+- start_node, finish_node 는 부르는 스레드에서만 계획 저장소와 run.json 을 쓴다
+- 노드 실행 도구: Read, Write, Edit, Glob, Grep, Bash, WebSearch, WebFetch (사용자, 2026-11-20 "보여준 것 그대로 허용")
+
+시험 계획
+- 가짜 claude 로 시뮬레이션 그대로 (노드 5개: 1 → 2·3 → 4(확인) → 5, 3 이 한 번 실패 → 다시 실행 → 확인 허가 → 끝)
+- 코드 노드 둘이 동시에 뜨지 않음, 문서 노드는 3개까지
+- 건너뛰기 번짐, 고쳐서 다시와 멈추기 뒤 다음 차례가 다시 묻지 않음, 다음 /plan-run 에서 다시 물음
+- 마감: 마감을 시험에서 짧게 주고 "계속" 뒤 다음 차례가 이어 감
+- run_agent: 덧붙이기 인자, 신호로 끝날 때 자식 그룹을 끝냄
+
+### 노드 수행 이력이 남는 곳 (사용자 요청 "각 노드의 수행 이력이 어디에 표시되는지는 기록해주세요", 2026-11-20)
+
+| 무엇 | 어디 | 누가 쓰나 | 있음 / 묶음 4 에서 |
+|---|---|---|---|
+| 노드 상태 (원본) | 계획 저장소 PlanNode.status (지금 `.mockData/`, 나중 서버 PATCH /plans/{id}/nodes/{node_id}) | 우리 코드 | 있음 |
+| 회차, 상태 사본, 시작·끝 시각, 읽은 선행 노드와 그 회차, 확인한 말, 건너뛴 이유 | `<작업 폴더>/.plan/<계획 id>/nodes/<노드 id>/run.json` | 우리 코드 | 있음 (start·finish·back_to_todo), 시작·끝 기록은 묶음 4 |
+| 이 회차의 작업 지시 | `…/nodes/<노드 id>/prompt.md` | 묶음 2 생성기 (사람이 고쳐도 됨) | 있음 |
+| 이 회차의 결과 | `…/nodes/<노드 id>/result.md`, `files/` | 노드 실행 claude -p. 확인 노드는 우리 코드 | 묶음 4 |
+| 지난 회차 | `…/nodes/<노드 id>/runs/<회차>/` (prompt.md 복사, result.md·files/ 옮김) | 우리 코드 (archive_round) | 있음, 부르는 곳은 묶음 4 |
+| claude -p 답의 요약, 비용, 걸린 시간, 실패 이유 | engine 실행 기록 `.task_plan_manager/sessions/<세션>/runs/<실행>/run_nodes_*/result.json` (그 차례에 돌린 노드마다) | engine (run_nodes 의 결과) | 묶음 4 |
+| 실행 중 진행 줄 | 미정 (묶음 5) | | |
+
 ## 같이 쓰는 코드
 
 - 조건 함수: `workflow/plan_run/` 아래 (묶음 1 에서 위치 확정). 쓰는 단계: resume, prompts, rounds 안 묶음
@@ -411,4 +579,23 @@ tool-assess-model: **부분 충족**
   - 시험: tests/model/plan/test_plan_schedule.py 18 개 (시뮬레이션의 노드 상태마다 고를 노드와 확인 노드, limit, 건너뛰기 번짐 다섯 경우와 실행 중 뒤 노드, 진행 상태, 막힘)
   - 검증: ruff check, mypy, lint-imports 4/4, pytest 207 통과
   - 아직 흐름에서 쓰지 않음. 묶음 4 의 run_nodes, apply_failed 와 묶음 5 의 finish_plan, notify 가 쓴다
+- 2026-11-20 묶음 4 (사용자 "네 그렇게 바꿔서 진행 해주세요"):
+  - port: StopMark (dto/stop_mark.py), stop_mark_file_converter.py, read_stop / save_stop (`.plan/<id>/stop.json`), plan_folder_location.stop_file. specs/ports.md 갱신
+  - port 더한 것 (계획서에 빠졌던 것): PlanFolderWriter.write_result. 확인 노드의 result.md 를 우리 코드가 쓰는 데 필요 (계획서의 finish_confirm 이 쓰기로 한 것)
+  - run_agent: append 인자 (--append-system-prompt), install_child_cleanup (SIGTERM·SIGINT·끝날 때 돌던 자식 그룹을 끝냄). write_node_prompts 도 부른다
+  - 단계: rounds/run_nodes (run_nodes_task, run_until_question, node_steps, node_run_input, node_outcome, node_run_message.md), confirm (show_confirm TALK, ask_confirm, finish_confirm), failed (ask_failed, apply_failed), round_items, stopped_at, save_stop
+  - 바꿈: stopped_node 에 rounds 단계(멈춤 표시), wip_notice 에 끝남·막힘·남음, plan_run_flow 에 rounds 묶음
+  - 확인 대화 구간: engine 의 대화 결과 from 은 흐름 시작 시각이라, 사용자 말은 run_nodes 가 돌아온 시각(finished_at)부터 대화가 끝난 시각까지로 읽는다
+  - 시험: 시뮬레이션 그대로(3 실패 → 다시 실행 2 회차 → 확인 대화 → 허가 → 끝), 코드 노드 겹치지 않음·문서 노드 동시, 건너뛰기 번짐, 멈추기 뒤 남은 차례가 묻지 않고 다음 /plan-run 이 다시 물음, 고쳐서 다시, 허가하지 않음, 30분 마감 뒤 "계속". run_agent 덧붙이기, 부모가 SIGTERM 을 받으면 자식이 끝남. stop.json, write_result
+  - 묶음 1·2 시험: 흐름이 노드 실행까지 이어지므로 가짜 claude 로 노드도 실행하게 함 (끊긴 노드를 다시 실행하면 이어서 완료까지)
+  - 검증: ruff check, mypy, lint-imports 4/4, pytest 218 통과
+- 2026-11-20 묶음 4 리뷰 반영 (사용자 "ㅇㅇㅇ 이렇게 해주라"):
+  - 지적: run_nodes 가 30분 마감으로 "계속"을 돌려줘도 뒤에 알림·질문 단계가 없어, engine 이 같은 next 안에서 다음 차례를 바로 돌린다. next 한 번이 70분 제한을 넘고 그때 돌던 노드의 작업을 잃는다
+  - 고침: rounds 안 run_nodes 다음에 continue_notice (MAIN_SESSION_SHOW, run_if stopped_at("continue")). 글은 "노드 N개를 마쳤습니다. 남은 노드 M개를 이어서 실행합니다." 와 노드마다 `- 노드 <id> "<제목>": .plan/<계획 id>/nodes/<노드 id>/result.md`
+  - 작업 지시 만들기 뒤에도 알림을 두는 안은 뺐다. 작업 지시 하나에 1분 안팎이라, 첫 차례(최대 60분)와 합쳐도 70분 안에 든다
+  - 시험: 30분 마감 시험이 첫 차례 뒤 알림을 보고, 다음 next 에서 둘째 차례가 도는지 확인하게 바꿈. pytest 218 통과
+- 2026-11-20 묶음 4 리뷰 반영 2 (사용자 "아 오케이 해보자"):
+  - 지적: 실패 이유와 요약을 그 차례의 run_nodes 결과에만 둬서, 같은 차례의 두 번째 실패 노드나 다음 /plan-run 에서 다시 묻는 노드는 "지난 실행에서 끝나지 못하고 남음"으로 보였다
+  - 고침: NodeRun 과 run.json 에 failed_reason, failed_summary (기본 None, 키가 없는 기존 run.json 도 읽힘). finish_node 가 실패면 쓰고, start 가 비우고, _failure_detail 이 run.json 에서 읽는다. specs/models.md, 실행 데이터 (확정) 1 절 갱신
+  - 시험: 다음 /plan-run 이 실제 이유를 보임(기대값 바꿈), 같은 차례 두 실패 뒤 둘째의 이유, start 가 비움, run.json 저장·옛 모양 읽기. pytest 221 통과
 

@@ -90,8 +90,10 @@ DOCUMENT = "document", RESEARCH = "research", CODE = "code", HITL = "hitl"
 | read_inputs | tuple[ReadInput, ...] | 이 회차에 읽은 선행 노드와 그 회차 |
 | confirm | str \| None | 확인 노드면 사용자가 한 말 |
 | skipped_reason | str \| None | 건너뛴 이유 |
+| failed_reason | str \| None | 실패했으면 이유. 예: "막힘", "결과 파일 없음" |
+| failed_summary | str \| None | 실패했을 때 claude -p 답의 요약 |
 
-동작: `start(now, read_inputs) -> NodeRun`, `finish(status, now) -> NodeRun`, `back_to_todo() -> NodeRun` (끊긴 노드를 다시 실행할 때. 회차 그대로)
+동작: `start(now, read_inputs) -> NodeRun` (지난 실패 이유를 비움), `finish(status, now) -> NodeRun`, `back_to_todo() -> NodeRun` (끊긴 노드를 다시 실행할 때. 회차 그대로)
 
 ### ReadInput (`model/node_run/read_input.py`)
 | 필드 | 타입 | 뜻 |
