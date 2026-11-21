@@ -4,10 +4,11 @@ from task_plan_server.model.memory.memory import Memory
 from task_plan_server.model.memory.memory_identity import MemoryIdentity
 from task_plan_server.model.memory.memory_list_condition import MemoryListCondition
 from task_plan_server.model.memory.memory_read import MemoryRead
+from task_plan_server.model.memory.memory_search_terms import MemorySearchTerms
 from task_plan_server.transaction import TransactionManager, transactional
 
 from .memory_entity import MemoryEntity, to_memory_persona_entities, to_memory_source_entities
-from .memory_entity_query import MemoryEntityQuery
+from .memory_entity_query import MemoryEntityQuery, search_tokens_of
 
 
 class DefaultMemoryRepository(MemoryRepository):
@@ -16,9 +17,11 @@ class DefaultMemoryRepository(MemoryRepository):
         self._entities = entities
 
     @transactional
-    def save(self, memory: Memory) -> Memory:
+    def save(self, memory: Memory, terms: MemorySearchTerms) -> Memory:
         if memory.memory_id is None:
-            entity = self._entities.add(MemoryEntity.from_domain(memory))
+            new_entity = MemoryEntity.from_domain(memory)
+            new_entity.search_tokens = search_tokens_of(terms)
+            entity = self._entities.add(new_entity)
         else:
             found = self._entities.get(memory.memory_id)
             if found is None:
@@ -27,6 +30,7 @@ class DefaultMemoryRepository(MemoryRepository):
             entity.kind = memory.kind
             entity.theme = memory.theme
             entity.body = memory.body
+            entity.search_tokens = search_tokens_of(terms)
             current = entity.to_domain()
             # 바뀐 목록만 자식 행을 바꾼다. 보내지 않은 목록을 다시 쓰면 동시에 온 덧붙이기를 덮는다
             if current.persona_ids != memory.persona_ids:
@@ -36,6 +40,16 @@ class DefaultMemoryRepository(MemoryRepository):
             entity.updated_at = memory.updated_at
             self._entities.flush()
         return entity.to_domain()
+
+    @transactional
+    def save_search_terms(self, identity: MemoryIdentity, terms: MemorySearchTerms) -> None:
+        self._entities.update_search_tokens_by_id_and_active(identity.memory_id, terms)
+
+    @transactional
+    def find_ids_without_search_terms(self) -> list[MemoryIdentity]:
+        return [
+            MemoryIdentity(id) for id in self._entities.find_ids_without_search_tokens_and_active()
+        ]
 
     @transactional
     def find_write_by_id(self, identity: MemoryIdentity) -> Memory | None:

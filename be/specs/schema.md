@@ -41,6 +41,8 @@ id, plan_id (인덱스), from_node_id, to_node_id, 공통 4컬럼
 
 id, kind VARCHAR (knowledge, attitude, plan), theme TEXT, body TEXT, 공통 4컬럼
 
+- search_tokens TSVECTOR NOT NULL DEFAULT ''::tsvector (migration `fc4ad6b1e3bd_memory_search_tokens`, 2026-11-21). 검색용 낱말, 작업 이름 무게 A·본문 무게 B. GIN 인덱스 `ix_memories_search_tokens`. 같은 migration 이 확장 `vector`, `pg_trgm` 을 켠다
+
 ## memory_personas, memory_sources (같은 migration)
 
 - memory_personas: id, memory_id (인덱스), persona_id, position

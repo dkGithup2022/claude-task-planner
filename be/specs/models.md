@@ -79,6 +79,9 @@ memory_id: int
 
 kind: MemoryKind, query: str, persona_ids: tuple[int, ...], theme: str | None = None, limit: int = 10. `search_knowledge(search_param)` 인터페이스의 인자.
 
+### MemorySearchTerms (`memory/memory_search_terms.py`)
+지식 하나의 검색용 낱말 (VO). `theme: tuple[str, ...]` (작업 이름에서 나온 낱말), `body: tuple[str, ...]` (본문에서 나온 낱말). 팩토리·상태 변경 없음. 저장할 때 `memories.search_tokens` 에 작업 이름 낱말은 무게 A, 본문 낱말은 무게 B 로 들어간다. `Memory` 에는 넣지 않는다 (읽는 쪽에 보일 필요가 없음)
+
 ### MemorySearchHit (`memory/memory_search_hit.py`)
 
 memory_id: int, kind: MemoryKind, theme: str, body: str, score: float

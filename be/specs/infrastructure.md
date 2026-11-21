@@ -33,7 +33,9 @@
 
 | 메서드 | 반환 | 설명 |
 |---|---|---|
-| save(memory: Memory) | Memory | 지식 저장 (신규·수정). 페르소나와 근거의 순서를 지킨다 |
+| save(memory: Memory, terms: MemorySearchTerms) | Memory | 지식 저장 (신규·수정). 페르소나와 근거의 순서를 지킨다. 검색용 낱말도 같이 저장 |
+| save_search_terms(identity: MemoryIdentity, terms: MemorySearchTerms) | None | 검색용 낱말만 바꾼다. 고친 시각 그대로. 지운 지식이면 no-op |
+| find_ids_without_search_terms() | list[MemoryIdentity] | 검색용 낱말이 빈 지식 (지운 것 뺌). 직접 넣은 데이터를 채울 때 |
 | find_write_by_id(identity: MemoryIdentity) | Memory \| None | 지식 Write 모델 조회. 지운 지식은 없음 |
 | find_by_id(identity: MemoryIdentity) | MemoryRead \| None | (memory) 지식 조회 (덧붙인 횟수, 근거 계획 포함). 지운 지식 없음 |
 | delete_by_id(identity: MemoryIdentity) | None | (memory) soft-delete. 이미 지웠으면 no-op |
@@ -44,9 +46,9 @@
 
 | 메서드 | 반환 | 설명 |
 |---|---|---|
-| search_knowledge(search_param: SearchParam) | list[MemorySearchHit] | 같은 종류, 페르소나가 겹치는, theme 을 주면 작업 이름이 같은 지식을 가까운 순으로 limit 개 |
+| search_knowledge(search_param: SearchParam, query_terms: tuple[str, ...]) | list[MemorySearchHit] | 같은 종류, 페르소나가 겹치는, theme 을 주면 작업 이름이 같은 지식을 검색어 낱말과 가까운 순으로 limit 개. 낱말이 없으면 고친 시각 최근 순 |
 
-처음 구현 `DefaultKnowledgeSearcher` (persistence): 낱말이 작업 이름에 있으면 2, 본문에 있으면 1. (낱말 수 × 3) 으로 나눈 0~1. 0 보다 큰 것만, 점수 순, 같으면 고친 시각 최근 순
+구현 `DefaultKnowledgeSearcher` (persistence): `memories.search_tokens` (tsvector, simple) 에 낱말 OR 질의로 `@@`, `ts_rank(…, 32)` 점수 순, 같으면 고친 시각 최근 순 (2026-11-21, 한국어 형태소 검색)
 
 (memory — MemoryRepository 계속)
 
@@ -67,3 +69,11 @@
 | delete_by_id(identity: PersonaIdentity) | None | (persona) soft-delete. 쓰는 곳 검사는 부르는 쪽 |
 | find_summaries(status: PlanStatus \| None, limit: int \| None) | list[PlanSummary] | (plan) 계획 목록. 만든 시각 최근 순. 지우지 않은 노드의 상태별 수 |
 | find_missing_ids(persona_ids: list[int]) | list[int] | (persona) 지우지 않은 페르소나에 없는 id. 받은 순서, 겹치지 않게 |
+
+## memory — TextTokenizer (`memory/text_tokenizer.py`)
+
+글을 검색용 낱말로 나누는 port (2026-11-21). 구현 `KiwiTextTokenizer` (persistence, kiwipiepy).
+
+| 메서드 | 반환 | 설명 |
+|---|---|---|
+| tokens(text: str) | tuple[str, ...] | 검색에 쓸 낱말 (명사, 영문, 동사·형용사 어간). 나온 순서대로, 겹쳐도 그대로 |

@@ -20,7 +20,8 @@ ROOT = Path(__file__).parent
 @pytest.fixture(scope="session")
 def database_url() -> Iterator[str]:
     """testcontainers Postgres. DB 가 필요한 테스트가 처음 요청할 때만 기동된다."""
-    with PostgresContainer("postgres:16-alpine", driver="psycopg") as pg:
+    # vector 확장이 든 이미지 (migration 이 CREATE EXTENSION vector 를 한다)
+    with PostgresContainer("pgvector/pgvector:pg16", driver="psycopg") as pg:
         yield pg.get_connection_url()
 
 

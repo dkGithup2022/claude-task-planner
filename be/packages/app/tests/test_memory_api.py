@@ -4,6 +4,10 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, text
 
+from task_plan_server.service.memory.usecase.memory_search_terms_refresh_usecase import (
+    MemorySearchTermsRefreshUsecase,
+)
+
 
 @pytest.fixture(autouse=True)
 def _personas(personas: dict[str, int]) -> None:
@@ -283,3 +287,69 @@ def test_patch_memory_keeps_child_rows_it_did_not_change(
 
     assert after_theme == before
     assert after_same == before
+
+
+def test_search_finds_word_with_particle_attached(client: TestClient) -> None:
+    """한국어 형태소로 나눠 조사가 붙어도 찾는다 ("설계에서" 로 "설계" 지식)."""
+    design = _memory(client, "plan", "API 설계", "엔드포인트마다 에러 코드를 함께 정한다", [1])
+    _memory(client, "plan", "기획 문서 작성", "상위와 하위 기획으로 나눈다", [1])
+
+    items = _search(client, query="설계에서 에러를")
+
+    assert [item["memory_id"] for item in items] == [design]
+    assert 0 < float(str(items[0]["score"])) <= 1
+
+
+def test_search_uses_new_words_after_patch(client: TestClient) -> None:
+    """고치면 검색용 낱말도 다시 만들어진다."""
+    memory_id = _memory(client, "plan", "문서 작성 계획", "검토를 마지막에 두지 않는다", [1])
+    assert _search(client, query="정합성") == []
+
+    client.patch(f"/api/memories/{memory_id}", json={"body": "정합성 검증 노드를 따로 두지 않는다"})
+
+    assert [item["memory_id"] for item in _search(client, query="정합성")] == [memory_id]
+    assert _search(client, query="마지막") == []
+
+
+def test_search_without_query_returns_newest_updated_first(client: TestClient) -> None:
+    """검색어가 비었으면 고친 시각 최근 순, 점수 0."""
+    older = _memory(client, "plan", "기획 문서 작성", "상위와 하위", [1])
+    newer = _memory(client, "plan", "테이블 설계", "배열은 별도 테이블", [1])
+
+    items = _search(client, query="")
+
+    assert [item["memory_id"] for item in items] == [newer, older]
+    assert all(item["score"] == 0 for item in items)
+
+
+def test_search_with_text_but_no_words_returns_nothing(client: TestClient) -> None:
+    """숫자, 기호, 조사만 있는 검색어는 맞는 낱말이 없으므로 빈 결과."""
+    _memory(client, "plan", "테이블 설계", "배열은 별도 테이블", [1])
+
+    for query in ("에서는", "404", "!!"):
+        assert _search(client, query=query) == []
+
+
+def test_refresh_fills_only_memories_without_search_terms(
+    client: TestClient, engine: Engine
+) -> None:
+    """DB 에 직접 넣어 낱말이 빈 지식만 채운다. 고친 시각은 그대로."""
+    memory_id = _memory(client, "plan", "API 설계", "엔드포인트마다 에러 코드", [1])
+    with engine.begin() as conn:
+        clear = text("UPDATE memories SET search_tokens = ''::tsvector WHERE id = :id")
+        conn.execute(clear, {"id": memory_id})
+        before = conn.execute(
+            text("SELECT updated_at FROM memories WHERE id = :id"), {"id": memory_id}
+        ).scalar_one()
+    assert _search(client, query="엔드포인트") == []
+
+    with client.app.state.dishka_container() as request_container:  # type: ignore[attr-defined]
+        filled = request_container.get(MemorySearchTermsRefreshUsecase).execute()
+
+    assert filled == 1
+    assert [item["memory_id"] for item in _search(client, query="엔드포인트")] == [memory_id]
+    with engine.begin() as conn:
+        after = conn.execute(
+            text("SELECT updated_at FROM memories WHERE id = :id"), {"id": memory_id}
+        ).scalar_one()
+    assert after == before

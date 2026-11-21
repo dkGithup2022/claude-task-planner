@@ -2,7 +2,7 @@
 name = "task-plan-server-persistence"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["task-plan-server-infrastructure", "task-plan-server-transaction", "task-plan-server-my-logging", "task-plan-server-model", "task-plan-server-exception", "sqlalchemy>=2.0.30", "psycopg[binary]>=3.2"]
+dependencies = ["task-plan-server-infrastructure", "task-plan-server-transaction", "task-plan-server-my-logging", "task-plan-server-model", "task-plan-server-exception", "sqlalchemy>=2.0.30", "psycopg[binary]>=3.2", "kiwipiepy>=0.25"]
 
 [build-system]
 requires = ["hatchling>=1.25"]

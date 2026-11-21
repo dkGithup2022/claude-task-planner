@@ -3,14 +3,16 @@ from task_plan_server.model.memory.memory_search_hit import MemorySearchHit
 from task_plan_server.model.memory.search_param import SearchParam
 from task_plan_server.transaction import TransactionManager, transactional
 
+from .memory_entity import MemoryEntity
 from .memory_entity_query import MemoryEntityQuery
-from .text_match_score import query_words, text_match_score
 
 
 class DefaultKnowledgeSearcher(KnowledgeSearcher):
-    """처음 구현: 거른 지식을 글자 맞추기 점수로 줄 세운다 (text_match_score).
+    """한국어 형태소 기반 전문 검색 (2026-11-21).
 
-    검색어에 낱말이 있으면 점수가 0 보다 큰 것만, 없으면 거른 지식을 고친 시각 최근 순으로 돌려준다.
+    search_tokens (tsvector) 에 검색어 낱말이 하나라도 맞는 지식을 ts_rank 점수 순으로 돌려준다.
+    낱말이 없으면 (검색어가 빔) 거른 지식을 고친 시각 최근 순으로,
+    점수 0 으로 돌려준다.
     """
 
     def __init__(self, tx: TransactionManager, entities: MemoryEntityQuery) -> None:
@@ -18,22 +20,20 @@ class DefaultKnowledgeSearcher(KnowledgeSearcher):
         self._entities = entities
 
     @transactional
-    def search_knowledge(self, search_param: SearchParam) -> list[MemorySearchHit]:
-        candidates = self._entities.find_for_search_and_active(
-            search_param.kind, list(search_param.persona_ids), search_param.theme
-        )  # 고친 시각 최근 순
-        words = query_words(search_param.query)
-        hits = [
-            MemorySearchHit(
-                entity.id,
-                entity.kind,
-                entity.theme,
-                entity.body,
-                text_match_score(words, entity.theme, entity.body),
-            )
-            for entity in candidates
-        ]
-        if words:
-            hits = [hit for hit in hits if hit.score > 0]
-        hits.sort(key=lambda hit: hit.score, reverse=True)  # 같은 점수는 고친 시각 순을 지킨다
-        return hits[: max(0, search_param.limit)]
+    def search_knowledge(
+        self, search_param: SearchParam, query_terms: tuple[str, ...]
+    ) -> list[MemorySearchHit]:
+        persona_ids = list(search_param.persona_ids)
+        if not query_terms:
+            candidates = self._entities.find_for_search_and_active(
+                search_param.kind, persona_ids, search_param.theme
+            )  # 고친 시각 최근 순
+            return [_hit(entity, 0.0) for entity in candidates[: max(0, search_param.limit)]]
+        ranked = self._entities.find_for_search_by_terms_and_active(
+            search_param.kind, persona_ids, search_param.theme, query_terms, search_param.limit
+        )
+        return [_hit(entity, score) for entity, score in ranked]
+
+
+def _hit(entity: MemoryEntity, score: float) -> MemorySearchHit:
+    return MemorySearchHit(entity.id, entity.kind, entity.theme, entity.body, score)

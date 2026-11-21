@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import Self
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Identity, Text, false
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import BigInteger, Boolean, DateTime, Identity, Index, Text, false, text
+from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.orm import Mapped, deferred, mapped_column, relationship
 
 from task_plan_server.model.memory.memory import Memory
 from task_plan_server.model.memory.memory_kind import MemoryKind
@@ -16,11 +17,17 @@ from .memory_source_entity import MemorySourceEntity
 
 class MemoryEntity(Base):
     __tablename__ = "memories"
+    __table_args__ = (Index("ix_memories_search_tokens", "search_tokens", postgresql_using="gin"),)
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
     kind: Mapped[MemoryKind] = mapped_column(value_enum(MemoryKind), nullable=False)
     theme: Mapped[str] = mapped_column(Text, nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False)
+    # 검색용 낱말 (작업 이름 무게 A, 본문 무게 B). 도메인에는 없다. 저장할 때 repository 가 넣는다.
+    # 지식을 읽을 때는 쓰지 않으므로 늦게 읽는다 (deferred)
+    search_tokens: Mapped[str] = deferred(
+        mapped_column(TSVECTOR, nullable=False, server_default=text("''::tsvector"))
+    )
 
     personas: Mapped[list[MemoryPersonaEntity]] = relationship(
         lazy="selectin", cascade="all, delete-orphan", order_by="MemoryPersonaEntity.position"

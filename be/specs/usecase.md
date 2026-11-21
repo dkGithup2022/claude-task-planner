@@ -86,16 +86,16 @@
 | 메서드 | 반환 | 설명 |
 |---|---|---|
 | get_by_id(identity: MemoryIdentity) | MemoryRead | 없으면 MemoryNotFoundException |
-| search(search_param: SearchParam) | list[MemorySearchHit] | KnowledgeSearcher 에 위임 |
+| search(search_param: SearchParam) | list[MemorySearchHit] | 검색어를 `query_terms_of` 로 낱말로 나눠 KnowledgeSearcher 에 위임 (2026-11-21). 글자는 있는데 낱말이 없으면 (숫자, 기호, 조사만) [] |
 | get_list(condition: MemoryListCondition) | MemoryList(items, total) | 웹 목록. 고친 시각 최근 순 |
 
 ### MemoryWriter (`memory/memory_writer.py`)
 
 | 메서드 | 반환 | 설명 |
 |---|---|---|
-| create(command: MemoryCreateCommand) | MemoryIdentity | 새 지식. 본문과 근거는 받은 그대로 |
+| create(command: MemoryCreateCommand) | MemoryIdentity | 새 지식. 본문과 근거는 받은 그대로. 검색용 낱말을 만들어 같이 저장 |
 | delete(identity: MemoryIdentity) | None | 지식을 지운다. 없으면 404 |
-| update(command: MemoryUpdateCommand) | Memory | 값이 있는 필드만 받은 그대로 바꾼다. 없으면 404 |
+| update(command: MemoryUpdateCommand) | Memory | 값이 있는 필드만 받은 그대로 바꾼다. 검색용 낱말을 다시 만들어 같이 저장. 없으면 404 |
 
 ### Command
 
@@ -109,6 +109,7 @@
 | MemoryCreateUsecase | execute(command) -> MemoryIdentity | Writer.create 를 감싼다 |
 | MemoryUpdateUsecase | execute(command) -> MemoryIdentity | Writer.update 를 감싼다 |
 | MemoryDeleteUsecase | execute(identity) -> None | Writer.delete 를 감싼다. 없으면 404 |
+| MemorySearchTermsRefreshUsecase | execute() -> int | 검색용 낱말이 빈 지식(지운 것 뺌)을 채운다. 고친 시각 그대로. 채운 수. 라우터 없음, 서버가 시작할 때 app lifespan 이 부른다 (2026-11-21) |
 
 ## persona
 
@@ -135,3 +136,10 @@
 ## 공통: 페르소나 id 검사 (`service/persona/persona_check.py`)
 
 `require_personas(repository, persona_ids)`: 없는(지운) 페르소나가 있으면 UnknownPersonaException(400, "페르소나 n 가 없습니다"). MemoryCreate, MemoryUpdate, PlanCreate, PlanNodeCreate, PlanNodeUpdate Usecase 가 Writer 전에 부른다. None·빈 목록은 보지 않는다 (사용자, 2026-11-20)
+
+### memory 검색용 낱말 (`memory/search_terms/`, 2026-11-21)
+
+저장(인덱싱)과 검색이 같은 규칙으로 낱말을 만든다. tokenizer 는 `TextTokenizer` (구현 KiwiTextTokenizer, Scope.APP)
+- `memory_search_terms_of(tokenizer, theme, body) -> MemorySearchTerms`: 작업 이름과 본문을 따로 나눈다. DefaultMemoryWriter 의 create·update, MemorySearchTermsRefreshUsecase 가 쓴다
+- `query_terms_of(tokenizer, query) -> tuple[str, ...]`: 검색어 낱말. 겹친 것은 처음 것만. DefaultMemoryReader.search 가 쓴다
+- DefaultMemoryWriter(tx, repository, tokenizer), DefaultMemoryReader(repository, searcher, tokenizer)
