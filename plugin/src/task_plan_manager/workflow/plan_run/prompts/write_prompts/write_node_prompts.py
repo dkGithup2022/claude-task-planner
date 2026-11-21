@@ -22,6 +22,7 @@ from task_plan_manager.port.local.plan_folder.default_plan_folder_reader import 
 from task_plan_manager.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
 from task_plan_manager.port.persona_api.persona_api_choice import persona_api_reader
 from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
+from task_plan_manager.workflow.plan_run.prompts.write_prompts.node_knowledge import node_knowledge
 from task_plan_manager.workflow.plan_run.prompts.write_prompts.node_prompt_error import NodePromptError
 from task_plan_manager.workflow.plan_run.prompts.write_prompts.node_prompt_input import node_prompt_input
 from task_plan_manager.workflow.plan_run.show_progress import show_writing_prompts
@@ -53,13 +54,13 @@ def write_node_prompts(plan_id: int, node_ids: list[int]) -> tuple[list[dict[str
         }
         for node_id, future in futures.items():
             try:
-                text, answer = future.result()
+                text, answer, warning = future.result()
             except NodePromptError as error:
                 failed.append({"node_id": node_id, "title": plan.node(node_id).title, "reason": str(error)})
                 continue
             # 쓰기: 이 스레드에서만 쓴다
             DefaultPlanFolderWriter().write_prompt(plan_id, node_id, text)
-            made.append({"node_id": node_id, "cost_usd": answer.cost_usd, "seconds": answer.seconds})
+            made.append(_made_entry(node_id, answer, warning))
     return made, failed
 
 
@@ -73,11 +74,21 @@ def writing_rules() -> str:
     return (HERE / "writing.md").read_text(encoding="utf-8").strip()
 
 
+def _made_entry(node_id: int, answer: AgentResult, warning: str | None) -> dict[str, Any]:
+    """만든 것 한 줄. 지식 검색이 실패했으면 warning 을 더한다."""
+    entry: dict[str, Any] = {"node_id": node_id, "cost_usd": answer.cost_usd, "seconds": answer.seconds}
+    if warning:
+        entry["warning"] = warning
+    return entry
+
+
 def _make_one(
     system_prompt: str, command_md: str, plan: Plan, node: PlanNode, personas: dict[int, Persona]
-) -> tuple[str, AgentResult]:
-    """생성기를 부르고 첫 줄을 검사한 뒤, 산출물 스펙 원문 절과 글쓰기 규칙을 붙인 글."""
-    user_input = node_prompt_input(command_md, plan, node, personas)
+) -> tuple[str, AgentResult, str | None]:
+    """담당 페르소나의 지식을 찾아 생성기를 부르고 첫 줄을 검사한 뒤, 산출물 스펙 원문 절과 글쓰기 규칙을 붙인 글.
+    셋째 값은 지식 찾기의 경고 (없으면 None)."""
+    knowledge_md, warning = node_knowledge(node)
+    user_input = node_prompt_input(command_md, plan, node, personas, knowledge_md)
     try:
         answer = run_agent(system_prompt, user_input, READ_TOOLS, Path.cwd(), MODEL, TIMEOUT_SECONDS)
     except AgentCallError as error:
@@ -85,4 +96,4 @@ def _make_one(
     if not answer.text.startswith(FIRST_LINE):
         raise NodePromptError("첫 줄이 정해진 제목이 아님")
     text = "\n\n".join([answer.text, SPEC_SECTION, node.output_spec.strip(), writing_rules()])
-    return text + "\n", answer
+    return text + "\n", answer, warning

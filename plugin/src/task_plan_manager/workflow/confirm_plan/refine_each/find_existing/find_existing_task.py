@@ -14,6 +14,7 @@ from task_plan_manager.engine.request.code_request import CodeRequest
 from task_plan_manager.port.memory_api.dto.memory_search_query import MemorySearchQuery
 from task_plan_manager.port.memory_api.memory_api_choice import memory_api_reader
 from task_plan_manager.workflow.confirm_plan.refine_each.candidate_kind import memory_kind
+from task_plan_manager.workflow.confirm_plan.refine_each.find_existing.search_word import build_search_word
 
 SEARCH_LIMIT = 10  # 바꾸면 choose_target 쪽 수(선언의 단계 셋)도 맞춘다. 시험이 지킨다
 
@@ -31,7 +32,7 @@ class FindExistingTask(Task):
         candidate = context.current_item()
         query = MemorySearchQuery(
             kind=memory_kind(candidate["type"]),
-            query=f"{candidate['theme']} {candidate['content']}",
+            query=build_search_word(candidate),
             persona_ids=tuple(context.read("find_plan")["persona_ids"]),
             limit=SEARCH_LIMIT,
         )

@@ -48,9 +48,9 @@ plan_run
 | `resume/rerun_choices.py` | 선택지 `모두 다시 실행`, `멈추기` |
 | `prompts/count_prompts/count_prompts_task.py` | 출력 `{missing: [{node_id, title}], minutes, cost_low, cost_high}` |
 | `prompts/show_estimate/show_estimate_task.py` | "노드 N개의 작업 지시를 만듭니다. 약 M분, $lo~hi 안팎" |
-| `prompts/write_prompts/write_prompts_task.py` | 출력 `{made: [{node_id, cost_usd, seconds}], failed: [{node_id, title, reason}]}` |
+| `prompts/write_prompts/write_prompts_task.py` | 출력 `{made: [{node_id, cost_usd, seconds, warning(지식 검색이 실패했을 때만)}], failed: [{node_id, title, reason}]}` |
 | `prompts/write_prompts/write_node_prompts.py` | 노드마다 생성기 호출 → 첫 줄 검사 → 산출물 스펙 원문 절·글쓰기 규칙 붙여 prompt.md. retry 도 씀 |
-| `prompts/write_prompts/node_prompt_input.py` | 생성기 입력 글 (명령서, 노드, 산출물 스펙, 앞 노드의 산출물 스펙, 담당 페르소나, 지식 "(없음)") |
+| `prompts/write_prompts/node_prompt_input.py` | 생성기 입력 글 (명령서, 노드, 산출물 스펙, 앞 노드의 산출물 스펙, 담당 페르소나, 담당 페르소나로 검색한 작업 지식과 태도 각 5 개) |
 | `prompts/write_prompts/prompt_write_node_prompt.md`, `writing.md` | 생성기 프롬프트 (기존 node_prompt.md 에서 앞 노드 절 두 문장만 고침), 글쓰기 규칙 (그대로) |
 | `prompts/ask_retry/`, `prompts/retry_prompts/`, `prompts/retry_choices.py` | 실패한 노드를 한 질문에 모아 다시 만들기 |
 | `was_running.py`, `has_broken.py`, `has_missing_prompts.py`, `has_failed_prompts.py`, `not_stopped.py` | 조건 |

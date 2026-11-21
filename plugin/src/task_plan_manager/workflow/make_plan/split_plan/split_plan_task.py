@@ -35,7 +35,7 @@ class SplitPlanTask(Task):
         # 명령서는 계획 저장소에서 읽는다 (요청문의 원본은 API). 호출 기록은 이 단계의 산출물 폴더에 남긴다
         plan = plan_api_reader().get_plan(context.read("register_plan")["plan_id"])
         call_log = PromptCallLog(context.output_dir())
-        split = split_tree(plan.title, plan.request, call_log)
+        split = split_tree(plan.title, plan.request, plan.persona_ids, call_log)
         specs = write_specs(plan.request, split.tree, _participants(plan.persona_ids), call_log)
         edges = write_edges(specs.drafts, call_log)
         saved = save_graph(plan.plan_id, specs.drafts, edges.edges, plan_api_reader(), plan_api_writer())

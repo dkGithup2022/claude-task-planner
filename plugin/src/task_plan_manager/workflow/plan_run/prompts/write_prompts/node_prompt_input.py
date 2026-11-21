@@ -14,11 +14,13 @@ from task_plan_manager.model.plan.plan import Plan
 from task_plan_manager.model.plan.plan_node import PlanNode
 
 CONFIRM_NODE_OWNER = "(사용자 확인 노드)"
-NO_KNOWLEDGE = "(없음)"  # 지식 검색이 mock 인 동안 (make_plan 과 같음)
 
 
-def node_prompt_input(command_md: str, plan: Plan, node: PlanNode, personas: dict[int, Persona]) -> str:
-    """명령서, 작업 지시를 쓸 노드, 이 노드의 산출물 스펙, 앞 노드, 담당 페르소나, 검색한 지식 순서의 글."""
+def node_prompt_input(
+    command_md: str, plan: Plan, node: PlanNode, personas: dict[int, Persona], knowledge_md: str
+) -> str:
+    """명령서, 작업 지시를 쓸 노드, 이 노드의 산출물 스펙, 앞 노드, 담당 페르소나, 검색한 지식 순서의 글.
+    knowledge_md 는 담당 페르소나로 찾은 지식의 글이다 (node_knowledge)."""
     owners = [personas[persona_id] for persona_id in node.persona_ids if persona_id in personas]
     parts = [
         "# 명령서",
@@ -39,7 +41,7 @@ def node_prompt_input(command_md: str, plan: Plan, node: PlanNode, personas: dic
         "# 이 노드를 실행할 담당 페르소나",
         _owner_lines(node, owners),
         "# 담당 페르소나로 검색한 태도와 지식",
-        NO_KNOWLEDGE,
+        knowledge_md,
     ]
     return "\n\n".join(parts) + "\n"
 

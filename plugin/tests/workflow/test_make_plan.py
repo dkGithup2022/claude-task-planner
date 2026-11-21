@@ -33,7 +33,9 @@ FAKE_CLAUDE = r"""
 import json, re, sys
 
 text = sys.stdin.read()
-if "# 지금까지의 작업 트리" in text:  # split: 맨 위만 두 작업으로 나누고 나머지는 나누지 않는다
+if text.startswith("# 실제 작업"):  # 관계있는 지식 고르기: 관계있는 것이 없다고 답한다
+    output = {"ids": []}
+elif "# 지금까지의 작업 트리" in text:  # split: 맨 위만 두 작업으로 나누고 나머지는 나누지 않는다
     target = re.search(r"^- 이름: (.+)$", text, re.MULTILINE).group(1)
     children = [
         {"name": "재료 준비", "kind": "작업", "scope": "재료를 고른다", "source": "일반적인 분해"},
