@@ -86,16 +86,16 @@
 | 메서드 | 반환 | 설명 |
 |---|---|---|
 | get_by_id(identity: MemoryIdentity) | MemoryRead | 없으면 MemoryNotFoundException |
-| search(search_param: SearchParam) | list[MemorySearchHit] | 검색어를 `query_terms_of` 로 낱말로 나눠 KnowledgeSearcher 에 위임 (2026-11-21). 글자는 있는데 낱말이 없으면 (숫자, 기호, 조사만) [] |
+| search(search_param: SearchParam) | list[MemorySearchHit] | 검색어를 `query_terms_of` 로 낱말로 나눈다. 낱말이 없으면 (검색어가 비었거나 숫자, 기호, 조사만) 벡터 검색을 켜도 []. 벡터 검색을 끄면 전문 검색만 (`_full_text_search`: KnowledgeSearcher 에 위임). 켜면 `_hybrid_search`: 전문 검색 30 개 + 벡터 검색 30 개를 `reciprocal_rank_fusion` 으로 합쳐 앞에서 limit 개, 점수는 RRF 점수 (2026-11-21) |
 | get_list(condition: MemoryListCondition) | MemoryList(items, total) | 웹 목록. 고친 시각 최근 순 |
 
 ### MemoryWriter (`memory/memory_writer.py`)
 
 | 메서드 | 반환 | 설명 |
 |---|---|---|
-| create(command: MemoryCreateCommand) | MemoryIdentity | 새 지식. 본문과 근거는 받은 그대로. 검색용 낱말을 만들어 같이 저장 |
+| create(command: MemoryCreateCommand) | MemoryIdentity | 새 지식. 본문과 근거는 받은 그대로. 검색용 낱말을 만들어 같이 저장. 벡터 검색을 켰으면 벡터도 (끄면 벡터를 비움) |
 | delete(identity: MemoryIdentity) | None | 지식을 지운다. 없으면 404 |
-| update(command: MemoryUpdateCommand) | Memory | 값이 있는 필드만 받은 그대로 바꾼다. 검색용 낱말을 다시 만들어 같이 저장. 없으면 404 |
+| update(command: MemoryUpdateCommand) | Memory | 값이 있는 필드만 받은 그대로 바꾼다. 검색용 낱말을 다시 만들어 같이 저장. 벡터 검색을 켰으면 벡터도 (끄면 벡터를 비움). 없으면 404 |
 
 ### Command
 
@@ -110,6 +110,7 @@
 | MemoryUpdateUsecase | execute(command) -> MemoryIdentity | Writer.update 를 감싼다 |
 | MemoryDeleteUsecase | execute(identity) -> None | Writer.delete 를 감싼다. 없으면 404 |
 | MemorySearchTermsRefreshUsecase | execute() -> int | 검색용 낱말이 빈 지식(지운 것 뺌)을 채운다. 고친 시각 그대로. 채운 수. 라우터 없음, 서버가 시작할 때 app lifespan 이 부른다 (2026-11-21) |
+| MemoryEmbeddingRefreshUsecase | execute() -> int | 검색용 벡터가 비었거나 다른 모델로 만든 지식(지운 것 뺌)의 벡터를 다시 만든다. 고친 시각 그대로. 다시 만든 수, 꺼져 있으면 0. 라우터 없음, 서버가 시작할 때 app lifespan 이 부른다 (2026-11-21) |
 
 ## persona
 
@@ -142,4 +143,9 @@
 저장(인덱싱)과 검색이 같은 규칙으로 낱말을 만든다. tokenizer 는 `TextTokenizer` (구현 KiwiTextTokenizer, Scope.APP)
 - `memory_search_terms_of(tokenizer, theme, body) -> MemorySearchTerms`: 작업 이름과 본문을 따로 나눈다. DefaultMemoryWriter 의 create·update, MemorySearchTermsRefreshUsecase 가 쓴다
 - `query_terms_of(tokenizer, query) -> tuple[str, ...]`: 검색어 낱말. 겹친 것은 처음 것만. DefaultMemoryReader.search 가 쓴다
-- DefaultMemoryWriter(tx, repository, tokenizer), DefaultMemoryReader(repository, searcher, tokenizer)
+- `embedding_of(embedder, theme, body) -> MemoryEmbedding`: 저장할 지식의 벡터. 작업 이름과 본문을 줄바꿈으로 잇는다 (2026-11-21)
+- DefaultMemoryWriter(tx, repository, tokenizer, embedder), DefaultMemoryReader(repository, searcher, tokenizer, embedder). embedder 는 `TextEmbedder` (Scope.APP, 설정 `memory_search_vector` 로 FastembedTextEmbedder 또는 DisabledTextEmbedder)
+
+### memory 검색 결과 합치기 (`memory/search_rank/`, 2026-11-21)
+- `reciprocal_rank_fusion(*rankings) -> list[MemorySearchHit]`: 지식마다 1 / (60 + 순위) 를 더한 점수 순. 같으면 먼저 넘긴 목록에서 먼저 나온 것이 앞
+- `CANDIDATE_COUNT = 30` (DefaultMemoryReader): 켰을 때 전문 검색과 벡터 검색이 각각 가져올 후보 수

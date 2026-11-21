@@ -78,6 +78,64 @@ class MemoryEntityQuery:
         stmt = stmt.order_by(score.desc(), MemoryEntity.updated_at.desc()).limit(max(0, limit))
         return [(entity, float(rank)) for entity, rank in self._session.execute(stmt).all()]
 
+    def find_for_search_by_embedding_and_active(
+        self,
+        kind: MemoryKind,
+        persona_ids: list[int],
+        theme: str | None,
+        model: str,
+        vector: tuple[float, ...],
+        limit: int,
+    ) -> list[tuple[MemoryEntity, float]]:
+        """검색 대상 가운데 model 로 만든 벡터가 있는 지식과 그 점수 (1 - 코사인 거리).
+
+        거리 가까운 순, 같으면 고친 시각 최근 순으로 limit 개.
+        거르기는 find_for_search_and_active 와 같다.
+        다른 모델의 벡터는 차원이 다를 수 있고, 차원이 다른 벡터가 하나라도 비교에 섞이면
+        쿼리 전체가 실패하므로 embedding_model 이 같은 줄만 비교한다.
+        """
+        if not persona_ids:
+            return []
+        distance = MemoryEntity.embedding.cosine_distance(list(vector))
+        overlapping = select(MemoryPersonaEntity.memory_id).where(
+            MemoryPersonaEntity.persona_id.in_(persona_ids)
+        )
+        stmt = select(MemoryEntity, 1 - distance).where(
+            MemoryEntity.kind == kind,
+            MemoryEntity.id.in_(overlapping),
+            MemoryEntity.is_deleted.is_(False),
+            MemoryEntity.embedding_model == model,
+            MemoryEntity.embedding.is_not(None),
+        )
+        if theme is not None:
+            stmt = stmt.where(MemoryEntity.theme == theme)
+        stmt = stmt.order_by(distance, MemoryEntity.updated_at.desc()).limit(max(0, limit))
+        return [(entity, float(score)) for entity, score in self._session.execute(stmt).all()]
+
+    def update_embedding_by_id_and_active(
+        self, id: int, model: str, vector: tuple[float, ...]
+    ) -> None:
+        """검색용 벡터와 모델 이름만 바꾼다.
+
+        updated_at 의 onupdate 가 돌지 않게 지금 값을 그대로 넣는다.
+        """
+        stmt = (
+            update(MemoryEntity)
+            .where(MemoryEntity.id == id, MemoryEntity.is_deleted.is_(False))
+            .values(
+                embedding=list(vector), embedding_model=model, updated_at=MemoryEntity.updated_at
+            )
+        )
+        self._session.execute(stmt)
+
+    def find_ids_without_embedding_of_and_active(self, model: str) -> list[int]:
+        """벡터가 비었거나 다른 모델로 만든 지식의 id. 지운 것은 뺀다."""
+        stmt = select(MemoryEntity.id).where(
+            MemoryEntity.embedding_model.is_distinct_from(model),
+            MemoryEntity.is_deleted.is_(False),
+        )
+        return list(self._session.scalars(stmt.order_by(MemoryEntity.id)).all())
+
     def update_search_tokens_by_id_and_active(self, id: int, terms: MemorySearchTerms) -> None:
         """검색용 낱말만 바꾼다. updated_at 의 onupdate 가 돌지 않게 지금 값을 그대로 넣는다."""
         stmt = (

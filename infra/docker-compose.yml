@@ -23,6 +23,12 @@ services:
     environment:
       APP_ENV: prod
       APP_DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-task_plan_server}
+      # 지식 검색에 벡터 검색을 더할지 (기본 끔). 켜면 처음 시작할 때 임베딩 모델(약 0.22GB)을 내려받는다
+      APP_MEMORY_SEARCH_VECTOR: ${MEMORY_SEARCH_VECTOR:-false}
+      # 임베딩 모델 파일을 두는 곳. 볼륨이라 컨테이너를 새로 만들어도 다시 받지 않는다
+      FASTEMBED_CACHE_PATH: /models
+    volumes:
+      - models:/models
     ports:
       - "${BE_PORT:-8000}:8000"
     depends_on:
@@ -48,3 +54,4 @@ services:
 
 volumes:
   pgdata:
+  models:

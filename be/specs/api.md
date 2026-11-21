@@ -90,7 +90,7 @@
 
 ### POST /api/memories/search — 지식 검색
 
-- 요청 MemorySearchRequest: kind (필수), query, persona_ids, theme (null 가능), limit (기본 10, 1~100)
+- 요청 MemorySearchRequest: kind (필수), query, persona_ids, theme (null 가능), limit (기본 10, 1~30. 2026-11-21 에 100 에서 낮춤)
 - 응답 200 MemorySearchResponse: items[{memory_id, kind, theme, body, score}] 점수 높은 순
 - 오류: 형식이 틀리면 400
 - 호출: MemoryReader.search → KnowledgeSearcher.search_knowledge

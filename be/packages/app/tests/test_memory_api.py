@@ -189,6 +189,13 @@ def test_search_rejects_unknown_kind_with_400(client: TestClient) -> None:
     assert client.post("/api/memories/search", json=body).status_code == 400
 
 
+def test_search_accepts_limit_up_to_30_and_rejects_31_with_400(client: TestClient) -> None:
+    body = {"kind": "plan", "query": "x", "persona_ids": [1], "theme": None}
+
+    assert client.post("/api/memories/search", json={**body, "limit": 30}).status_code == 200
+    assert client.post("/api/memories/search", json={**body, "limit": 31}).status_code == 400
+
+
 def test_list_memories_newest_updated_first_with_fields(client: TestClient) -> None:
     older = _memory(client, "plan", "기획 문서 작성", "상위 기획", [1])
     newer = _memory(client, "knowledge", "테이블 설계", "FK 걸지 않는다", [1, 2])
@@ -311,22 +318,11 @@ def test_search_uses_new_words_after_patch(client: TestClient) -> None:
     assert _search(client, query="마지막") == []
 
 
-def test_search_without_query_returns_newest_updated_first(client: TestClient) -> None:
-    """검색어가 비었으면 고친 시각 최근 순, 점수 0."""
-    older = _memory(client, "plan", "기획 문서 작성", "상위와 하위", [1])
-    newer = _memory(client, "plan", "테이블 설계", "배열은 별도 테이블", [1])
-
-    items = _search(client, query="")
-
-    assert [item["memory_id"] for item in items] == [newer, older]
-    assert all(item["score"] == 0 for item in items)
-
-
-def test_search_with_text_but_no_words_returns_nothing(client: TestClient) -> None:
-    """숫자, 기호, 조사만 있는 검색어는 맞는 낱말이 없으므로 빈 결과."""
+def test_search_without_words_returns_nothing(client: TestClient) -> None:
+    """검색어가 비었거나 숫자, 기호, 조사만 있으면 맞는 낱말이 없으므로 빈 결과."""
     _memory(client, "plan", "테이블 설계", "배열은 별도 테이블", [1])
 
-    for query in ("에서는", "404", "!!"):
+    for query in ("", "에서는", "404", "!!"):
         assert _search(client, query=query) == []
 
 

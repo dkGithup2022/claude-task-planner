@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Self
 
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import BigInteger, Boolean, DateTime, Identity, Index, Text, false, text
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, deferred, mapped_column, relationship
@@ -28,6 +29,11 @@ class MemoryEntity(Base):
     search_tokens: Mapped[str] = deferred(
         mapped_column(TSVECTOR, nullable=False, server_default=text("''::tsvector"))
     )
+    # 검색용 벡터와 그 벡터를 만든 모델 이름. 도메인에는 없다. 저장할 때 repository 가 넣는다.
+    # 차원을 정하지 않아 모델을 바꿔도 열 선언은 그대로다. 벡터 검색을 끄면 둘 다 비어 있다.
+    # 지식을 읽을 때는 쓰지 않으므로 늦게 읽는다 (deferred)
+    embedding: Mapped[list[float] | None] = deferred(mapped_column(Vector(), nullable=True))
+    embedding_model: Mapped[str | None] = deferred(mapped_column(Text, nullable=True))
 
     personas: Mapped[list[MemoryPersonaEntity]] = relationship(
         lazy="selectin", cascade="all, delete-orphan", order_by="MemoryPersonaEntity.position"

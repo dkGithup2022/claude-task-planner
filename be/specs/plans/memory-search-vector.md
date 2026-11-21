@@ -197,3 +197,66 @@
 - persistence 통합 시험: 다른 모델(다른 차원)로 만든 벡터가 섞인 테이블에서 `search_by_embedding` 이 에러 없이 같은 모델의 지식만 돌려준다. 같은 모델 조건이 없으면 `ERROR: different vector dimensions 4 and 3` 으로 쿼리 전체가 실패하는 것을 개발 DB 임시 테이블에서 확인했다 (2026-11-21)
 
 ## Phase 3: 구현 진행
+
+### 1. add-model
+- 새 파일 `model/memory/memory_embedding.py` (`MemoryEmbedding(model, vector)`), `specs/models.md`
+- 검증: ruff 통과, mypy 통과 (230 files)
+
+### 2. add-infrastructure
+- 새 파일 `infrastructure/memory/text_embedder.py` (`TextEmbedder`: enabled, model, embed)
+- `KnowledgeSearcher.search_by_embedding` 추가, `MemoryRepository.save(memory, terms, embedding)` 로 변경, `save_embedding`·`find_ids_without_embedding_of` 추가. `specs/infrastructure.md`
+- 검증: ruff, lint-imports 통과. mypy 는 `DefaultMemoryWriter` 의 `save` 호출 두 곳만 인자 부족 (add-usecase 에서 맞춤)
+
+### 3. add-entity-specs
+- `MemoryEntity.embedding` (`Vector()`, 차원 없음, NULL, deferred), `embedding_model` (TEXT, NULL, deferred)
+- migration `20261121_bddbb4ecf910_memory_embedding.py` (down_revision `fc4ad6b1e3bd`). autogenerate 결과에서 `pgvector.sqlalchemy.vector.VECTOR()` (import 없음) 를 `Vector()` 와 import 로 고치고 설명을 붙임
+- 의존성: `packages/persistence/pyproject.toml` 에 `pgvector>=0.5.1`, `fastembed>=0.9.1` (Entity 가 `Vector` 를 쓰므로 계획의 4 단계보다 앞당겨 이 단계에서 더함). `uv.lock` 갱신 (pgvector 0.5.1, fastembed 0.9.1)
+- 검증: 개발 DB `alembic upgrade head` → `bddbb4ecf910 (head)`, `alembic check` "No new upgrade operations detected.", `\d memories` 에 `embedding vector`, `embedding_model text`. `specs/schema.md`
+
+### 4. add-query
+- `MemoryEntityQuery`: `find_for_search_by_embedding_and_active` (같은 모델 조건 + 벡터 있음, `cosine_distance` 순, 같으면 고친 시각 최근 순), `update_embedding_by_id_and_active` (updated_at 그대로), `find_ids_without_embedding_of_and_active` (`embedding_model IS DISTINCT FROM model`)
+- `DefaultMemoryRepository`: `save` 가 `_put_embedding` 으로 벡터를 넣거나 비움, `save_embedding`, `find_ids_without_embedding_of`
+- `DefaultKnowledgeSearcher.search_by_embedding`
+- 새 파일 `persistence/memory/fastembed_text_embedder.py`, `persistence/memory/disabled_text_embedder.py`. `specs/repository.md`
+- 검증: ruff, lint-imports 통과. mypy 는 위 두 곳만
+
+### 5. add-usecase
+- 새 파일 `service/memory/search_terms/embedding_of.py`, `service/memory/search_rank/__init__.py`, `service/memory/search_rank/reciprocal_rank_fusion.py`, `service/memory/usecase/memory_embedding_refresh_usecase.py`
+- `DefaultMemoryReader(repository, searcher, tokenizer, embedder)`: `search` 가 `_full_text_search` / `_hybrid_search` 로 나뉨. `CANDIDATE_COUNT = 30`
+- `DefaultMemoryWriter(tx, repository, tokenizer, embedder)`: `_embedding` 이 꺼져 있으면 None
+- `app/settings.py` 설정 셋, `app/providers/memory_provider.py` (`embedder` 를 Scope.APP 로 설정에 따라 고름, `MemoryEmbeddingRefreshUsecase`), `app/lifespan.py` (`prepare_embedder` 를 try 없이 맨 먼저, 끝에 `fill_empty_embeddings`)
+- 계획과 다른 점: 구현 때 검색어가 비면 벡터를 켜도 전문 검색(고친 시각 최근 순)으로 가게 했다. 사용자가 바꿈 (아래 "구현 뒤 사용자 결정")
+- 검증: ruff, lint-imports, mypy (237 files) 통과, create_app 통과, pytest 72 passed (기존 시험 그대로). `specs/usecase.md`
+
+### 6. add-api
+- `MemorySearchRequest.limit`: `le=100` → `le=30`. `specs/api.md`
+- 시험 더함: `test_search_accepts_limit_up_to_30_and_rejects_31_with_400`
+- 검증: ruff, lint-imports, mypy 통과, openapi 에 `/api/memories`, `/api/memories/{memory_id}`, `/api/memories/search`
+
+### 7. infra
+- `infra/docker-compose.yml` be 에 `APP_MEMORY_SEARCH_VECTOR: ${MEMORY_SEARCH_VECTOR:-false}`, `FASTEMBED_CACHE_PATH: /models`, 볼륨 `models:/models`, 맨 아래 `models:`
+- `infra/.env.example` 에 `MEMORY_SEARCH_VECTOR=false` 와 설명
+- 검증: `docker compose --env-file .env.example config` 통과
+
+### 8. 시험과 개발 서버 확인
+- 새 시험 (가짜 벡터, 모델을 내려받지 않음)
+  - service: `tests/memory/test_reciprocal_rank_fusion.py` (3), `test_default_memory_reader.py` (4), `test_default_memory_writer.py` (3), `test_memory_embedding_refresh_usecase.py` (3)
+  - persistence (실제 Postgres): `tests/memory/test_default_knowledge_searcher.py` (3, 다른 차원이 섞인 테이블 포함), `test_memory_repository_embedding.py` (3)
+- 전체: ruff check, ruff format --check (295 files), lint-imports (2 kept), mypy (237 files) 통과, pytest 92 passed, create_app 통과, `alembic check` 통과
+- 개발 서버, 벡터 켬 (`APP_MEMORY_SEARCH_VECTOR=true`, 포트 8011): 모델을 Hugging Face 에서 받고 시작 약 10 초. 로그 `Memory embeddings filled: count=7`, `Application startup complete.`
+  - "문서 계획에서 검토를" (limit 5): #5 문서 작성 계획 0.0328, #7 서비스 설계 문서 작성 0.032, #6 기획 문서 작성 0.032, #3 API 서버 개발 0.0312
+  - "404": #5 0.0164, #7 0.0161, #3 0.0159, #6 0.0156 (전문 검색은 빈 결과지만 벡터 검색이 가까운 순으로 돌려준다)
+- 차원을 틀리게 줌 (`APP_MEMORY_SEARCH_VECTOR_DIMENSION=768`): `ValueError: embedding dimension mismatch: model=sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2, expected=768, actual=384`, `Application startup failed. Exiting.` (exit 3)
+- 벡터 끔 (기본): 모델을 받지 않고 시작 약 2 초. "문서 계획에서 검토를": #5 0.3451, #7 0.2432, #6 0.1823, #3 0.075 (전문 검색만 쓰던 때와 같음). "404": `{"items":[]}`
+- 개발 DB 의 지식 7 개에는 MiniLM 벡터(384)가 남아 있다. 꺼진 동안에는 쓰지 않는다
+
+### 구현 뒤 사용자 결정 (2026-11-21)
+- 낱말이 없는 검색어는 벡터 검색을 켜도 빈 결과. 구현 때는 켜면 "404" 에도 벡터 검색이 가까운 순으로 돌려줬다 (#5 0.0164 등)
+- 검색어가 비면 결과 없음 (전에는 고친 시각 최근 순). CLI 는 늘 작업 이름과 내용을 검색어로 보내고, 웹은 검색 API 를 쓰지 않아 영향 없음
+- 고친 곳: `DefaultMemoryReader.search` 가 분기 전에 낱말을 만들고 없으면 []. `_has_text_but_no_terms` 는 지움
+- 시험 as-is / to-be
+  - app: `test_search_without_query_returns_newest_updated_first` ("" 는 최근 순) 지움, `test_search_with_text_but_no_words_returns_nothing` 을 `test_search_without_words_returns_nothing` 로 바꾸고 "" 도 빈 결과
+  - service: `test_should_use_full_text_when_query_is_empty_even_if_vector_is_enabled`, `test_should_return_empty_when_query_has_text_but_no_terms_and_vector_is_disabled` 를 `test_should_return_empty_when_query_has_no_terms` (켬·끔 × "" · "404") 하나로
+- `KnowledgeSearcher.search_knowledge` 의 "낱말이 없으면 고친 시각 최근 순" 경로는 이제 부르는 곳이 없다. 검색어 없는 목록을 나눌 때 정리한다
+- 검증: ruff, ruff format, lint-imports, mypy 통과, pytest 93 passed
+

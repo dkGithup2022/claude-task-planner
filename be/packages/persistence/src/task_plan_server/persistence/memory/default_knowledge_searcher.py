@@ -1,4 +1,5 @@
 from task_plan_server.infrastructure.memory.knowledge_searcher import KnowledgeSearcher
+from task_plan_server.model.memory.memory_embedding import MemoryEmbedding
 from task_plan_server.model.memory.memory_search_hit import MemorySearchHit
 from task_plan_server.model.memory.search_param import SearchParam
 from task_plan_server.transaction import TransactionManager, transactional
@@ -33,6 +34,21 @@ class DefaultKnowledgeSearcher(KnowledgeSearcher):
             search_param.kind, persona_ids, search_param.theme, query_terms, search_param.limit
         )
         return [_hit(entity, score) for entity, score in ranked]
+
+    @transactional
+    def search_by_embedding(
+        self, search_param: SearchParam, embedding: MemoryEmbedding, limit: int
+    ) -> list[MemorySearchHit]:
+        # pgvector 의 코사인 거리 (<=>) 로 같은 모델의 벡터만 비교한다. 인덱스 없이 전체를 본다
+        nearest = self._entities.find_for_search_by_embedding_and_active(
+            search_param.kind,
+            list(search_param.persona_ids),
+            search_param.theme,
+            embedding.model,
+            embedding.vector,
+            limit,
+        )
+        return [_hit(entity, score) for entity, score in nearest]
 
 
 def _hit(entity: MemoryEntity, score: float) -> MemorySearchHit:

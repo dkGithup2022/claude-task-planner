@@ -33,8 +33,10 @@
 
 | 메서드 | 반환 | 설명 |
 |---|---|---|
-| save(memory: Memory, terms: MemorySearchTerms) | Memory | 지식 저장 (신규·수정). 페르소나와 근거의 순서를 지킨다. 검색용 낱말도 같이 저장 |
+| save(memory: Memory, terms: MemorySearchTerms, embedding: MemoryEmbedding \| None) | Memory | 지식 저장 (신규·수정). 페르소나와 근거의 순서를 지킨다. 검색용 낱말과 벡터도 같이 저장. embedding 이 None 이면 벡터를 비운다 (2026-11-21) |
 | save_search_terms(identity: MemoryIdentity, terms: MemorySearchTerms) | None | 검색용 낱말만 바꾼다. 고친 시각 그대로. 지운 지식이면 no-op |
+| save_embedding(identity: MemoryIdentity, embedding: MemoryEmbedding) | None | 검색용 벡터만 바꾼다. 고친 시각 그대로. 지운 지식이면 no-op (2026-11-21) |
+| find_ids_without_embedding_of(model: str) | list[MemoryIdentity] | 벡터가 비었거나 다른 모델로 만든 지식 (지운 것 뺌). 다시 만들 대상. 없으면 [] (2026-11-21) |
 | find_ids_without_search_terms() | list[MemoryIdentity] | 검색용 낱말이 빈 지식 (지운 것 뺌). 직접 넣은 데이터를 채울 때 |
 | find_write_by_id(identity: MemoryIdentity) | Memory \| None | 지식 Write 모델 조회. 지운 지식은 없음 |
 | find_by_id(identity: MemoryIdentity) | MemoryRead \| None | (memory) 지식 조회 (덧붙인 횟수, 근거 계획 포함). 지운 지식 없음 |
@@ -47,6 +49,7 @@
 | 메서드 | 반환 | 설명 |
 |---|---|---|
 | search_knowledge(search_param: SearchParam, query_terms: tuple[str, ...]) | list[MemorySearchHit] | 같은 종류, 페르소나가 겹치는, theme 을 주면 작업 이름이 같은 지식을 검색어 낱말과 가까운 순으로 limit 개. 낱말이 없으면 고친 시각 최근 순 |
+| search_by_embedding(search_param: SearchParam, embedding: MemoryEmbedding, limit: int) | list[MemorySearchHit] | 거르기는 search_knowledge 와 같고, 같은 모델로 만든 벡터의 지식만 코사인 유사도(1 - 코사인 거리) 순으로 limit 개. query·search_param.limit 은 보지 않는다. 다른 모델의 벡터는 차원이 달라 비교하지 않는다 (2026-11-21) |
 
 구현 `DefaultKnowledgeSearcher` (persistence): `memories.search_tokens` (tsvector, simple) 에 낱말 OR 질의로 `@@`, `ts_rank(…, 32)` 점수 순, 같으면 고친 시각 최근 순 (2026-11-21, 한국어 형태소 검색)
 
@@ -77,3 +80,13 @@
 | 메서드 | 반환 | 설명 |
 |---|---|---|
 | tokens(text: str) | tuple[str, ...] | 검색에 쓸 낱말 (명사, 영문, 동사·형용사 어간). 나온 순서대로, 겹쳐도 그대로 |
+
+## memory — TextEmbedder (`memory/text_embedder.py`)
+
+글을 검색용 벡터로 바꾸는 port (2026-11-21). 구현 `FastembedTextEmbedder` (persistence, fastembed), 벡터 검색을 끄면 `DisabledTextEmbedder`.
+
+| 메서드 | 반환 | 설명 |
+|---|---|---|
+| enabled (property) | bool | 벡터 검색을 켰는지. False 이면 embed 를 부르지 않는다 |
+| model (property) | str | 지금 쓰는 모델 이름 |
+| embed(text: str) | MemoryEmbedding | 글의 벡터. enabled 가 False 이면 에러 |
