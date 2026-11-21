@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import pytest
 
-from task_plan_manager.claude_utils.prompt.prompt_output_converter import PromptOutputConverter
+from task_planner.claude_utils.prompt.prompt_output_converter import PromptOutputConverter
 
 
 @dataclass(frozen=True, slots=True)

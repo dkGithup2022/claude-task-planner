@@ -1,14 +1,14 @@
 import pytest
 
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.model.plan.plan_node_status import PlanNodeStatus
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.port.plan_api.default_plan_api_reader import DefaultPlanApiReader
-from task_plan_manager.port.plan_api.dto.new_node import NewNode
-from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
-from task_plan_manager.port.plan_api.dto.node_change import NodeChange
-from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
-from task_plan_manager.port.plan_api.plan_not_found_error import PlanNotFoundError
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.model.plan.plan_node_status import PlanNodeStatus
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.port.plan_api.default_plan_api_reader import DefaultPlanApiReader
+from task_planner.port.plan_api.dto.new_node import NewNode
+from task_planner.port.plan_api.dto.new_plan import NewPlan
+from task_planner.port.plan_api.dto.node_change import NodeChange
+from task_planner.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
+from task_planner.port.plan_api.plan_not_found_error import PlanNotFoundError
 
 PLAN_BODY = {
     "plan_id": 1,

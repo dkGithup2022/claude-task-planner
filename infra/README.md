@@ -20,7 +20,7 @@ docker compose -f infra/docker-compose.yml up -d --build
 ```
 
 - 웹: http://localhost:3000 (WEB_PORT)
-- 서버: http://localhost:8000/api (BE_PORT). CLI 는 `TASK_PLAN_MANAGER_API_URL` 을 이 주소로 둔다
+- 서버: http://localhost:8000/api (BE_PORT). CLI 는 `TASK_PLANNER_API_URL` 을 이 주소로 둔다
 - 개발 서버가 같은 포트를 쓰고 있으면 `infra/.env` 에서 `BE_PORT`, `WEB_PORT` 를 바꾼다
 
 처음 빌드는 기본 이미지를 받고 `npm ci`, `next build` 를 하느라 10분쯤 걸린다. 그 뒤에는 바뀐 층만 다시 만든다.

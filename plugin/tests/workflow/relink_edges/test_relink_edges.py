@@ -2,13 +2,13 @@
 
 import json
 
-from task_plan_manager.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
-from task_plan_manager.claude_utils.prompt.prompt_output_converter import PromptOutputConverter
-from task_plan_manager.workflow.relink_edges.prompt_relink_edges_edge import RelinkEdgesEdge
-from task_plan_manager.workflow.relink_edges.prompt_relink_edges_output import RelinkEdgesOutput
-from task_plan_manager.workflow.relink_edges.relink_edges import RELINK_EDGES, relink_edges
-from task_plan_manager.workflow.relink_edges.relink_node import RelinkNode
-from task_plan_manager.workflow.relink_edges.relink_request import RelinkRequest
+from task_planner.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
+from task_planner.claude_utils.prompt.prompt_output_converter import PromptOutputConverter
+from task_planner.workflow.relink_edges.prompt_relink_edges_edge import RelinkEdgesEdge
+from task_planner.workflow.relink_edges.prompt_relink_edges_output import RelinkEdgesOutput
+from task_planner.workflow.relink_edges.relink_edges import RELINK_EDGES, relink_edges
+from task_planner.workflow.relink_edges.relink_node import RelinkNode
+from task_planner.workflow.relink_edges.relink_request import RelinkRequest
 
 SPEC = "### 하는 일\n{}\n\n### 산출물\n- 형태: 코드 변경\n{} 코드\n\n### 그 외 설명\n(없음)"
 

@@ -4,8 +4,8 @@ import io
 import json
 import sys
 
-from task_plan_manager.engine.port.session.default_session_reader import DefaultSessionReader
-from task_plan_manager.entry import cli
+from task_planner.engine.port.session.default_session_reader import DefaultSessionReader
+from task_planner.entry import cli
 
 SID = "sess-cli"
 
@@ -65,11 +65,11 @@ def test_should_record_transcript_path_when_session_starts():
 
 
 def test_should_show_and_edit_plan_through_cli():
-    from task_plan_manager.model.plan.node_kind import NodeKind
-    from task_plan_manager.model.plan.plan_status import PlanStatus
-    from task_plan_manager.port.plan_api.dto.new_node import NewNode
-    from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
-    from task_plan_manager.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
+    from task_planner.model.plan.node_kind import NodeKind
+    from task_planner.model.plan.plan_status import PlanStatus
+    from task_planner.port.plan_api.dto.new_node import NewNode
+    from task_planner.port.plan_api.dto.new_plan import NewPlan
+    from task_planner.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
 
     writer = MockPlanApiWriter()
     plan_id = writer.create_plan(NewPlan("메모 API", "# 명령", (1,))).plan_id

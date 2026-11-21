@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from task_plan_manager.workflow.plan_run.find_plan.command_plan_id import command_plan_id
-from task_plan_manager.workflow.plan_run.find_plan.plan_not_runnable_error import PlanNotRunnableError
+from task_planner.workflow.plan_run.find_plan.command_plan_id import command_plan_id
+from task_planner.workflow.plan_run.find_plan.plan_not_runnable_error import PlanNotRunnableError
 
 
 def _transcript(tmp_path, *contents: str):
@@ -23,14 +23,14 @@ def _command(name: str, args: str) -> str:
 def test_should_read_last_plan_run_command(tmp_path):
     path = _transcript(
         tmp_path,
-        _command("/task_plan_manager:plan-run", "3"),
-        _command("/task_plan_manager:plan-go", "9"),
-        _command("/task_plan_manager:plan-run", "7"),
+        _command("/task-planner:plan-run", "3"),
+        _command("/task-planner:plan-go", "9"),
+        _command("/task-planner:plan-run", "7"),
     )
     assert command_plan_id(path) == 7
 
 
 def test_should_fail_when_no_plan_run_command(tmp_path):
-    path = _transcript(tmp_path, _command("/task_plan_manager:plan-go", "9"), "계획 7 실행해 줘")
+    path = _transcript(tmp_path, _command("/task-planner:plan-go", "9"), "계획 7 실행해 줘")
     with pytest.raises(PlanNotRunnableError, match="명령에서 계획 id 를 찾지 못했습니다"):
         command_plan_id(path)

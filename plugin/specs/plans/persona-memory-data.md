@@ -65,7 +65,7 @@
   - 계획 상태 바꾸기는 `PATCH /plans/{plan_id}/status` (가안. 데이터·API 문서에 아직 없다)
 
 - 서버 구현의 공통 설정
-  - 서버 주소: 환경 변수 `TASK_PLAN_MANAGER_API_URL` (번들 규칙 `{PKG}_{서비스}_URL`). 서비스가 하나라 이름을 하나로 둔다
+  - 서버 주소: 환경 변수 `TASK_PLANNER_API_URL` (번들 규칙 `{PKG}_{서비스}_URL`). 서비스가 하나라 이름을 하나로 둔다
   - 시간 제한 30 초, 실패하면 그 포트의 예외에 요청 경로·상태 코드·응답 글을 담는다
   - 새 라이브러리 없이 표준 라이브러리(`urllib.request`, `json`)로 한다
   - 시험: 진짜 서버를 부르지 않는다. 시험 안에서 `http.server` 로 가짜 서버를 띄우거나 호출 함수를 바꿔 끼운다
@@ -77,11 +77,11 @@
 ```python
 # port/persona_api/persona_api_choice.py
 def persona_api_reader() -> PersonaApiReader:
-    """TASK_PLAN_MANAGER_API_URL 이 있으면 서버 구현, 없으면 mock."""
+    """TASK_PLANNER_API_URL 이 있으면 서버 구현, 없으면 mock."""
 ```
 
 - 안 가: 서버 주소 환경 변수가 있으면 서버, 없으면 mock (위 모양)
-- 안 나: 별도 환경 변수 `TASK_PLAN_MANAGER_API=mock|server`
+- 안 나: 별도 환경 변수 `TASK_PLANNER_API=mock|server`
 - 안 다: 고르는 함수 없이 단계가 직접 Mock 을 쓰고, 서버를 만들 때 바꾼다 (지금 plan_api 를 쓰는 save_graph 시험은 이 모양)
 
 **model 층 요청**
@@ -126,7 +126,7 @@ def persona_api_reader() -> PersonaApiReader:
 
 ## 사용자 확인 (2026-11-19)
 
-1. 구현 고르기: 나. 환경 변수 `TASK_PLAN_MANAGER_API=mock|server` 로 고른다. 없으면 mock
+1. 구현 고르기: 나. 환경 변수 `TASK_PLANNER_API=mock|server` 로 고른다. 없으면 mock
 2. 서버 구현(`Default…`)도 지금 HTTP 로 만든다. 페르소나, 지식, 계획 저장소 모두 (사용자: 어려운 게 아니니 지금 하자). 서버가 없으므로 시험은 가짜 서버로 한다
 3. mock 검색은 검색어와 상관없이 정해진 결과를 돌려준다
 4. 공통 HTTP 는 `common/http/` 에 둔다

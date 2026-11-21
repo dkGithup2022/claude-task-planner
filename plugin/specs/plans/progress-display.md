@@ -23,7 +23,7 @@
 - 공통 기능: 없음
 - 워크플로로 넘길 것 (이 계획서의 4 절에서 따로 다룸)
   - 진행 기록을 남기는 함수 `report_progress` 와, 흐름의 단계마다 부르는 곳
-  - 상태 줄을 그리는 명령 `task_plan_manager statusline` (entry) 와 글 고르기
+  - 상태 줄을 그리는 명령 `task-planner statusline` (entry) 와 글 고르기
 
 ### tool-assess-port
 
@@ -77,7 +77,7 @@
 검증 (1~3 끝): ruff check·format 통과, mypy 통과, lint-imports 4 kept, pytest 전체 통과
 
 ### 리뷰 반영 (2026-11-20, 사용자 허락)
-- 상태 줄 설정: 플러그인을 마켓플레이스로 설치하면 실행 파일 경로에 버전 폴더(`…/task_plan_manager/0.1.0/bin/…`)가 들어간다. 버전이 바뀐 뒤에도 예전 경로가 남지 않게, 명령이 `/bin/task_plan_manager statusline` 으로 끝나는 우리 줄은 지금 명령으로 바꿔 적는다. 사용자가 넣은 다른 상태 줄은 그대로 둔다
+- 상태 줄 설정: 플러그인을 마켓플레이스로 설치하면 실행 파일 경로에 버전 폴더(`…/task-planner/0.1.0/bin/…`)가 들어간다. 버전이 바뀐 뒤에도 예전 경로가 남지 않게, 명령이 `/bin/task-planner statusline` 으로 끝나는 우리 줄은 지금 명령으로 바꿔 적는다. 사용자가 넣은 다른 상태 줄은 그대로 둔다
 - 진행 기록 읽기: 줄을 `\n` 으로만 나눈다. `splitlines()` 는 제목 안의 U+2028 같은 문자에서도 나눠 그 기록을 건너뛰었다
 - 진행 기록 읽기: 파일 경로를 `progress_file(plan_id)` 로 만든다. `.plan/` 아래 이름이 숫자인 폴더만 본다
 - 시험 3 개 더함 (예전 버전의 우리 줄 바꾸기, U+2028 이 든 제목, 계획이 아닌 폴더 무시). U+2028 시험은 고치기 전 코드에서 실패하는 것을 확인했다
@@ -139,7 +139,7 @@
 4. `latest_for_session(session_id)` 로 읽어 2 단계의 글을 찍는다. 기록이 없거나 `ClosedProgress` 면 찍지 않는다
 
 ### 상태 줄 명령의 경로
-- 지금 돌고 있는 코드 위치에서 `<저장소>/plugin/bin/task_plan_manager statusline` 을 계산한다 (`common/mock_data.py` 가 같은 방식으로 저장소 위치를 찾는다)
+- 지금 돌고 있는 코드 위치에서 `<저장소>/plugin/bin/task-planner statusline` 을 계산한다 (`common/mock_data.py` 가 같은 방식으로 저장소 위치를 찾는다)
 - 이 계산은 파이썬 코드가 `plugin` 폴더와 같은 저장소 안에 있어야 맞다. 마켓플레이스 배포 방식을 정할 때 다시 확인한다
 
 ### 4 의 1 단계: 기록 포트에 report (2026-11-20)
@@ -162,7 +162,7 @@
 - 만든 파일: `workflow/statusline/draw_statusline.py` (`draw_statusline(stdin_text) -> list[str]`), entry `cli.py` 에 `statusline`
 - 하는 일: 사용자 설정의 원래 상태 줄 명령에 같은 입력을 넘김 (2 초까지 기다림, 찍은 글은 버림, 우리 명령이면 넘기지 않음) → 입력의 `workspace.current_dir` (없으면 `cwd`) 로 폴더를 옮김 → 이 세션의 마지막 기록을 그림
 - 시험: `tests/workflow/statusline/test_draw_statusline.py` (작업 폴더의 기록을 그림, 세션이 없거나 입력이 깨지면 그리지 않음, 다른 세션·불허는 그리지 않음, 원래 명령에 같은 입력을 넘기고 그 글은 버림, 원래 명령이 우리 것이면 부르지 않음), `tests/test_cli.py` (기록이 없으면 아무것도 찍지 않음)
-- 실제 실행 (`plugin/bin/task_plan_manager statusline`, 표준 입력으로 세션 정보): 한 번에 0.3~0.5 초, 처음 한 번 1.3 초
+- 실제 실행 (`plugin/bin/task-planner statusline`, 표준 입력으로 세션 정보): 한 번에 0.3~0.5 초, 처음 한 번 1.3 초
 - 검증: ruff check·format 통과, mypy 통과, lint-imports 4 kept, pytest 274 passed
 - 별도 에이전트 리뷰 지적 5 개는 모두 두기로 함 (사용자, 2026-11-20 "걍 내비 두자"): 원래 상태 줄 명령이 멈추면 손자 프로세스가 남음, 원래 명령에 이 저장소의 가상 환경이 넘어감, 기록 한 줄이 JSON 객체가 아니면 오류, CLI 시험이 현재 폴더를 바꾼 채 끝남, 원래 명령의 글을 버리는지 보는 시험이 약함
 

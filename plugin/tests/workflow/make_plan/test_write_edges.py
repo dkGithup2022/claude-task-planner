@@ -3,15 +3,15 @@
 
 import json
 
-from task_plan_manager.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
-from task_plan_manager.workflow.make_plan.split_plan.write_edges.edge_draft import EdgeDraft
-from task_plan_manager.workflow.make_plan.split_plan.write_edges.write_edges import write_edges
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.node_draft import NodeDraft
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.prerequisite import Prerequisite
-from task_plan_manager.workflow.relink_edges.prompt_relink_edges_edge import RelinkEdgesEdge
-from task_plan_manager.workflow.relink_edges.prompt_relink_edges_output import RelinkEdgesOutput
+from task_planner.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
+from task_planner.workflow.make_plan.split_plan.write_edges.edge_draft import EdgeDraft
+from task_planner.workflow.make_plan.split_plan.write_edges.write_edges import write_edges
+from task_planner.workflow.make_plan.split_plan.write_specs.node_draft import NodeDraft
+from task_planner.workflow.make_plan.split_plan.write_specs.prerequisite import Prerequisite
+from task_planner.workflow.relink_edges.prompt_relink_edges_edge import RelinkEdgesEdge
+from task_planner.workflow.relink_edges.prompt_relink_edges_output import RelinkEdgesOutput
 
 OUTPUT_SPEC = "### 하는 일\n한다\n\n### 산출물\n- 형태: 표\n분량\n\n### 그 외 설명\n(없음)"
 

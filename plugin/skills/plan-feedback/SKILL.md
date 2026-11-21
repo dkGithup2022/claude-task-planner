@@ -4,10 +4,10 @@ description: 검토 중인 계획에 대한 피드백을 받아 고친다. 계�
 argument-hint: <계획 id>
 ---
 계획 id 는 `$ARGUMENTS` 입니다.
-계획은 `task_plan_manager plan show <id>` 로 읽습니다.
+계획은 `task-planner plan show <id>` 로 읽습니다.
 
 - 계획의 노드와 계획에 대한 피드백을 받습니다.
-- 만족하면 `/task_plan_manager:plan-go <id>`, 취소하려면 `/task_plan_manager:plan-cancel <id>` 를 입력하게 안내합니다.
+- 만족하면 `/task-planner:plan-go <id>`, 취소하려면 `/task-planner:plan-cancel <id>` 를 입력하게 안내합니다.
 - 이 단계는 확정 전에, 대화로 기존 계획과 노드를 바꾸거나 노드에 지시할 내용을 더하는 단계입니다.
 
 고치는 일은 아래 다섯 가지입니다.
@@ -19,7 +19,7 @@ argument-hint: <계획 id>
 
 만약 insert 요청이 왔는데, 추가할 노드의 선행, 후행 노드를 특정할 수 없다면, 확실히 물어보세요.
 
-계획을 고치는 말이 오면 Skill 로 `task_plan_manager:plan-edit <id>` 를 부르고, 사용자 말을 그대로 넘깁니다.
+계획을 고치는 말이 오면 Skill 로 `task-planner:plan-edit <id>` 를 부르고, 사용자 말을 그대로 넘깁니다.
 plan-edit 이 돌려준 바뀐 것과 새 계획 표를 그대로 보이고, 더 고칠 것이 있는지 묻습니다.
 고치는 말이 아니면(질문, 잡담) 그냥 답합니다. 지식으로 저장하거나 Claude 메모리에 적지 않습니다. 지식은 /plan-go 때 이 대화에서 뽑습니다.
 
@@ -74,5 +74,5 @@ plan-edit 6 에 사용자 말을 넘김
 ```
 대응
 ```
-고치지 않음. "/task_plan_manager:plan-go 6 을 입력하면 확정합니다" 라고 안내
+고치지 않음. "/task-planner:plan-go 6 을 입력하면 확정합니다" 라고 안내
 ```

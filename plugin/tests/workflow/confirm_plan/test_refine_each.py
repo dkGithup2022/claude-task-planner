@@ -8,20 +8,20 @@ from pathlib import Path
 
 import pytest
 
-from task_plan_manager.common import files
-from task_plan_manager.entry.cli import hook, main
-from task_plan_manager.model.memory.memory_kind import MemoryKind
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.model.plan.shown_record import ShownRecord
-from task_plan_manager.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
-from task_plan_manager.port.memory_api.dto.new_memory import NewMemory
-from task_plan_manager.port.memory_api.mock_memory_api_writer import MockMemoryApiWriter
-from task_plan_manager.port.memory_api.mock_memory_files import load_memories, save_memories
-from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
-from task_plan_manager.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
-from task_plan_manager.workflow.confirm_plan.refine_each.choose_target.merge_target import TARGET_PAGES
-from task_plan_manager.workflow.confirm_plan.refine_each.choose_target.target_pages import has_next, page_of
-from task_plan_manager.workflow.confirm_plan.refine_each.find_existing.find_existing_task import SEARCH_LIMIT
+from task_planner.common import files
+from task_planner.entry.cli import hook, main
+from task_planner.model.memory.memory_kind import MemoryKind
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.model.plan.shown_record import ShownRecord
+from task_planner.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
+from task_planner.port.memory_api.dto.new_memory import NewMemory
+from task_planner.port.memory_api.mock_memory_api_writer import MockMemoryApiWriter
+from task_planner.port.memory_api.mock_memory_files import load_memories, save_memories
+from task_planner.port.plan_api.dto.new_plan import NewPlan
+from task_planner.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
+from task_planner.workflow.confirm_plan.refine_each.choose_target.merge_target import TARGET_PAGES
+from task_planner.workflow.confirm_plan.refine_each.choose_target.target_pages import has_next, page_of
+from task_planner.workflow.confirm_plan.refine_each.find_existing.find_existing_task import SEARCH_LIMIT
 
 CANDIDATES = [
     {"type": "plan", "theme": "UI/UX 설계", "content": "셋으로 나눈다", "quotes": ["셋으로 나눠줘"]},
@@ -55,7 +55,7 @@ def setup(tmp_path, monkeypatch):
     exe = tmp_path / "fake-claude"
     exe.write_text(f"#!{sys.executable}\n" + FAKE_CLAUDE)
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", str(exe))
+    monkeypatch.setenv("TASK_PLANNER_CLAUDE_BIN", str(exe))
     monkeypatch.setenv("FAKE_CANDIDATES", json.dumps(CANDIDATES, ensure_ascii=False))
     # 계획을 보여 준 대화: 보여 준 뒤 피드백 세 줄
     shown = tmp_path / "shown.jsonl"
@@ -71,7 +71,7 @@ def setup(tmp_path, monkeypatch):
     DefaultPlanFolderWriter().save_shown(plan_id, ShownRecord("2026-11-19T00:00:00Z", str(shown)))
     # 지금 대화: /plan-go 1
     session = tmp_path / "session.jsonl"
-    command = "<command-name>/task_plan_manager:plan-go</command-name>\n<command-args>1</command-args>"
+    command = "<command-name>/task-planner:plan-go</command-name>\n<command-args>1</command-args>"
     session.write_text(json.dumps({"type": "user", "timestamp": "2026-11-19T01:00:00.000Z",
                                    "message": {"content": command}}), encoding="utf-8")  # fmt: skip
     hook("session-start", {"session_id": "s", "transcript_path": str(session)})

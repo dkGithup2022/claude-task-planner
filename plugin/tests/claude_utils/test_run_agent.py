@@ -3,8 +3,8 @@ import stat
 
 import pytest
 
-from task_plan_manager.claude_utils.agent.agent_call_error import AgentCallError
-from task_plan_manager.claude_utils.agent.run_agent import run_agent
+from task_planner.claude_utils.agent.agent_call_error import AgentCallError
+from task_planner.claude_utils.agent.run_agent import run_agent
 
 
 def _fake_claude(tmp_path, monkeypatch, body: str):
@@ -12,7 +12,7 @@ def _fake_claude(tmp_path, monkeypatch, body: str):
     exe = tmp_path / "fake-claude"
     exe.write_text(f'#!/bin/bash\nprintf "%s\\n" "$@" > {tmp_path}/args.txt\npwd >> {tmp_path}/args.txt\n' + body)
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", str(exe))
+    monkeypatch.setenv("TASK_PLANNER_CLAUDE_BIN", str(exe))
 
 
 def test_should_run_in_work_dir_with_given_tools_and_no_hooks(tmp_path, monkeypatch):
@@ -63,7 +63,7 @@ def test_should_append_system_prompt_when_asked(tmp_path, monkeypatch):
 CHILD_DRIVER = r"""
 import sys, threading, time
 from pathlib import Path
-from task_plan_manager.claude_utils.agent.run_agent import install_child_cleanup, run_agent
+from task_planner.claude_utils.agent.run_agent import install_child_cleanup, run_agent
 install_child_cleanup()
 threading.Thread(target=run_agent, args=("s", "u", ("Read",), Path(sys.argv[1]), "opus", 60), daemon=True).start()
 time.sleep(60)

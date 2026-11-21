@@ -4,12 +4,12 @@ import json
 
 import pytest
 
-from task_plan_manager.common import files
-from task_plan_manager.entry.cli import main
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
-from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
-from task_plan_manager.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
+from task_planner.common import files
+from task_planner.entry.cli import main
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
+from task_planner.port.plan_api.dto.new_plan import NewPlan
+from task_planner.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
 
 
 @pytest.fixture(autouse=True)
@@ -40,7 +40,7 @@ def test_should_show_plans_of_this_work_folder_and_finish(capsys):
     shown = run(capsys, "start", "list_plans")
     assert shown["type"] == "finished"  # 마지막 보이기 글은 끝 지시에 실림
     assert shown["payload"]["text"] == (
-        "명령 뒤에 계획 id 를 넣어 다시 불러 주세요. 예: /task_plan_manager:plan-go 7\n\n"
+        "명령 뒤에 계획 id 를 넣어 다시 불러 주세요. 예: /task-planner:plan-go 7\n\n"
         "| id | 제목 | 상태 |\n|---|---|---|\n| 1 | 검색 기능 설계 | 검토 중 |\n| 2 | 로그인 개편 | 승인 |"
     )
 

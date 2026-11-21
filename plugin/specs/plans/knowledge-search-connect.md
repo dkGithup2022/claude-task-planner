@@ -140,7 +140,7 @@ def pick_relevant_contexts(
 ## 3. 검증
 
 - `uv run ruff check . && uv run ruff format --check . && uv run lint-imports && uv run mypy && uv run pytest -q`
-- 서버로 한 번: `TASK_PLAN_MANAGER_API=server` 로 작은 계획 하나를 만들어, 나누기 판단의 호출 기록(`calls/`)에서 거르기 입력·출력과 나누기 입력의 검색 결과 절을 확인한다
+- 서버로 한 번: `TASK_PLANNER_API=server` 로 작은 계획 하나를 만들어, 나누기 판단의 호출 기록(`calls/`)에서 거르기 입력·출력과 나누기 입력의 검색 결과 절을 확인한다
 - 별도 에이전트 리뷰
 
 ## 4. 진행 기록

@@ -1,4 +1,4 @@
-# task-plan-manager 제작 규칙
+# claude-task-planner 제작 규칙
 
 번들(dk-claude-tool-bundle)의 규칙(README.md, 각 스킬의 구현 규칙)을 따르고, 아래를 더 지킨다. 사용자가 정했다 (2026-11-19).
 

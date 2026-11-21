@@ -33,7 +33,7 @@
 ## 4. 파일 트리
 
 ```
-src/task_plan_manager/engine/
+src/task_planner/engine/
 ├─ runner/unit/default_unit_runner.py   보이기를 완료한 뒤 다음 차례가 없으면 끝 지시로 바꿔 돌려줌
 └─ runner/flow/default_flow_runner.py   단계 실행기가 끝 지시를 돌려주면 그 글로 실행을 끝냄
 tests/                                   마지막 show → finished 를 기대하던 시험을 고침

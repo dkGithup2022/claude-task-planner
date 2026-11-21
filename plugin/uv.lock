@@ -471,7 +471,7 @@ wheels = [
 ]
 
 [[package]]
-name = "task-plan-manager"
+name = "task-planner"
 version = "0.1.0"
 source = { editable = "." }
 

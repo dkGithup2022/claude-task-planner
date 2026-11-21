@@ -4,9 +4,9 @@ from dataclasses import dataclass
 
 import pytest
 
-from task_plan_manager.claude_utils.prompt.call_prompt import call_prompt
-from task_plan_manager.claude_utils.prompt.dto.prompt_spec import PromptSpec
-from task_plan_manager.claude_utils.prompt.prompt_call_error import PromptCallError
+from task_planner.claude_utils.prompt.call_prompt import call_prompt
+from task_planner.claude_utils.prompt.dto.prompt_spec import PromptSpec
+from task_planner.claude_utils.prompt.prompt_call_error import PromptCallError
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,7 +19,7 @@ def _fake_claude(tmp_path, monkeypatch, body: str):
     exe = tmp_path / "fake-claude"
     exe.write_text("#!/bin/bash\n" + body)
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", str(exe))
+    monkeypatch.setenv("TASK_PLANNER_CLAUDE_BIN", str(exe))
 
 
 def _spec(tmp_path, timeout_s=5):

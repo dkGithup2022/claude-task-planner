@@ -1,6 +1,6 @@
 # 워크플로: plan_run (D 계획 실행)
 
-승인된 계획의 계획 노드를 간선 순서대로 실행한다. `/task_plan_manager:plan-run <id>`.
+승인된 계획의 계획 노드를 간선 순서대로 실행한다. `/task-planner:plan-run <id>`.
 진행 방식: dk-claude-tool-bundle 의 tool-workflow-planner 절차 (계획서 → 확답 → 준비 → 단계 제작 → 조립 → 검증). 묶음 다섯으로 나눠 묶음마다 만들고 검수받는다. 단계마다의 상세(프롬프트·지시문 전문, 입력·출력 예시)는 묶음마다 사용자와 대화로 정하고 이 문서에 더한다.
 
 ## 요청
@@ -155,7 +155,7 @@ call_prompt 와 달리 출력 모양을 정하지 않는다. 답 글 첫 줄의 
 
 def run_agent(prompt_text: str, work_dir: Path, model: str, timeout_seconds: int) -> AgentResult:
     argv = [
-        os.environ.get("TASK_PLAN_MANAGER_CLAUDE_BIN", "claude"), "-p", "--model", model,
+        os.environ.get("TASK_PLANNER_CLAUDE_BIN", "claude"), "-p", "--model", model,
         "--output-format", "json",
         "--allowedTools", "Read Write Edit Glob Grep Bash",
         "--permission-mode", "bypassPermissions",
@@ -242,12 +242,12 @@ tool-assess-model: **부분 충족**
 
 멈출 때의 글:
 ```
-명령에서 계획 id 를 찾지 못했습니다. /task_plan_manager:plan-run <계획 id> 로 다시 불러 주세요
+명령에서 계획 id 를 찾지 못했습니다. /task-planner:plan-run <계획 id> 로 다시 불러 주세요
 대화 기록 경로가 없어 명령의 계획 id 를 읽지 못했습니다
 계획 {id} 이 계획 저장소에 없습니다
 계획 {id} 의 계획 폴더가 이 작업 폴더에 없습니다. 계획을 만든 폴더에서 불러 주세요
-계획 {id} 은 작성 중 상태라 실행할 수 없습니다. 계획을 다 만든 뒤 /task_plan_manager:plan-go {id} 로 확정해 주세요
-계획 {id} 은 검토 중 상태라 실행할 수 없습니다. 확정은 /task_plan_manager:plan-go {id}
+계획 {id} 은 작성 중 상태라 실행할 수 없습니다. 계획을 다 만든 뒤 /task-planner:plan-go {id} 로 확정해 주세요
+계획 {id} 은 검토 중 상태라 실행할 수 없습니다. 확정은 /task-planner:plan-go {id}
 계획 {id} 은 불허 상태라 실행할 수 없습니다
 계획 {id} 은 끝남 상태입니다. 모든 노드를 이미 실행했습니다
 ```
@@ -297,7 +297,7 @@ tool-assess-model: **부분 충족**
 
 ### 묶음 1 시험용 임시 끝 단계: wip_notice
 - 종류: MAIN_SESSION_SHOW. 묶음 5 의 notify 로 바꾼다
-- 글: "계획 {plan_id} \"{title}\" 을 실행 중으로 두었습니다. (작업 지시 만들기부터는 아직 만들지 않았습니다)" / 멈췄으면 "노드 {id}, {id} 에서 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}"
+- 글: "계획 {plan_id} \"{title}\" 을 실행 중으로 두었습니다. (작업 지시 만들기부터는 아직 만들지 않았습니다)" / 멈췄으면 "노드 {id}, {id} 에서 멈췄습니다. 이어 하려면 /task-planner:plan-run {plan_id}"
 
 ### 묶음 2: 작업 지시 만들기 (prompts)
 
@@ -444,7 +444,7 @@ run_nodes 출력: { stop_at: "failed" | "confirm" | "finished" | "blocked" | "co
 - ask_failed: "노드 {id} \"{title}\" 이 끝나지 못했습니다.\n이유: {reason}\n요약: {summary, 없으면 줄 없음}\n결과: {result.md 경로, 없으면 \"없음\"}\n어떻게 할까요?" 다시 실행 / 작업 지시를 고쳐 다시 / 건너뛰기 / 멈추기
 - apply_failed
   - 다시 실행: archive_round (runs/<회차>/ 로 보관, 회차 +1, run.json todo), 노드 상태 todo
-  - 작업 지시를 고쳐 다시: 위와 같고 멈춤 표시 (message "작업 지시 {prompt.md 경로} 를 고친 뒤 /task_plan_manager:plan-run {plan_id}")
+  - 작업 지시를 고쳐 다시: 위와 같고 멈춤 표시 (message "작업 지시 {prompt.md 경로} 를 고친 뒤 /task-planner:plan-run {plan_id}")
   - 건너뛰기: nodes_to_skip 의 노드마다 run.json finish(skipped) 와 skipped_reason "사용자가 건너뜀", 노드 상태 skipped
   - 멈추기: 멈춤 표시 (reason failed_stop)
 
@@ -516,7 +516,7 @@ def _next_question(plan, ran, past_deadline) -> dict[str, Any]:
 | 이 회차의 작업 지시 | `…/nodes/<노드 id>/prompt.md` | 묶음 2 생성기 (사람이 고쳐도 됨) | 있음 |
 | 이 회차의 결과 | `…/nodes/<노드 id>/result.md`, `files/` | 노드 실행 claude -p. 확인 노드는 우리 코드 | 묶음 4 |
 | 지난 회차 | `…/nodes/<노드 id>/runs/<회차>/` (prompt.md 복사, result.md·files/ 옮김) | 우리 코드 (archive_round) | 있음, 부르는 곳은 묶음 4 |
-| claude -p 답의 요약, 비용, 걸린 시간, 실패 이유 | engine 실행 기록 `.task_plan_manager/sessions/<세션>/runs/<실행>/run_nodes_*/result.json` (그 차례에 돌린 노드마다) | engine (run_nodes 의 결과) | 묶음 4 |
+| claude -p 답의 요약, 비용, 걸린 시간, 실패 이유 | engine 실행 기록 `.task_planner/sessions/<세션>/runs/<실행>/run_nodes_*/result.json` (그 차례에 돌린 노드마다) | engine (run_nodes 의 결과) | 묶음 4 |
 | 실행 중 진행 줄 | 미정 (묶음 5) | | |
 
 ### 묶음 5-1: finish_plan (계획서, 2026-11-20)
@@ -598,12 +598,12 @@ tool-assess-model
 - 입력: ← find_plan.plan_id, ← find_plan.title, ← check_broken, ← apply_rerun, ← retry_prompts (멈춘 자리, stop_point), ← finish_plan.finished
 - 출력: 없음
 - 보일 글 (위에서부터 처음 맞는 것):
-  1. 노드 실행 중 멈춤: 멈춤 표시의 글 그대로. 예: `노드 3 "화면 설계" 에서 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run 7`
-  2. 끊긴 노드에서 멈춤: `노드 {id, …} 에서 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}` (지금 글)
-  3. 작업 지시를 못 만듦: `노드 {id, …} 의 작업 지시를 만들지 못해 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}` (지금 글)
+  1. 노드 실행 중 멈춤: 멈춤 표시의 글 그대로. 예: `노드 3 "화면 설계" 에서 멈췄습니다. 이어 하려면 /task-planner:plan-run 7`
+  2. 끊긴 노드에서 멈춤: `노드 {id, …} 에서 멈췄습니다. 이어 하려면 /task-planner:plan-run {plan_id}` (지금 글)
+  3. 작업 지시를 못 만듦: `노드 {id, …} 의 작업 지시를 만들지 못해 멈췄습니다. 이어 하려면 /task-planner:plan-run {plan_id}` (지금 글)
   4. 끝남 (finish_plan.finished): `계획 {plan_id} "{title}" 을 마쳤습니다. {노드 수 줄}` + 빈 줄 + 표
-  5. 막힘: `계획 {plan_id} "{title}" 에서 더 실행할 수 있는 노드가 없습니다. {노드 수 줄}. 이어 하려면 /task_plan_manager:plan-run {plan_id}` + 빈 줄 + 표
-  6. 그 밖(차례를 다 씀): `계획 {plan_id} "{title}" 에 남은 노드가 있습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}`
+  5. 막힘: `계획 {plan_id} "{title}" 에서 더 실행할 수 있는 노드가 없습니다. {노드 수 줄}. 이어 하려면 /task-planner:plan-run {plan_id}` + 빈 줄 + 표
+  6. 그 밖(차례를 다 씀): `계획 {plan_id} "{title}" 에 남은 노드가 있습니다. 이어 하려면 /task-planner:plan-run {plan_id}`
 - 노드 수 줄: `노드 5개: 완료 4, 건너뜀 1` (0 인 상태는 뺌. 순서 완료, 건너뜀, 실패, 실행 중, 할 일)
 - 표: `| 노드 | 제목 | 상태 | 회차 | 결과 / 이유 |`, 계획의 노드 순서. 회차는 run.json 이 없으면 `-`
 - 결과 / 이유:
@@ -631,7 +631,7 @@ tool-assess-model
 e2e
 - 코드 사본: 이번 커밋의 git worktree (scratchpad), mock 저장소는 페르소나·지식만 복사
 - 할 일 하나: 문서 노드 3~4개 + 확인 노드 하나
-- 확인할 것: /task_plan_manager:plan-run (id 없이) → 계획 목록, /task_plan_manager:plan-run <id> → 견적 → 노드 실행 → 확인 대화 → 허가 → 끝 알림 표가 그대로 보임, 계획 상태 끝남, Stop 훅이 끼어들어도 앞 출력을 먼저 처리함
+- 확인할 것: /task-planner:plan-run (id 없이) → 계획 목록, /task-planner:plan-run <id> → 견적 → 노드 실행 → 확인 대화 → 허가 → 끝 알림 표가 그대로 보임, 계획 상태 끝남, Stop 훅이 끼어들어도 앞 출력을 먼저 처리함
 
 ## 같이 쓰는 코드
 
@@ -729,7 +729,7 @@ e2e
   - 단계: notify/notify_task.py (plan_run.notify), notify_messages.py, node_table.py. wip_notice 지움. 선언 reads 에서 write_prompts 를 빼고 finish_plan 을 더함
   - 시험 기대값: 끝 글 "실행 중으로 두었습니다", "모든 노드를 마쳤습니다", "작업 지시 2개를 새로 만들었습니다" → "을 마쳤습니다". 시뮬레이션 시험에 노드 수 줄·표 머리·회차 2 줄·확인 칸 확인 더함
   - 새 시험: tests/workflow/plan_run/test_node_table.py (노드 수 줄, 상태별 칸), test_notify_messages.py (멈춤 세 경우, 막힘, 남음)
-  - 시험에서 본 것: 확인한 말을 대화 기록에서 초 단위로 자르므로, 1초 안에 몰린 시험 대화에서는 명령 줄 "/task_plan_manager:plan-run 1" 까지 확인한 말로 잡힌다. 실제 대화(명령과 확인이 몇 분 떨어짐)에서는 생기지 않음 (e2e9 의 run.json confirm 은 사용자 답만 담김). 시험은 확인 칸의 시작만 본다
+  - 시험에서 본 것: 확인한 말을 대화 기록에서 초 단위로 자르므로, 1초 안에 몰린 시험 대화에서는 명령 줄 "/task-planner:plan-run 1" 까지 확인한 말로 잡힌다. 실제 대화(명령과 확인이 몇 분 떨어짐)에서는 생기지 않음 (e2e9 의 run.json confirm 은 사용자 답만 담김). 시험은 확인 칸의 시작만 본다
   - 리뷰 지적 (사용자 "넵"): claude -p 가 오류로 끝나 여러 줄 stderr 가 실패 이유로 남은 노드를 건너뛰면 표가 깨짐 → 표 칸의 실패 이유를 한 줄로, | 를 \| 로 (node_table.one_line). 시험 하나 더함
   - 검증: ruff check, mypy, lint-imports 4/4, pytest 227 통과
 - 2026-11-20 묶음 5-3 plan-run 스킬 (사용자 "두는 쪽으로 하고 맥락에 대한 설명을 주석으로 잘 남겨줘", "스킬에 저걸 넣으면 그냥 컨텍스트에 추가되는거 아님? 적고 싶으면 별도 파일에"):

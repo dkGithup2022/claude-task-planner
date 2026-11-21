@@ -1,6 +1,6 @@
 ---
 name: joke-note-writer
-description: task_plan_manager 의 count_joke 워크플로가 띄운다. 숫자 말장난 하나의 해설 메모를 써서 정해진 폴더에 저장한다
+description: task-planner 의 count_joke 워크플로가 띄운다. 숫자 말장난 하나의 해설 메모를 써서 정해진 폴더에 저장한다
 tools: Write
 model: haiku
 maxTurns: 4

@@ -5,8 +5,8 @@ import threading
 
 import pytest
 
-from task_plan_manager.common.http.http_json import request_json
-from task_plan_manager.common.http.http_json_error import HttpJsonError
+from task_planner.common.http.http_json import request_json
+from task_planner.common.http.http_json_error import HttpJsonError
 
 
 def _start_server_that_closes_after_request() -> int:

@@ -2,15 +2,15 @@
 
 import pytest
 
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
-from task_plan_manager.port.plan_api.mock_plan_api_reader import MockPlanApiReader
-from task_plan_manager.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
-from task_plan_manager.workflow.make_plan.split_plan.save_graph.plan_not_drafting_error import PlanNotDraftingError
-from task_plan_manager.workflow.make_plan.split_plan.save_graph.save_graph import save_graph
-from task_plan_manager.workflow.make_plan.split_plan.write_edges.edge_draft import EdgeDraft
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.node_draft import NodeDraft
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.port.plan_api.dto.new_plan import NewPlan
+from task_planner.port.plan_api.mock_plan_api_reader import MockPlanApiReader
+from task_planner.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
+from task_planner.workflow.make_plan.split_plan.save_graph.plan_not_drafting_error import PlanNotDraftingError
+from task_planner.workflow.make_plan.split_plan.save_graph.save_graph import save_graph
+from task_planner.workflow.make_plan.split_plan.write_edges.edge_draft import EdgeDraft
+from task_planner.workflow.make_plan.split_plan.write_specs.node_draft import NodeDraft
 
 
 def _draft(local_id: str, output_spec: str = "### 하는 일\n한다") -> NodeDraft:

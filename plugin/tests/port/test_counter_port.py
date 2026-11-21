@@ -1,6 +1,6 @@
-from task_plan_manager.model.counter.counter import Counter
-from task_plan_manager.port.local.counter.default_counter_reader import DefaultCounterReader
-from task_plan_manager.port.local.counter.default_counter_writer import DefaultCounterWriter
+from task_planner.model.counter.counter import Counter
+from task_planner.port.local.counter.default_counter_reader import DefaultCounterReader
+from task_planner.port.local.counter.default_counter_writer import DefaultCounterWriter
 
 
 def test_should_read_zero_when_no_file_and_read_back_saved_counter():

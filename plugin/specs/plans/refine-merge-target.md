@@ -100,7 +100,7 @@ engine 은 바꾸지 않는다.
 ## 5. 파일 트리
 
 ```
-src/task_plan_manager/workflow/confirm_plan/
+src/task_planner/workflow/confirm_plan/
 ├─ confirm_plan_flows.py                         choose_target 묶음을 더함, keep_each 단계의 reads 에 고르기 단계들
 └─ refine_each/
    ├─ choose_action/

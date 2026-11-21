@@ -45,7 +45,7 @@ list_plans
     | 7 | 검색 기능 설계 | 검토 중 |
     | 9 | 로그인 개편 | 승인 |
     ```
-  - 보일 글 (계획이 없을 때): "이 작업 폴더에 계획이 없습니다. /task_plan_manager:run make_plan 으로 계획을 만들어 주세요."
+  - 보일 글 (계획이 없을 때): "이 작업 폴더에 계획이 없습니다. /task-planner:run make_plan 으로 계획을 만들어 주세요."
   - 상태는 한국어로 보인다: drafting 작성 중, reviewing 검토 중, approved 승인, rejected 불허, running 실행 중, done 끝남
 - 상태: 확답 (사용자, 2026-11-19)
 
@@ -61,7 +61,7 @@ list_plans
 ### list_plans (만들기 전 계획, 2026-11-19)
 
 1. 입력
-   - 사용자: `/plan-go`(또는 `/plan-cancel`, `/plan-run`)를 id 없이 부름 → 그 명령의 스킬 글이 `task_plan_manager start list_plans` 를 부른다 (명령 스킬은 다음 일)
+   - 사용자: `/plan-go`(또는 `/plan-cancel`, `/plan-run`)를 id 없이 부름 → 그 명령의 스킬 글이 `task-planner start list_plans` 를 부른다 (명령 스킬은 다음 일)
    - collect_plans: 앞 단계 결과 없음. 작업 폴더의 `.plan/` 폴더 이름, 계획 저장소 (`plan_api_reader()`)
    - show_plans: `context.read("collect_plans")["plans"]` (선언의 `reads=("collect_plans",)`)
 2. 출력
@@ -70,7 +70,7 @@ list_plans
 3. 생길 파일 트리
    ```
    코드
-   src/task_plan_manager/workflow/list_plans/
+   src/task_planner/workflow/list_plans/
    ├─ __init__.py
    ├─ list_plans_flow.py
    ├─ collect_plans/
@@ -80,11 +80,11 @@ list_plans
       ├─ __init__.py
       ├─ show_plans_task.py
       └─ plan_status_label.py          상태 → 한국어 (작성 중, 검토 중 …)
-   src/task_plan_manager/workflow/registry.py   FLOWS 에 "list_plans" 한 줄
+   src/task_planner/workflow/registry.py   FLOWS 에 "list_plans" 한 줄
    tests/workflow/test_list_plans.py
 
    실행하면 (작업 폴더)
-   .task_plan_manager/sessions/<세션 id>/runs/<실행 id>/
+   .task_planner/sessions/<세션 id>/runs/<실행 id>/
    ├─ collect_plans_<uuid8>/result.json
    └─ show_plans_<uuid8>/result.json
    ```
@@ -133,15 +133,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.code_request import CodeRequest
-from task_plan_manager.port.local.plan_folder.default_plan_folder_reader import DefaultPlanFolderReader
-from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
-from task_plan_manager.port.plan_api.plan_not_found_error import PlanNotFoundError
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.code_request import CodeRequest
+from task_planner.port.local.plan_folder.default_plan_folder_reader import DefaultPlanFolderReader
+from task_planner.port.plan_api.plan_api_choice import plan_api_reader
+from task_planner.port.plan_api.plan_not_found_error import PlanNotFoundError
 
 MISSING_TITLE = "(계획 저장소에 없음)"
 
@@ -176,17 +176,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.show_request import ShowRequest
-from task_plan_manager.workflow.list_plans.show_plans.plan_status_label import status_label
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.show_request import ShowRequest
+from task_planner.workflow.list_plans.show_plans.plan_status_label import status_label
 
 # 계획서(specs/plans/workflow-list_plans.md) show_plans 의 보일 글 그대로
 GUIDE = "명령 뒤에 계획 id 를 넣어 다시 불러 주세요. 예: /plan-go 7"
-NO_PLANS = "이 작업 폴더에 계획이 없습니다. /task_plan_manager:run make_plan 으로 계획을 만들어 주세요."
+NO_PLANS = "이 작업 폴더에 계획이 없습니다. /task-planner:run make_plan 으로 계획을 만들어 주세요."
 
 
 @TASKS.register_as("list_plans.show_plans")
@@ -218,13 +218,13 @@ def build_plan_list_text(plans: list[dict[str, Any]]) -> str:
 
 from __future__ import annotations
 
-from task_plan_manager.engine.definition.flow_definition import FlowDefinition
-from task_plan_manager.engine.definition.ref import Ref
-from task_plan_manager.engine.definition.unit.builders import group, task
-from task_plan_manager.engine.performer.performed_by import PerformedBy
-from task_plan_manager.engine.runner.child_run.child_run import ChildRun
-from task_plan_manager.workflow.list_plans.collect_plans import collect_plans_task  # noqa: F401
-from task_plan_manager.workflow.list_plans.show_plans import show_plans_task  # noqa: F401
+from task_planner.engine.definition.flow_definition import FlowDefinition
+from task_planner.engine.definition.ref import Ref
+from task_planner.engine.definition.unit.builders import group, task
+from task_planner.engine.performer.performed_by import PerformedBy
+from task_planner.engine.runner.child_run.child_run import ChildRun
+from task_planner.workflow.list_plans.collect_plans import collect_plans_task  # noqa: F401
+from task_planner.workflow.list_plans.show_plans import show_plans_task  # noqa: F401
 
 LIST_PLANS_FLOW = FlowDefinition(
     name="list_plans",

@@ -182,7 +182,7 @@ make_plan
 ### interview (만듦, 2026-11-19)
 
 1. 입력
-   - 사용자: `/task_plan_manager:run make_plan <맡긴 일>`. run 스킬은 흐름 이름만 CLI 에 넘기고(`task_plan_manager start make_plan`), 맡긴 일의 글은 대화 기록에 남는다
+   - 사용자: `/task-planner:run make_plan <맡긴 일>`. run 스킬은 흐름 이름만 CLI 에 넘기고(`task-planner start make_plan`), 맡긴 일의 글은 대화 기록에 남는다
    - 앞 단계 결과: 없음
 2. 출력
    - CLI 가 메인 세션에 주는 지시 (실제 출력, goal 은 줄임):
@@ -190,7 +190,7 @@ make_plan
      {"type": "talk", "node_uuid": "76770d63-…", "item_key": "-",
       "payload": {"goal": "grill-me 방식(grilling 스킬)으로 사용자를 인터뷰해, 작업…", "opening": "어떤 일을 계획으로 만들까요?"}}
      ```
-   - 메인 세션이 대화를 마치고 `task_plan_manager done` 을 부르면 단계 결과 파일에 대화 구간과 대화 기록 경로를 쓴다 (실제 출력):
+   - 메인 세션이 대화를 마치고 `task-planner done` 을 부르면 단계 결과 파일에 대화 구간과 대화 기록 경로를 쓴다 (실제 출력):
      ```json
      {"by_item": {"-": {"from": "2026-11-19T04:16:56Z", "to": "2026-11-19T04:16:56Z", "transcript": null}}}
      ```
@@ -198,7 +198,7 @@ make_plan
    - `transcript` 가 null 인 것은 CLI 만 따로 돌려서다. Claude Code 에서 플러그인으로 돌리면 세션 시작 훅이 대화 기록 경로를 `session.json` 에 적고, 이 값에 그 경로가 들어간다 (확인 전. Claude Code 에서 돌려 볼 때 본다)
 3. 생긴 파일 트리 (작업 폴더 기준, 실제 실행)
    ```
-   .task_plan_manager/sessions/try1/
+   .task_planner/sessions/try1/
    ├─ session.json                                  {session_id, transcript_path, active_run_id, ...}
    └─ runs/r_20261119_041656/
       ├─ state.json
@@ -207,7 +207,7 @@ make_plan
    ```
    코드 쪽에 생긴 파일:
    ```
-   src/task_plan_manager/workflow/
+   src/task_planner/workflow/
    ├─ registry.py                                   FLOWS 에 "make_plan" 한 줄
    └─ make_plan/
       ├─ __init__.py
@@ -221,7 +221,7 @@ make_plan
 4. 프롬프트 전문: 메인 세션이 받는 프롬프트는 두 부분이다 (사용자 지적, 2026-11-19: 대화 목표도 프롬프트다)
    - 대화를 어떻게 하는지: 플러그인 run 스킬의 talk 처리 (`plugin/skills/run/SKILL.md` 2 번)
      ```text
-     talk: payload.opening 으로 대화를 시작해 payload.goal 을 향해 사용자와 이야기합니다. 충분하면 AskUserQuestion 으로 "정리할까요?" (예 / 더 이야기) 를 묻고, 예면 task_plan_manager done 을 부릅니다.
+     talk: payload.opening 으로 대화를 시작해 payload.goal 을 향해 사용자와 이야기합니다. 충분하면 AskUserQuestion 으로 "정리할까요?" (예 / 더 이야기) 를 묻고, 예면 task-planner done 을 부릅니다.
      ```
    - 무엇을 위해 대화하는지: 대화 목표 (`interview_goal.md`, 지시의 payload.goal 로 넘어감)
    ```text
@@ -234,7 +234,7 @@ make_plan
    ```
    첫 말: "어떤 일을 계획으로 만들까요?"
 5. 코드 전문
-   - `src/task_plan_manager/workflow/make_plan/interview/interview_task.py`
+   - `src/task_planner/workflow/make_plan/interview/interview_task.py`
      ```python
 """interview: 메인 세션이 grill-me 방식으로 사용자를 인터뷰해, 계획을 세우는 데 필요한 결정을 모은다.
 결과는 대화 구간과 대화 기록 경로. 다음 단계(write_request)가 이 구간의 대화로 명령서를 쓴다."""
@@ -244,12 +244,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.conversation_request import ConversationRequest
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.conversation_request import ConversationRequest
 
 # 대화 목표는 계획서(specs/plans/workflow-make_plan.md) interview 의 글 그대로. 길어서 md 파일로 둔다
 GOAL = (Path(__file__).parent / "interview_goal.md").read_text(encoding="utf-8").strip()
@@ -270,7 +270,7 @@ class InterviewTask(Task):
         # 수행자가 돌려준 대화 구간과 대화 기록 경로를 그대로 이 단계의 결과로 남긴다
         return TaskOutput(dict(result))
      ```
-   - `src/task_plan_manager/workflow/make_plan/make_plan_flow.py`
+   - `src/task_planner/workflow/make_plan/make_plan_flow.py`
      ```python
 """make_plan 워크플로 선언. 계획서: specs/plans/workflow-make_plan.md
 
@@ -279,12 +279,12 @@ class InterviewTask(Task):
 
 from __future__ import annotations
 
-from task_plan_manager.engine.definition.flow_definition import FlowDefinition
-from task_plan_manager.engine.definition.ref import Ref
-from task_plan_manager.engine.definition.unit.builders import group, task
-from task_plan_manager.engine.performer.performed_by import PerformedBy
-from task_plan_manager.engine.runner.child_run.child_run import ChildRun
-from task_plan_manager.workflow.make_plan.interview import interview_task  # noqa: F401
+from task_planner.engine.definition.flow_definition import FlowDefinition
+from task_planner.engine.definition.ref import Ref
+from task_planner.engine.definition.unit.builders import group, task
+from task_planner.engine.performer.performed_by import PerformedBy
+from task_planner.engine.runner.child_run.child_run import ChildRun
+from task_planner.workflow.make_plan.interview import interview_task  # noqa: F401
 
 MAKE_PLAN_FLOW = FlowDefinition(
     name="make_plan",
@@ -299,8 +299,8 @@ MAKE_PLAN_FLOW = FlowDefinition(
 
 import json
 
-from task_plan_manager.entry.cli import main
-from task_plan_manager.workflow.make_plan.interview.interview_task import GOAL, OPENING
+from task_planner.entry.cli import main
+from task_planner.workflow.make_plan.interview.interview_task import GOAL, OPENING
 
 
 def run(capsys, *args):
@@ -369,13 +369,13 @@ def test_should_start_with_interview_talk_and_finish_after_done(capsys, package_
        ```
 3. 생긴 파일 트리
    ```
-   src/task_plan_manager/workflow/make_plan/write_request/
+   src/task_planner/workflow/make_plan/write_request/
    ├─ __init__.py
    ├─ write_request_task.py
    ├─ prompt_write_request.md
    ├─ prompt_write_request_output.py
    └─ transcript_missing_error.py
-   실행하면 .task_plan_manager/sessions/<세션 id>/runs/<실행 id>/write_request_<uuid8>/
+   실행하면 .task_planner/sessions/<세션 id>/runs/<실행 id>/write_request_<uuid8>/
    ├─ result.json
    └─ calls/1/request.json, response.json
    ```
@@ -414,16 +414,16 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from task_plan_manager.claude_utils.prompt.dto.prompt_spec import PromptSpec
-from task_plan_manager.claude_utils.transcript.read_dialogue import dialogue
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.prompt_request import PromptRequest
-from task_plan_manager.workflow.make_plan.write_request.prompt_write_request_output import WriteRequestOutput
-from task_plan_manager.workflow.make_plan.write_request.transcript_missing_error import TranscriptMissingError
+from task_planner.claude_utils.prompt.dto.prompt_spec import PromptSpec
+from task_planner.claude_utils.transcript.read_dialogue import dialogue
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.prompt_request import PromptRequest
+from task_planner.workflow.make_plan.write_request.prompt_write_request_output import WriteRequestOutput
+from task_planner.workflow.make_plan.write_request.transcript_missing_error import TranscriptMissingError
 
 WRITE_REQUEST = PromptSpec(
     name="write_request",
@@ -487,7 +487,7 @@ class WriteRequestOutput:
    - 판단마다 `<폴더>/calls/split/<n>/request.json, response.json`
 3. 생긴 파일 트리
    ```
-   src/task_plan_manager/workflow/make_plan/split_plan/
+   src/task_planner/workflow/make_plan/split_plan/
    ├─ __init__.py
    ├─ request_md.py                 명령서 md 의 목차별 글 꺼내기, 목차 내리기
    ├─ prompt_call_log.py            CODE 단계 안의 claude -p 기록
@@ -597,16 +597,16 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
-from task_plan_manager.claude_utils.prompt.call_prompt import call_prompt
-from task_plan_manager.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
-from task_plan_manager.claude_utils.prompt.dto.prompt_spec import PromptSpec
-from task_plan_manager.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
-from task_plan_manager.workflow.make_plan.split_plan.request_md import demoted, section
-from task_plan_manager.workflow.make_plan.split_plan.split_tree.prompt_split_output import SplitOutput
-from task_plan_manager.workflow.make_plan.split_plan.split_tree.split_result import SplitResult
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.task_tree import TaskTree
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.work_item import WorkItem
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.work_kind import WorkKind
+from task_planner.claude_utils.prompt.call_prompt import call_prompt
+from task_planner.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
+from task_planner.claude_utils.prompt.dto.prompt_spec import PromptSpec
+from task_planner.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
+from task_planner.workflow.make_plan.split_plan.request_md import demoted, section
+from task_planner.workflow.make_plan.split_plan.split_tree.prompt_split_output import SplitOutput
+from task_planner.workflow.make_plan.split_plan.split_tree.split_result import SplitResult
+from task_planner.workflow.make_plan.split_plan.task_tree.task_tree import TaskTree
+from task_planner.workflow.make_plan.split_plan.task_tree.work_item import WorkItem
+from task_planner.workflow.make_plan.split_plan.task_tree.work_kind import WorkKind
 
 MAX_NODES = 40  # 맨 아래 작업(= 노드) 상한 (기존과 같음)
 MAX_DEPTH = 5  # 이 깊이에 닿은 작업은 더 판단하지 않는다
@@ -727,8 +727,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.work_item import WorkItem
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.work_kind import WorkKind
+from task_planner.workflow.make_plan.split_plan.task_tree.work_item import WorkItem
+from task_planner.workflow.make_plan.split_plan.task_tree.work_kind import WorkKind
 
 ROOT_KEY = "0"
 
@@ -795,7 +795,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.work_kind import WorkKind
+from task_planner.workflow.make_plan.split_plan.task_tree.work_kind import WorkKind
 
 
 @dataclass(frozen=True, slots=True)
@@ -843,8 +843,8 @@ from __future__ import annotations
 import threading
 from pathlib import Path
 
-from task_plan_manager.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
-from task_plan_manager.common import files
+from task_planner.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
+from task_planner.common import files
 
 
 class PromptCallLog:
@@ -892,7 +892,7 @@ class PromptCallLog:
    - 정의서마다 `calls/spec/<n>/`
 3. 생긴 파일 트리
    ```
-   src/task_plan_manager/workflow/make_plan/split_plan/
+   src/task_planner/workflow/make_plan/split_plan/
    ├─ prompt_caller.py              claude -p 호출 함수의 모양 (split_tree 와 같이 씀)
    └─ write_specs/
       ├─ write_specs.py
@@ -936,20 +936,20 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from task_plan_manager.claude_utils.prompt.call_prompt import call_prompt
-from task_plan_manager.claude_utils.prompt.dto.prompt_spec import PromptSpec
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
-from task_plan_manager.workflow.make_plan.split_plan.prompt_caller import PromptCaller
-from task_plan_manager.workflow.make_plan.split_plan.request_md import demoted
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.task_tree import TaskTree
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.work_item import WorkItem
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.work_kind import WorkKind
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.node_draft import NodeDraft
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.participant import Participant
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.prerequisite import Prerequisite
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.prompt_spec_output import SpecOutput
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.specs_result import SpecsResult
+from task_planner.claude_utils.prompt.call_prompt import call_prompt
+from task_planner.claude_utils.prompt.dto.prompt_spec import PromptSpec
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
+from task_planner.workflow.make_plan.split_plan.prompt_caller import PromptCaller
+from task_planner.workflow.make_plan.split_plan.request_md import demoted
+from task_planner.workflow.make_plan.split_plan.task_tree.task_tree import TaskTree
+from task_planner.workflow.make_plan.split_plan.task_tree.work_item import WorkItem
+from task_planner.workflow.make_plan.split_plan.task_tree.work_kind import WorkKind
+from task_planner.workflow.make_plan.split_plan.write_specs.node_draft import NodeDraft
+from task_planner.workflow.make_plan.split_plan.write_specs.participant import Participant
+from task_planner.workflow.make_plan.split_plan.write_specs.prerequisite import Prerequisite
+from task_planner.workflow.make_plan.split_plan.write_specs.prompt_spec_output import SpecOutput
+from task_planner.workflow.make_plan.split_plan.write_specs.specs_result import SpecsResult
 
 PARALLEL = 4
 NOT_A_TASK_SOURCES = ("명령서", "저장소")  # 선행 작업이 아닌 출처
@@ -1191,15 +1191,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from task_plan_manager.claude_utils.prompt.call_prompt import call_prompt
-from task_plan_manager.claude_utils.prompt.dto.prompt_spec import PromptSpec
-from task_plan_manager.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
-from task_plan_manager.workflow.make_plan.split_plan.prompt_caller import PromptCaller
-from task_plan_manager.workflow.make_plan.split_plan.request_md import demoted
-from task_plan_manager.workflow.make_plan.split_plan.write_edges.edge_draft import EdgeDraft
-from task_plan_manager.workflow.make_plan.split_plan.write_edges.edges_result import EdgesResult
-from task_plan_manager.workflow.make_plan.split_plan.write_edges.prompt_edges_output import EdgesOutput
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.node_draft import NodeDraft
+from task_planner.claude_utils.prompt.call_prompt import call_prompt
+from task_planner.claude_utils.prompt.dto.prompt_spec import PromptSpec
+from task_planner.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
+from task_planner.workflow.make_plan.split_plan.prompt_caller import PromptCaller
+from task_planner.workflow.make_plan.split_plan.request_md import demoted
+from task_planner.workflow.make_plan.split_plan.write_edges.edge_draft import EdgeDraft
+from task_planner.workflow.make_plan.split_plan.write_edges.edges_result import EdgesResult
+from task_planner.workflow.make_plan.split_plan.write_edges.prompt_edges_output import EdgesOutput
+from task_planner.workflow.make_plan.split_plan.write_specs.node_draft import NodeDraft
 
 EDGES = PromptSpec(
     name="edges",
@@ -1344,14 +1344,14 @@ split_plan 을 다시 수행하면 앞선 시도가 남긴 노드를 지우고 �
 
 from __future__ import annotations
 
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.port.plan_api.dto.new_node import NewNode
-from task_plan_manager.port.plan_api.plan_api_reader import PlanApiReader
-from task_plan_manager.port.plan_api.plan_api_writer import PlanApiWriter
-from task_plan_manager.workflow.make_plan.split_plan.save_graph.plan_not_drafting_error import PlanNotDraftingError
-from task_plan_manager.workflow.make_plan.split_plan.save_graph.saved_graph import SavedGraph
-from task_plan_manager.workflow.make_plan.split_plan.write_edges.edge_draft import EdgeDraft
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.node_draft import NodeDraft
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.port.plan_api.dto.new_node import NewNode
+from task_planner.port.plan_api.plan_api_reader import PlanApiReader
+from task_planner.port.plan_api.plan_api_writer import PlanApiWriter
+from task_planner.workflow.make_plan.split_plan.save_graph.plan_not_drafting_error import PlanNotDraftingError
+from task_planner.workflow.make_plan.split_plan.save_graph.saved_graph import SavedGraph
+from task_planner.workflow.make_plan.split_plan.write_edges.edge_draft import EdgeDraft
+from task_planner.workflow.make_plan.split_plan.write_specs.node_draft import NodeDraft
 
 
 def save_graph(
@@ -1418,7 +1418,7 @@ def _real_line_breaks(text: str) -> str:
 3. 생길 파일 트리
    ```
    코드
-   src/task_plan_manager/workflow/make_plan/register_plan/
+   src/task_planner/workflow/make_plan/register_plan/
    ├─ __init__.py
    ├─ register_plan_task.py
    └─ no_persona_error.py           페르소나가 하나도 없을 때
@@ -1426,9 +1426,9 @@ def _real_line_breaks(text: str) -> str:
    tests/workflow/test_make_plan.py 시험 더함
 
    실행하면 (작업 폴더)
-   .task_plan_manager/sessions/<세션 id>/runs/<실행 id>/register_plan_<uuid8>/result.json
+   .task_planner/sessions/<세션 id>/runs/<실행 id>/register_plan_<uuid8>/result.json
    .plan/<plan_id>/command.md
-   mock (task-plan-manager 저장소)
+   mock (claude-task-planner 저장소)
    .mockData/personas.json          없으면 처음 값으로 생김
    .mockData/plans/<plan_id>.json
    .mockData/ids.json
@@ -1475,17 +1475,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.code_request import CodeRequest
-from task_plan_manager.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
-from task_plan_manager.port.persona_api.persona_api_choice import persona_api_reader
-from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
-from task_plan_manager.port.plan_api.plan_api_choice import plan_api_writer
-from task_plan_manager.workflow.make_plan.register_plan.no_persona_error import NoPersonaError
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.code_request import CodeRequest
+from task_planner.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
+from task_planner.port.persona_api.persona_api_choice import persona_api_reader
+from task_planner.port.plan_api.dto.new_plan import NewPlan
+from task_planner.port.plan_api.plan_api_choice import plan_api_writer
+from task_planner.workflow.make_plan.register_plan.no_persona_error import NoPersonaError
 
 
 @TASKS.register_as("make_plan.register_plan")
@@ -1517,7 +1517,7 @@ def _default_persona_ids() -> tuple[int, ...]:
    ```
    작업 폴더
    ├─ .plan/1/command.md                                      명령서 사본
-   └─ .task_plan_manager/sessions/try2/runs/r_20261119_053615/
+   └─ .task_planner/sessions/try2/runs/r_20261119_053615/
       ├─ interview_f3244c81/result.json
       ├─ write_request_ac9dbeff/result.json, calls/1/
       └─ register_plan_b6f35063/result.json                   {"plan_id": 1}
@@ -1540,7 +1540,7 @@ def _default_persona_ids() -> tuple[int, ...]:
    - 호출 기록: `split_plan_<uuid8>/files/calls/split/<n>/`, `spec/<n>/`, `edges/1/` (engine 이 단계마다 만들어 주는 산출물 폴더)
 3. 바뀐 파일
    ```
-   src/task_plan_manager/workflow/make_plan/
+   src/task_planner/workflow/make_plan/
    ├─ make_plan_flow.py                  split_plan 을 더함
    └─ split_plan/
       ├─ split_plan_task.py              새로 만듦
@@ -1561,20 +1561,20 @@ from __future__ import annotations
 
 from typing import Any
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.code_request import CodeRequest
-from task_plan_manager.model.persona.persona import Persona
-from task_plan_manager.port.persona_api.persona_api_choice import persona_api_reader
-from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
-from task_plan_manager.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
-from task_plan_manager.workflow.make_plan.split_plan.save_graph.save_graph import save_graph
-from task_plan_manager.workflow.make_plan.split_plan.split_tree.split_tree import split_tree
-from task_plan_manager.workflow.make_plan.split_plan.write_edges.write_edges import write_edges
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.write_specs import write_specs
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.code_request import CodeRequest
+from task_planner.model.persona.persona import Persona
+from task_planner.port.persona_api.persona_api_choice import persona_api_reader
+from task_planner.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
+from task_planner.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
+from task_planner.workflow.make_plan.split_plan.save_graph.save_graph import save_graph
+from task_planner.workflow.make_plan.split_plan.split_tree.split_tree import split_tree
+from task_planner.workflow.make_plan.split_plan.write_edges.write_edges import write_edges
+from task_planner.workflow.make_plan.split_plan.write_specs.write_specs import write_specs
 
 
 @TASKS.register_as("make_plan.split_plan")
@@ -1656,15 +1656,15 @@ def _participants(persona_ids: tuple[int, ...]) -> tuple[Persona, ...]:
 3. 생길 파일 트리
    ```
    코드
-   src/task_plan_manager/model/plan/shown_record.py                  새로: ShownRecord(shown_at, transcript)
-   src/task_plan_manager/port/local/plan_folder/
+   src/task_planner/model/plan/shown_record.py                  새로: ShownRecord(shown_at, transcript)
+   src/task_planner/port/local/plan_folder/
    ├─ plan_folder_reader.py               read_shown(plan_id) -> ShownRecord | None 를 더함
    ├─ plan_folder_writer.py               save_shown(plan_id, record) 를 더함
    ├─ default_plan_folder_reader.py       구현 더함
    ├─ default_plan_folder_writer.py       구현 더함
    ├─ shown_record_file_converter.py      새로: ShownRecord ↔ shown.json
    └─ plan_folder_location.py             shown_file(plan_id) 를 더함
-   src/task_plan_manager/workflow/make_plan/prepare_show/
+   src/task_planner/workflow/make_plan/prepare_show/
    ├─ __init__.py
    ├─ prepare_show_task.py
    ├─ plan_summary.py                     보일 글 만들기 (build_summary)
@@ -1676,7 +1676,7 @@ def _participants(persona_ids: tuple[int, ...]) -> tuple[Persona, ...]:
 
    실행하면 (작업 폴더)
    .plan/<plan_id>/shown.json
-   .task_plan_manager/…/prepare_show_<uuid8>/result.json
+   .task_planner/…/prepare_show_<uuid8>/result.json
    ```
 4. 프롬프트: 없음
 5. 코드 (만들 모양)
@@ -1718,20 +1718,20 @@ from __future__ import annotations
 
 from typing import Any
 
-from task_plan_manager.common.clock import utc_now
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.code_request import CodeRequest
-from task_plan_manager.model.plan.plan import Plan
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.model.plan.shown_record import ShownRecord
-from task_plan_manager.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
-from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
-from task_plan_manager.workflow.make_plan.prepare_show.plan_not_showable_error import PlanNotShowableError
-from task_plan_manager.workflow.make_plan.prepare_show.plan_summary import build_summary
+from task_planner.common.clock import utc_now
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.code_request import CodeRequest
+from task_planner.model.plan.plan import Plan
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.model.plan.shown_record import ShownRecord
+from task_planner.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
+from task_planner.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
+from task_planner.workflow.make_plan.prepare_show.plan_not_showable_error import PlanNotShowableError
+from task_planner.workflow.make_plan.prepare_show.plan_summary import build_summary
 
 
 @TASKS.register_as("make_plan.prepare_show")
@@ -1766,9 +1766,9 @@ def _move_to_reviewing(plan_id: int) -> Plan:
 
 from __future__ import annotations
 
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.model.plan.plan import Plan
-from task_plan_manager.model.plan.plan_node import PlanNode
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.model.plan.plan import Plan
+from task_planner.model.plan.plan_node import PlanNode
 
 
 def build_summary(plan: Plan, warnings: list[str]) -> str:
@@ -1837,12 +1837,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.show_request import ShowRequest
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.show_request import ShowRequest
 
 # 계획서(specs/plans/workflow-make_plan.md) show_plan 의 보일 글 그대로
 GUIDE = """고칠 곳이 있으면 대화로 말해 주세요.
@@ -1872,17 +1872,17 @@ interview → write_request → register_plan → split_plan → prepare_show �
 
 from __future__ import annotations
 
-from task_plan_manager.engine.definition.flow_definition import FlowDefinition
-from task_plan_manager.engine.definition.ref import Ref
-from task_plan_manager.engine.definition.unit.builders import group, task
-from task_plan_manager.engine.performer.performed_by import PerformedBy
-from task_plan_manager.engine.runner.child_run.child_run import ChildRun
-from task_plan_manager.workflow.make_plan.interview import interview_task  # noqa: F401
-from task_plan_manager.workflow.make_plan.prepare_show import prepare_show_task  # noqa: F401
-from task_plan_manager.workflow.make_plan.register_plan import register_plan_task  # noqa: F401
-from task_plan_manager.workflow.make_plan.show_plan import show_plan_task  # noqa: F401
-from task_plan_manager.workflow.make_plan.split_plan import split_plan_task  # noqa: F401
-from task_plan_manager.workflow.make_plan.write_request import write_request_task  # noqa: F401
+from task_planner.engine.definition.flow_definition import FlowDefinition
+from task_planner.engine.definition.ref import Ref
+from task_planner.engine.definition.unit.builders import group, task
+from task_planner.engine.performer.performed_by import PerformedBy
+from task_planner.engine.runner.child_run.child_run import ChildRun
+from task_planner.workflow.make_plan.interview import interview_task  # noqa: F401
+from task_planner.workflow.make_plan.prepare_show import prepare_show_task  # noqa: F401
+from task_planner.workflow.make_plan.register_plan import register_plan_task  # noqa: F401
+from task_planner.workflow.make_plan.show_plan import show_plan_task  # noqa: F401
+from task_planner.workflow.make_plan.split_plan import split_plan_task  # noqa: F401
+from task_planner.workflow.make_plan.write_request import write_request_task  # noqa: F401
 
 MAKE_PLAN_FLOW = FlowDefinition(
     name="make_plan",
@@ -1902,11 +1902,11 @@ MAKE_PLAN_FLOW = FlowDefinition(
 
 ### 끝까지 시험: Claude Code (2026-11-19)
 
-방법: Claude Code 를 대화 없이(`claude -p`) 띄우고, 같은 세션 id 로 이어 부르며 Claude 가 사용자 역할로 답했다. 플러그인은 `--plugin-dir`, 허용 도구는 `task_plan_manager` 명령·Skill·AskUserQuestion 만. 작업 폴더는 scratchpad 의 빈 폴더(tpm-try2), mock 은 저장소의 실제 `.mockData/`.
+방법: Claude Code 를 대화 없이(`claude -p`) 띄우고, 같은 세션 id 로 이어 부르며 Claude 가 사용자 역할로 답했다. 플러그인은 `--plugin-dir`, 허용 도구는 `task-planner` 명령·Skill·AskUserQuestion 만. 작업 폴더는 scratchpad 의 빈 폴더(tpm-try2), mock 은 저장소의 실제 `.mockData/`.
 
 | 차례 | 사용자 말 | 일어난 일 |
 |---|---|---|
-| 1 | `/task_plan_manager:run make_plan 파이썬으로 할 일 목록을 관리하는 작은 CLI 도구를 만들고 싶어` | `start make_plan` → talk 지시 → **Skill grilling 을 불렀다** → 질문 7개를 추천 답과 함께 한 번에 (grilling 의 라운드 방식) |
+| 1 | `/task-planner:run make_plan 파이썬으로 할 일 목록을 관리하는 작은 CLI 도구를 만들고 싶어` | `start make_plan` → talk 지시 → **Skill grilling 을 불렀다** → 질문 7개를 추천 답과 함께 한 번에 (grilling 의 라운드 방식) |
 | 2 | "Q1 은 b 로 해줘. 나머지는 다 추천대로 예." | 목차로 정리해 보이고 "이 내용으로 정리할까요? (예 / 더 이야기)" |
 | 3 | "예" | `done` → write_request → register_plan → split_plan → prepare_show 가 이어서 돌고 show 지시 (65 초) → `next` → finished |
 
@@ -1921,7 +1921,7 @@ MAKE_PLAN_FLOW = FlowDefinition(
   | 6 | README 작성 | document | 1, 2, 3, 4 |
   ```
 - claude -p 비용 $0.585 (명령서 1, 나누기 7, 정의서 6, 간선 1). 메인 세션 비용은 따로
-- 작업 폴더: `.plan/1/command.md`, `.plan/1/shown.json`(시각, 대화 기록 경로), `.task_plan_manager/sessions/<세션 id>/runs/…` (단계 여섯 개 폴더, split_plan 의 calls/split 1~7, spec 1~6, edges 1)
+- 작업 폴더: `.plan/1/command.md`, `.plan/1/shown.json`(시각, 대화 기록 경로), `.task_planner/sessions/<세션 id>/runs/…` (단계 여섯 개 폴더, split_plan 의 calls/split 1~7, spec 1~6, edges 1)
 - mock: `.mockData/personas.json`, `ids.json`, `plans/1.json`
 
 발견

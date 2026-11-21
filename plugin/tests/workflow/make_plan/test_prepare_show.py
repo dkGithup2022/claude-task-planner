@@ -2,17 +2,17 @@
 
 import pytest
 
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.model.plan.plan import Plan
-from task_plan_manager.model.plan.plan_edge import PlanEdge
-from task_plan_manager.model.plan.plan_node import PlanNode
-from task_plan_manager.model.plan.plan_node_status import PlanNodeStatus
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
-from task_plan_manager.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
-from task_plan_manager.workflow.make_plan.prepare_show.plan_not_showable_error import PlanNotShowableError
-from task_plan_manager.workflow.make_plan.prepare_show.plan_summary import build_summary
-from task_plan_manager.workflow.make_plan.prepare_show.prepare_show_task import _move_to_reviewing
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.model.plan.plan import Plan
+from task_planner.model.plan.plan_edge import PlanEdge
+from task_planner.model.plan.plan_node import PlanNode
+from task_planner.model.plan.plan_node_status import PlanNodeStatus
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.port.plan_api.dto.new_plan import NewPlan
+from task_planner.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
+from task_planner.workflow.make_plan.prepare_show.plan_not_showable_error import PlanNotShowableError
+from task_planner.workflow.make_plan.prepare_show.plan_summary import build_summary
+from task_planner.workflow.make_plan.prepare_show.prepare_show_task import _move_to_reviewing
 
 
 def _node(node_id: int, title: str, kind: NodeKind = NodeKind.DOCUMENT) -> PlanNode:

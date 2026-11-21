@@ -1,29 +1,29 @@
-from task_plan_manager.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
-from task_plan_manager.engine.definition.ref import Ref
-from task_plan_manager.engine.instruction.instruction import Instruction
-from task_plan_manager.engine.instruction.instruction_converter import InstructionConverter
-from task_plan_manager.engine.instruction.instruction_type import InstructionType
-from task_plan_manager.engine.model.history.history_entry import HistoryEntry
-from task_plan_manager.engine.model.result.fixed_items import FixedItems
-from task_plan_manager.engine.model.result.node_result import NodeResult
-from task_plan_manager.engine.model.run_state.flow_run_state import FlowRunState
-from task_plan_manager.engine.model.run_state.flow_run_status import FlowRunStatus
-from task_plan_manager.engine.model.run_state.node_kind import NodeKind
-from task_plan_manager.engine.model.run_state.node_status import NodeStatus
-from task_plan_manager.engine.model.run_state.scenario_node import ScenarioNode
-from task_plan_manager.engine.model.session.claude_session import ClaudeSession
-from task_plan_manager.engine.performer.performed_by import PerformedBy
-from task_plan_manager.engine.port.history.history_file_converter import HistoryFileConverter
-from task_plan_manager.engine.port.result.fixed_items_file_converter import FixedItemsFileConverter
-from task_plan_manager.engine.port.result.node_result_file_converter import NodeResultFileConverter
-from task_plan_manager.engine.port.result.prompt_call_file_converter import PromptCallFileConverter
-from task_plan_manager.engine.port.run_state.run_state_file_converter import RunStateFileConverter
-from task_plan_manager.engine.port.session.session_file_converter import SessionFileConverter
-from task_plan_manager.engine.request.conversation_request import ConversationRequest
-from task_plan_manager.engine.request.question_request import QuestionRequest
-from task_plan_manager.engine.request.show_request import ShowRequest
-from task_plan_manager.engine.request.subagent_request import SubagentRequest
-from task_plan_manager.engine.runner.child_run.child_run import ChildRun
+from task_planner.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
+from task_planner.engine.definition.ref import Ref
+from task_planner.engine.instruction.instruction import Instruction
+from task_planner.engine.instruction.instruction_converter import InstructionConverter
+from task_planner.engine.instruction.instruction_type import InstructionType
+from task_planner.engine.model.history.history_entry import HistoryEntry
+from task_planner.engine.model.result.fixed_items import FixedItems
+from task_planner.engine.model.result.node_result import NodeResult
+from task_planner.engine.model.run_state.flow_run_state import FlowRunState
+from task_planner.engine.model.run_state.flow_run_status import FlowRunStatus
+from task_planner.engine.model.run_state.node_kind import NodeKind
+from task_planner.engine.model.run_state.node_status import NodeStatus
+from task_planner.engine.model.run_state.scenario_node import ScenarioNode
+from task_planner.engine.model.session.claude_session import ClaudeSession
+from task_planner.engine.performer.performed_by import PerformedBy
+from task_planner.engine.port.history.history_file_converter import HistoryFileConverter
+from task_planner.engine.port.result.fixed_items_file_converter import FixedItemsFileConverter
+from task_planner.engine.port.result.node_result_file_converter import NodeResultFileConverter
+from task_planner.engine.port.result.prompt_call_file_converter import PromptCallFileConverter
+from task_planner.engine.port.run_state.run_state_file_converter import RunStateFileConverter
+from task_planner.engine.port.session.session_file_converter import SessionFileConverter
+from task_planner.engine.request.conversation_request import ConversationRequest
+from task_planner.engine.request.question_request import QuestionRequest
+from task_planner.engine.request.show_request import ShowRequest
+from task_planner.engine.request.subagent_request import SubagentRequest
+from task_planner.engine.runner.child_run.child_run import ChildRun
 
 
 def _scenario() -> ScenarioNode:
@@ -81,7 +81,7 @@ def test_should_restore_payload_type_from_instruction_type():
     payloads = [
         (InstructionType.SHOW, ShowRequest("글")),
         (InstructionType.TALK, ConversationRequest("목표", "첫 말")),
-        (InstructionType.SPAWN, SubagentRequest("task_plan_manager:writer", "메시지")),
+        (InstructionType.SPAWN, SubagentRequest("task-planner:writer", "메시지")),
     ]
     for kind, payload in payloads:
         ins = Instruction(kind, "u", None, payload)
@@ -96,7 +96,7 @@ def test_should_name_node_folder_with_uuid_prefix():
 def test_should_refuse_payload_that_does_not_match_instruction_type():
     import pytest
 
-    from task_plan_manager.engine.request.code_request import CodeRequest
+    from task_planner.engine.request.code_request import CodeRequest
 
     for kind, payload in [(InstructionType.ASK, CodeRequest()), (InstructionType.ASK, ShowRequest("x")),
                           (InstructionType.SPAWN, ShowRequest("x"))]:  # fmt: skip
@@ -105,12 +105,12 @@ def test_should_refuse_payload_that_does_not_match_instruction_type():
 
 
 def test_should_carry_skill_on_show_payload_only_when_present():
-    from task_plan_manager.engine.instruction.instruction import Instruction
-    from task_plan_manager.engine.instruction.instruction_converter import InstructionConverter
+    from task_planner.engine.instruction.instruction import Instruction
+    from task_planner.engine.instruction.instruction_converter import InstructionConverter
 
     converter = InstructionConverter()
-    with_skill = Instruction.finished("root", "계획 표", "task_plan_manager:plan-feedback 6")
+    with_skill = Instruction.finished("root", "계획 표", "task-planner:plan-feedback 6")
     as_json = converter.to_json(with_skill)
-    assert as_json["payload"] == {"text": "계획 표", "skill": "task_plan_manager:plan-feedback 6"}
+    assert as_json["payload"] == {"text": "계획 표", "skill": "task-planner:plan-feedback 6"}
     assert converter.to_data(as_json) == with_skill
     assert converter.to_json(Instruction.finished("root"))["payload"] == {"text": "끝났습니다."}

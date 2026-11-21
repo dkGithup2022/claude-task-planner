@@ -8,20 +8,20 @@ import sys
 
 import pytest
 
-from task_plan_manager.common.clock import utc_now
-from task_plan_manager.entry.cli import hook, main
-from task_plan_manager.model.node_run.node_run import NodeRun
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.model.plan.plan_node_status import PlanNodeStatus
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.port.local.plan_folder.default_plan_folder_reader import DefaultPlanFolderReader
-from task_plan_manager.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
-from task_plan_manager.port.local.plan_folder.plan_folder_location import result_file
-from task_plan_manager.port.plan_api.dto.new_node import NewNode
-from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
-from task_plan_manager.port.plan_api.dto.node_change import NodeChange
-from task_plan_manager.port.plan_api.mock_plan_api_reader import MockPlanApiReader
-from task_plan_manager.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
+from task_planner.common.clock import utc_now
+from task_planner.entry.cli import hook, main
+from task_planner.model.node_run.node_run import NodeRun
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.model.plan.plan_node_status import PlanNodeStatus
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.port.local.plan_folder.default_plan_folder_reader import DefaultPlanFolderReader
+from task_planner.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
+from task_planner.port.local.plan_folder.plan_folder_location import result_file
+from task_planner.port.plan_api.dto.new_node import NewNode
+from task_planner.port.plan_api.dto.new_plan import NewPlan
+from task_planner.port.plan_api.dto.node_change import NodeChange
+from task_planner.port.plan_api.mock_plan_api_reader import MockPlanApiReader
+from task_planner.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
 
 STARTED_AT = "2026-11-19T10:00:00Z"
 
@@ -119,7 +119,7 @@ def fake_agent(tmp_path, monkeypatch):
     exe = tmp_path / "fake-agent"
     exe.write_text(f"#!{sys.executable}\n" + FAKE_AGENT)
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", str(exe))
+    monkeypatch.setenv("TASK_PLANNER_CLAUDE_BIN", str(exe))
     monkeypatch.setenv("FAKE_AGENT_LOG", str(tmp_path / "agent.jsonl"))
 
     def bad(*titles: str) -> None:
@@ -130,7 +130,7 @@ def fake_agent(tmp_path, monkeypatch):
 
 def test_should_move_approved_plan_to_running(tmp_path, capsys):
     plan_id = _make_plan(PlanStatus.APPROVED)
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     finished = run(capsys, "start", "plan_run")  # 마지막 보이기 단계의 글은 끝 지시에 실린다
     assert finished["type"] == "finished", finished
@@ -144,7 +144,7 @@ def test_should_record_done_and_rerun_broken_node_when_resuming(tmp_path, capsys
     plan_id = _make_plan(PlanStatus.RUNNING)
     finished_id = _add_running_node(plan_id, "테이블 설계", with_result=True)
     broken_id = _add_running_node(plan_id, "API 구현", with_result=False)
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     asked = run(capsys, "start", "plan_run")
     assert asked["type"] == "ask"
@@ -171,7 +171,7 @@ def test_should_ask_once_and_rerun_all_broken_nodes(tmp_path, capsys, fake_agent
     plan_id = _make_plan(PlanStatus.RUNNING)
     first_id = _add_running_node(plan_id, "API 구현", with_result=False)
     second_id = _add_running_node(plan_id, "화면 구현", with_result=False)
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     asked = run(capsys, "start", "plan_run")
     assert f'- 노드 {first_id} "API 구현"\n- 노드 {second_id} "화면 구현"' in asked["payload"]["question"]
@@ -183,13 +183,13 @@ def test_should_stop_without_changing_broken_nodes(tmp_path, capsys):
     plan_id = _make_plan(PlanStatus.RUNNING)
     first_id = _add_running_node(plan_id, "API 구현", with_result=False)
     second_id = _add_running_node(plan_id, "화면 구현", with_result=False)
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     run(capsys, "start", "plan_run")
     finished = run(capsys, "done", "--answer", "멈추기")
     assert finished["type"] == "finished"
     assert finished["payload"]["text"] == (
-        f"노드 {first_id}, {second_id} 에서 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}"
+        f"노드 {first_id}, {second_id} 에서 멈췄습니다. 이어 하려면 /task-planner:plan-run {plan_id}"
     )
     assert _node_status(plan_id, first_id) is PlanNodeStatus.RUNNING
     assert _node_status(plan_id, second_id) is PlanNodeStatus.RUNNING
@@ -198,7 +198,7 @@ def test_should_stop_without_changing_broken_nodes(tmp_path, capsys):
 
 def test_should_not_ask_when_resuming_without_broken_nodes(tmp_path, capsys):
     plan_id = _make_plan(PlanStatus.RUNNING)
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
     finished = run(capsys, "start", "plan_run")
     assert finished["type"] == "finished" and "을 마쳤습니다" in finished["payload"]["text"]
 
@@ -206,7 +206,7 @@ def test_should_not_ask_when_resuming_without_broken_nodes(tmp_path, capsys):
 def test_should_make_first_round_when_finished_node_has_no_run_record(tmp_path, capsys):
     plan_id = _make_plan(PlanStatus.RUNNING)
     node_id = _add_running_node(plan_id, "테이블 설계", with_result=True, with_run=False)
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     assert run(capsys, "start", "plan_run")["type"] == "finished"
     recorded = DefaultPlanFolderReader().read_run(plan_id, node_id)
@@ -224,14 +224,14 @@ def test_should_make_first_round_when_finished_node_has_no_run_record(tmp_path, 
 )
 def test_should_fail_when_plan_is_not_runnable(tmp_path, capsys, status, folder, message):
     _make_plan(status, folder=folder)
-    _session_with_command(tmp_path, "/task_plan_manager:plan-run 1")
+    _session_with_command(tmp_path, "/task-planner:plan-run 1")
     failed = run(capsys, "start", "plan_run")
     assert failed["type"] == "failed" and message in failed["payload"]["text"]
     assert MockPlanApiReader().get_plan(1).status is status
 
 
 def test_should_fail_when_plan_is_missing(tmp_path, capsys):
-    _session_with_command(tmp_path, "/task_plan_manager:plan-run 5")
+    _session_with_command(tmp_path, "/task-planner:plan-run 5")
     failed = run(capsys, "start", "plan_run")
     assert failed["type"] == "failed" and "계획 5 이 계획 저장소에 없습니다" in failed["payload"]["text"]
 
@@ -258,7 +258,7 @@ def test_should_write_prompts_with_spec_and_writing_rules(tmp_path, capsys, fake
     plan_id = _make_plan(PlanStatus.APPROVED)
     table_id = _add_todo_node(plan_id, "테이블 설계")
     api_id = _add_todo_node(plan_id, "API 구현", after=table_id)
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     shown = run(capsys, "start", "plan_run")
     assert shown["type"] == "show"
@@ -283,7 +283,7 @@ def test_should_keep_existing_prompt(tmp_path, capsys, fake_agent):
     kept_id = _add_todo_node(plan_id, "테이블 설계")
     DefaultPlanFolderWriter().write_prompt(plan_id, kept_id, "사람이 고친 작업 지시")
     _add_todo_node(plan_id, "API 구현", after=kept_id)
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     assert run(capsys, "start", "plan_run")["payload"]["text"].startswith("노드 1개의 작업 지시를 만듭니다")
     run(capsys, "next")
@@ -296,7 +296,7 @@ def test_should_ask_once_and_retry_failed_prompts(tmp_path, capsys, fake_agent, 
     table_id = _add_todo_node(plan_id, "테이블 설계")
     api_id = _add_todo_node(plan_id, "API 구현", after=table_id)
     fake_agent("API 구현")
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     run(capsys, "start", "plan_run")
     asked = run(capsys, "next")
@@ -319,13 +319,13 @@ def test_should_stop_when_prompt_still_missing(tmp_path, capsys, fake_agent, ans
     plan_id = _make_plan(PlanStatus.APPROVED)
     api_id = _add_todo_node(plan_id, "API 구현")
     fake_agent("API 구현")  # 다시 만들어도 틀린다
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     run(capsys, "start", "plan_run")
     run(capsys, "next")
     finished = run(capsys, "done", "--answer", answer)
     assert finished["payload"]["text"] == (
-        f"노드 {api_id} 의 작업 지시를 만들지 못해 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}"
+        f"노드 {api_id} 의 작업 지시를 만들지 못해 멈췄습니다. 이어 하려면 /task-planner:plan-run {plan_id}"
     )
     assert len(_agent_rows(tmp_path, "prompt")) == (1 if answer == "멈추기" else 2)
 
@@ -334,7 +334,7 @@ def test_should_skip_prompts_when_stopped_at_broken_node(tmp_path, capsys, fake_
     plan_id = _make_plan(PlanStatus.RUNNING)
     _add_running_node(plan_id, "API 구현", with_result=False)
     _add_todo_node(plan_id, "화면 구현")
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     run(capsys, "start", "plan_run")
     finished = run(capsys, "done", "--answer", "멈추기")
@@ -375,7 +375,7 @@ def _statuses(plan_id: int) -> list[str]:
 def test_should_run_simulation_with_retry_and_confirm(tmp_path, capsys, fake_agent, monkeypatch):
     plan_id, (table, api, screen, check, deploy) = _simulation_plan()
     monkeypatch.setenv("FAKE_NODE_FAIL", str(screen))
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     asked = run(capsys, "start", "plan_run")  # 차례 1: 1 → 2·3, 3 이 막힘
     assert asked["type"] == "ask"
@@ -426,7 +426,7 @@ def test_should_run_code_nodes_one_at_a_time_and_documents_together(tmp_path, ca
     codes = [_add_node(plan_id, f"코드 {order}", NodeKind.CODE) for order in range(2)]
     documents = [_add_node(plan_id, f"문서 {order}", NodeKind.DOCUMENT) for order in range(2)]
     monkeypatch.setenv("FAKE_NODE_SLEEP", "0.4")
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     assert run(capsys, "start", "plan_run")["type"] == "finished"
     rows = {row["node_id"]: row for row in _agent_rows(tmp_path, "node")}
@@ -441,7 +441,7 @@ def test_should_run_code_nodes_one_at_a_time_and_documents_together(tmp_path, ca
 def test_should_skip_failed_node_and_followers(tmp_path, capsys, fake_agent, monkeypatch):
     plan_id, (table, *_rest) = _simulation_plan()
     monkeypatch.setenv("FAKE_NODE_FAIL", str(table))
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     run(capsys, "start", "plan_run")
     finished = run(capsys, "done", "--answer", "건너뛰기")
@@ -455,13 +455,13 @@ def test_should_skip_failed_node_and_followers(tmp_path, capsys, fake_agent, mon
 def test_should_stop_and_ask_again_on_next_plan_run(tmp_path, capsys, fake_agent, monkeypatch):
     plan_id, (_table, _api, screen, *_rest) = _simulation_plan()
     monkeypatch.setenv("FAKE_NODE_FAIL", str(screen))
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     run(capsys, "start", "plan_run")
     finished = run(capsys, "done", "--answer", "멈추기")  # 남은 차례는 다시 묻지 않는다
     assert finished["type"] == "finished"
     assert finished["payload"]["text"] == (
-        f'노드 {screen} "화면 설계" 에서 멈췄습니다. 이어 하려면 /task_plan_manager:plan-run {plan_id}'
+        f'노드 {screen} "화면 설계" 에서 멈췄습니다. 이어 하려면 /task-planner:plan-run {plan_id}'
     )
     assert _statuses(plan_id) == ["done", "done", "failed", "todo", "todo"]
     assert MockPlanApiReader().get_plan(plan_id).status is PlanStatus.RUNNING  # 멈추면 실행 중 그대로
@@ -476,7 +476,7 @@ def test_should_stop_and_ask_again_on_next_plan_run(tmp_path, capsys, fake_agent
 def test_should_show_reason_of_second_failure_in_same_round(tmp_path, capsys, fake_agent, monkeypatch):
     plan_id, (_table, api, screen, *_rest) = _simulation_plan()
     monkeypatch.setenv("FAKE_NODE_FAIL", f"{api},{screen}")  # 같은 차례에 둘 다 막힘
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     first = run(capsys, "start", "plan_run")
     assert first["payload"]["question"].startswith(f'노드 {api} "API 구현" 이 끝나지 못했습니다.\n이유: 막힘')
@@ -490,13 +490,13 @@ def test_should_show_reason_of_second_failure_in_same_round(tmp_path, capsys, fa
 def test_should_stop_for_prompt_edit_and_keep_node_todo(tmp_path, capsys, fake_agent, monkeypatch):
     plan_id, (_table, _api, screen, *_rest) = _simulation_plan()
     monkeypatch.setenv("FAKE_NODE_FAIL", str(screen))
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     run(capsys, "start", "plan_run")
     finished = run(capsys, "done", "--answer", "작업 지시를 고쳐 다시")
     prompt_path = tmp_path / "work" / ".plan" / str(plan_id) / "nodes" / str(screen) / "prompt.md"
     assert finished["payload"]["text"] == (
-        f"작업 지시 {prompt_path.resolve()} 를 고친 뒤 /task_plan_manager:plan-run {plan_id}"
+        f"작업 지시 {prompt_path.resolve()} 를 고친 뒤 /task-planner:plan-run {plan_id}"
     )
     assert _statuses(plan_id)[2] == "todo"
     screen_run = DefaultPlanFolderReader().read_run(plan_id, screen)
@@ -505,27 +505,27 @@ def test_should_stop_for_prompt_edit_and_keep_node_todo(tmp_path, capsys, fake_a
 
 def test_should_stop_when_confirm_is_denied(tmp_path, capsys, fake_agent):
     plan_id, (_table, _api, _screen, check, _deploy) = _simulation_plan()
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     assert run(capsys, "start", "plan_run")["type"] == "talk"
     run(capsys, "done")
     finished = run(capsys, "done", "--answer", "허가하지 않음")
     assert finished["payload"]["text"] == (
         f'노드 {check} "스테이징 확인" 을 허가하지 않아 멈췄습니다. 어떻게 할지 말씀해 주세요. '
-        f"이어 하려면 /task_plan_manager:plan-run {plan_id}"
+        f"이어 하려면 /task-planner:plan-run {plan_id}"
     )
     assert _statuses(plan_id) == ["done", "done", "done", "todo", "todo"]
 
 
 def test_should_continue_in_next_round_after_cutoff(tmp_path, capsys, fake_agent, monkeypatch, package_home):
-    from task_plan_manager.workflow.plan_run.rounds.run_nodes import run_until_question
+    from task_planner.workflow.plan_run.rounds.run_nodes import run_until_question
 
     plan_id = _make_plan(PlanStatus.APPROVED)
     first = _add_node(plan_id, "문서 1", NodeKind.DOCUMENT)
     _add_node(plan_id, "문서 2", NodeKind.DOCUMENT, (first,))
     monkeypatch.setattr(run_until_question, "LAUNCH_CUTOFF_SECONDS", 0.1)
     monkeypatch.setenv("FAKE_NODE_SLEEP", "0.3")
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
 
     # 첫 차례가 마감으로 "계속"이면 알림을 보이고 next 를 끝낸다. 다음 차례는 다음 next 에서 돈다
     shown = run(capsys, "start", "plan_run")
@@ -560,7 +560,7 @@ def test_should_record_run_steps_from_start_to_finish(tmp_path, capsys, fake_age
     monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s")
     plan_id, (table, api, screen, check, deploy) = _simulation_plan()
     monkeypatch.setenv("FAKE_NODE_FAIL", str(screen))
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
     run(capsys, "start", "plan_run")  # 차례 1: 화면 설계가 막혀 실패 처리를 묻는다
     monkeypatch.delenv("FAKE_NODE_FAIL")
     run(capsys, "done", "--answer", "다시 실행")  # 차례 2: 확인 노드
@@ -583,7 +583,7 @@ def test_should_record_writing_prompts(tmp_path, capsys, fake_agent, monkeypatch
     monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s")
     plan_id = _make_plan(PlanStatus.APPROVED)
     _add_todo_node(plan_id, "테이블 설계")
-    _session_with_command(tmp_path, f"/task_plan_manager:plan-run {plan_id}")
+    _session_with_command(tmp_path, f"/task-planner:plan-run {plan_id}")
     run(capsys, "start", "plan_run")
     run(capsys, "next")
     assert "prompts" in _phases_without_repeats(_progress_rows(tmp_path, plan_id))

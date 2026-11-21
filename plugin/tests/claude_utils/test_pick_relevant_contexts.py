@@ -1,12 +1,12 @@
 """pick_relevant_contexts: 가짜 claude 로 입력 글 모양과 고른 id 정리를 본다."""
 
-from task_plan_manager.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
-from task_plan_manager.claude_utils.search_utils.context_item import ContextItem
-from task_plan_manager.claude_utils.search_utils.pick_relevant_contexts import (
+from task_planner.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
+from task_planner.claude_utils.search_utils.context_item import ContextItem
+from task_planner.claude_utils.search_utils.pick_relevant_contexts import (
     RELEVANT_CONTEXT,
     pick_relevant_contexts,
 )
-from task_plan_manager.claude_utils.search_utils.prompt_relevant_context_output import RelevantContextOutput
+from task_planner.claude_utils.search_utils.prompt_relevant_context_output import RelevantContextOutput
 
 ITEMS = [
     ContextItem(5, "문서 작성 계획", "검토를 마지막 노드로 따로 두지 않는다\n"),

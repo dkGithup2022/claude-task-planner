@@ -2,11 +2,11 @@ import json
 
 import pytest
 
-from task_plan_manager.port.local.claude_settings.default_claude_settings_reader import DefaultClaudeSettingsReader
-from task_plan_manager.port.local.claude_settings.default_claude_settings_writer import DefaultClaudeSettingsWriter
-from task_plan_manager.port.local.claude_settings.dto.statusline_setup import StatuslineSetup
+from task_planner.port.local.claude_settings.default_claude_settings_reader import DefaultClaudeSettingsReader
+from task_planner.port.local.claude_settings.default_claude_settings_writer import DefaultClaudeSettingsWriter
+from task_planner.port.local.claude_settings.dto.statusline_setup import StatuslineSetup
 
-COMMAND = "/plugin/bin/task_plan_manager statusline"
+COMMAND = "/plugin/bin/task-planner statusline"
 
 
 @pytest.fixture(autouse=True)
@@ -46,8 +46,8 @@ def test_should_leave_user_statusline_or_broken_file_alone(work_dir, content):
 
 
 def test_should_replace_our_old_statusline_after_plugin_update(work_dir):
-    old = "/plugins/cache/m/task_plan_manager/0.1.0/bin/task_plan_manager statusline"
-    new = "/plugins/cache/m/task_plan_manager/0.2.0/bin/task_plan_manager statusline"
+    old = "/plugins/cache/m/task-planner/0.1.0/bin/task-planner statusline"
+    new = "/plugins/cache/m/task-planner/0.2.0/bin/task-planner statusline"
     writer = DefaultClaudeSettingsWriter()
     writer.ensure_statusline(old, 5)
 

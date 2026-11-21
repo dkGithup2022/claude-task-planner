@@ -1,8 +1,8 @@
 # port
 
 ## plan_api (`port/plan_api/`)
-계획 저장소. 계획, 노드, 간선, 계획 상태, 노드 상태. 원본은 나중의 서버 API 이고, 지금은 mock 구현이 task-plan-manager 저장소의 `.mockData/` 에 파일로 저장한다.
-환경 변수: `TASK_PLAN_MANAGER_API` (mock | server, 없으면 mock), `TASK_PLAN_MANAGER_API_URL` (서버 주소), `TASK_PLAN_MANAGER_MOCK_DIR` (mock 폴더를 바꿀 때. 시험이 쓴다)
+계획 저장소. 계획, 노드, 간선, 계획 상태, 노드 상태. 원본은 나중의 서버 API 이고, 지금은 mock 구현이 claude-task-planner 저장소의 `.mockData/` 에 파일로 저장한다.
+환경 변수: `TASK_PLANNER_API` (mock | server, 없으면 mock), `TASK_PLANNER_API_URL` (서버 주소), `TASK_PLANNER_MOCK_DIR` (mock 폴더를 바꿀 때. 시험이 쓴다)
 
 | 인터페이스 | 메서드 | 돌려주는 값 | 없을 때·실패 |
 |---|---|---|---|
@@ -51,7 +51,7 @@ dto: `ResultTarget(result_path, files_dir)`, `NodeOutput(round, result_path, fil
 
 ## 구현 고르기 (모든 API 포트)
 
-워크플로 단계는 `Mock…` 이나 `Default…` 를 직접 고르지 않고 포트 폴더의 `*_api_choice.py` 함수를 쓴다. `TASK_PLAN_MANAGER_API=server` 면 서버 구현(`common/http/` 로 `TASK_PLAN_MANAGER_API_URL` 을 부름), 아니면 mock. mock 폴더와 mock id 는 `common/mock_data.py`.
+워크플로 단계는 `Mock…` 이나 `Default…` 를 직접 고르지 않고 포트 폴더의 `*_api_choice.py` 함수를 쓴다. `TASK_PLANNER_API=server` 면 서버 구현(`common/http/` 로 `TASK_PLANNER_API_URL` 을 부름), 아니면 mock. mock 폴더와 mock id 는 `common/mock_data.py`.
 
 ## persona_api (`port/persona_api/`)
 | 인터페이스 | 메서드 | 돌려주는 값 | 없을 때·실패 |
@@ -98,7 +98,7 @@ Claude Code 설정 파일. 작업 폴더의 `.claude/settings.local.json` 과 �
 
 | 인터페이스 | 메서드 | 돌려주는 값 | 없을 때·실패 |
 |---|---|---|---|
-| ClaudeSettingsWriter | ensure_statusline(command, refresh_seconds) | StatuslineSetup: WRITTEN (넣음), ALREADY (이미 같은 명령), LEFT_ALONE (다른 상태 줄이 있거나, 읽지 못하거나, 쓰지 못해 건드리지 않음) | 파일이 없으면 만든다. 다른 키는 그대로. 명령이 `/bin/task_plan_manager statusline` 으로 끝나는 예전 버전의 우리 줄은 지금 명령으로 바꾼다 (플러그인 버전 폴더가 바뀌어서) |
+| ClaudeSettingsWriter | ensure_statusline(command, refresh_seconds) | StatuslineSetup: WRITTEN (넣음), ALREADY (이미 같은 명령), LEFT_ALONE (다른 상태 줄이 있거나, 읽지 못하거나, 쓰지 못해 건드리지 않음) | 파일이 없으면 만든다. 다른 키는 그대로. 명령이 `/bin/task-planner statusline` 으로 끝나는 예전 버전의 우리 줄은 지금 명령으로 바꾼다 (플러그인 버전 폴더가 바뀌어서) |
 | ClaudeSettingsReader | user_statusline_command() | 사용자 설정의 statusLine.command | 없거나 읽지 못하면 None |
 
 구현: `DefaultClaudeSettingsWriter`, `DefaultClaudeSettingsReader`. dto: `StatuslineSetup` (StrEnum)

@@ -7,16 +7,16 @@ from pathlib import Path
 
 import pytest
 
-from task_plan_manager.common import files
-from task_plan_manager.common.clock import utc_now
-from task_plan_manager.entry.cli import hook, main
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.model.plan.shown_record import ShownRecord
-from task_plan_manager.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
-from task_plan_manager.port.plan_api.dto.new_node import NewNode
-from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
-from task_plan_manager.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
+from task_planner.common import files
+from task_planner.common.clock import utc_now
+from task_planner.entry.cli import hook, main
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.model.plan.shown_record import ShownRecord
+from task_planner.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
+from task_planner.port.plan_api.dto.new_node import NewNode
+from task_planner.port.plan_api.dto.new_plan import NewPlan
+from task_planner.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
 
 SHOWN_AT = "2026-11-19T00:00:00Z"
 
@@ -59,7 +59,7 @@ def fake_claude(tmp_path, monkeypatch):
     exe = tmp_path / "fake-claude"
     exe.write_text(f"#!{sys.executable}\n" + FAKE_CLAUDE)
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", str(exe))
+    monkeypatch.setenv("TASK_PLANNER_CLAUDE_BIN", str(exe))
 
     def answer(candidates):
         output = {"structured_output": {"candidates": candidates}, "total_cost_usd": 0.01}
@@ -116,7 +116,7 @@ def _find_plan_result(package_home) -> dict:
 def test_should_read_plan_id_from_last_command_and_keep_shown_record(tmp_path, capsys, package_home):
     _make_plan("검색 기능 설계")
     _make_plan("로그인 개편")
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-go 1", "/task_plan_manager:plan-go 2")
+    _session_with_commands(tmp_path, "/task-planner:plan-go 1", "/task-planner:plan-go 2")
 
     _run_to_end(capsys, "plan_go")
     assert _find_plan_result(package_home) == {
@@ -130,7 +130,7 @@ def test_should_read_plan_id_from_last_command_and_keep_shown_record(tmp_path, c
 
 def test_should_read_plan_cancel_command_too(tmp_path, capsys, package_home):
     _make_plan("검색 기능 설계")
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-cancel 1")
+    _session_with_commands(tmp_path, "/task-planner:plan-cancel 1")
     _run_to_end(capsys, "plan_cancel")
     assert _find_plan_result(package_home)["plan_id"] == 1
 
@@ -138,14 +138,14 @@ def test_should_read_plan_cancel_command_too(tmp_path, capsys, package_home):
 @pytest.mark.parametrize(
     ("setup", "commands", "message"),
     [
-        (lambda: None, ("/task_plan_manager:run make_plan",), "명령에서 계획 id 를 찾지 못했습니다"),
-        (lambda: None, ("/task_plan_manager:plan-go 5",), "계획 5 이 계획 저장소에 없습니다"),
+        (lambda: None, ("/task-planner:run make_plan",), "명령에서 계획 id 를 찾지 못했습니다"),
+        (lambda: None, ("/task-planner:plan-go 5",), "계획 5 이 계획 저장소에 없습니다"),
         (
             lambda: _make_plan("계획", PlanStatus.APPROVED),
-            ("/task_plan_manager:plan-go 1",),
+            ("/task-planner:plan-go 1",),
             "승인 상태라 확정할 수 없습니다",
         ),
-        (lambda: _make_plan("계획", shown=False), ("/task_plan_manager:plan-go 1",), "보여 준 기록이 없습니다"),
+        (lambda: _make_plan("계획", shown=False), ("/task-planner:plan-go 1",), "보여 준 기록이 없습니다"),
     ],
 )
 def test_should_fail_with_reason(tmp_path, capsys, setup, commands, message):
@@ -171,7 +171,7 @@ def _add_cycle(plan_id: int) -> None:
 
 def test_should_stop_approval_when_plan_has_cycle(tmp_path, capsys):
     _add_cycle(_make_plan("계획"))
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-go 1")
+    _session_with_commands(tmp_path, "/task-planner:plan-go 1")
     failed = run(capsys, "start", "plan_go")
     assert failed["type"] == "failed"
     assert (
@@ -182,7 +182,7 @@ def test_should_stop_approval_when_plan_has_cycle(tmp_path, capsys):
 
 def test_should_not_check_edges_when_rejecting(tmp_path, capsys, package_home):
     _add_cycle(_make_plan("계획"))
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-cancel 1")
+    _session_with_commands(tmp_path, "/task-planner:plan-cancel 1")
     _run_to_end(capsys, "plan_cancel")
     run_dir = next((package_home / "sessions" / "s" / "runs").iterdir())
     assert not list(run_dir.glob("check_edges_*"))
@@ -201,7 +201,7 @@ def _sent_input(package_home) -> str:
 def test_should_send_plan_nodes_and_feedback_after_shown_time(tmp_path, capsys, package_home):
     plan_id = _make_plan("할 일 CLI")
     MockPlanApiWriter().add_node(plan_id, NewNode("테스트 작성", NodeKind.CODE, (1,), "### 하는 일"))
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-go 1")
+    _session_with_commands(tmp_path, "/task-planner:plan-go 1")
     _run_to_end(capsys, "plan_go")
 
     sent = _sent_input(package_home)
@@ -217,7 +217,7 @@ def test_should_drop_unusable_candidates_and_keep_first_16(tmp_path, capsys, pac
     good = {"type": "plan", "theme": "CLI 도구 개발", "content": "테스트는 따로 둔다", "quotes": ["따로 빼줘"]}
     fake_claude([{**good, "type": "attitude"}, {**good, "content": " "}] + [good] * 17)
     _make_plan("할 일 CLI")
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-go 1")
+    _session_with_commands(tmp_path, "/task-planner:plan-go 1")
     run(capsys, "start", "plan_go")  # 후보 16 개마다 질문이 이어지므로 첫 질문에서 멈춘 채 결과만 본다
 
     result = _extract_result(package_home)
@@ -230,7 +230,7 @@ def test_should_drop_unusable_candidates_and_keep_first_16(tmp_path, capsys, pac
 
 
 def _plan_status(plan_id: int) -> str:
-    from task_plan_manager.port.plan_api.mock_plan_api_reader import MockPlanApiReader
+    from task_planner.port.plan_api.mock_plan_api_reader import MockPlanApiReader
 
     return MockPlanApiReader().get_plan(plan_id).status.value
 
@@ -242,7 +242,7 @@ def _record_result(package_home) -> dict:
 
 def test_should_approve_plan_on_plan_go(tmp_path, capsys, package_home):
     _make_plan("계획")
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-go 1")
+    _session_with_commands(tmp_path, "/task-planner:plan-go 1")
     _run_to_end(capsys, "plan_go")
     assert _plan_status(1) == "approved"
     assert _record_result(package_home) == {"plan_id": 1, "status": "approved"}
@@ -250,16 +250,16 @@ def test_should_approve_plan_on_plan_go(tmp_path, capsys, package_home):
 
 def test_should_reject_plan_on_plan_cancel(tmp_path, capsys):
     _make_plan("계획")
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-cancel 1")
+    _session_with_commands(tmp_path, "/task-planner:plan-cancel 1")
     _run_to_end(capsys, "plan_cancel")
     assert _plan_status(1) == "rejected"
 
 
 def test_should_refuse_decision_when_status_changed_after_find_plan():
-    from task_plan_manager.workflow.confirm_plan.record_decision.decision_not_allowed_error import (
+    from task_planner.workflow.confirm_plan.record_decision.decision_not_allowed_error import (
         DecisionNotAllowedError,
     )
-    from task_plan_manager.workflow.confirm_plan.record_decision.record_decision_task import RecordDecisionTask
+    from task_planner.workflow.confirm_plan.record_decision.record_decision_task import RecordDecisionTask
 
     plan_id = _make_plan("계획", PlanStatus.APPROVED)
 
@@ -273,16 +273,16 @@ def test_should_refuse_decision_when_status_changed_after_find_plan():
 
 def test_should_notify_approval_with_next_command(tmp_path, capsys):
     _make_plan("검색 기능 설계")
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-go 1")
+    _session_with_commands(tmp_path, "/task-planner:plan-go 1")
     assert _run_to_end(capsys, "plan_go") == (
         '계획 1 "검색 기능 설계" 을 승인했습니다. 저장한 지식 0개 (새로 0, 덧붙이기 0).\n'
-        "실행은 /task_plan_manager:plan-run 1"
+        "실행은 /task-planner:plan-run 1"
     )
 
 
 def test_should_notify_rejection_as_end(tmp_path, capsys):
     _make_plan("검색 기능 설계")
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-cancel 1")
+    _session_with_commands(tmp_path, "/task-planner:plan-cancel 1")
     assert _run_to_end(capsys, "plan_cancel") == (
         '계획 1 "검색 기능 설계" 을 불허했습니다. 이 계획은 끝났습니다. 저장한 지식 0개 (새로 0, 덧붙이기 0).'
     )
@@ -291,7 +291,7 @@ def test_should_notify_rejection_as_end(tmp_path, capsys):
 def test_should_close_statusline_on_plan_cancel(tmp_path, capsys, monkeypatch, work_dir):
     monkeypatch.setenv("CLAUDE_CODE_SESSION_ID", "s")
     _make_plan("계획")
-    _session_with_commands(tmp_path, "/task_plan_manager:plan-cancel 1")
+    _session_with_commands(tmp_path, "/task-planner:plan-cancel 1")
     _run_to_end(capsys, "plan_cancel")
     records = (work_dir / ".plan" / "1" / "progress.jsonl").read_text(encoding="utf-8").splitlines()
     rows = [json.loads(line)["detail"] for line in records]

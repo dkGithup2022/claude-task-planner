@@ -1,6 +1,6 @@
-from task_plan_manager.model.memory.memory import Memory
-from task_plan_manager.model.memory.memory_kind import MemoryKind
-from task_plan_manager.model.memory.memory_source import MemorySource
+from task_planner.model.memory.memory import Memory
+from task_planner.model.memory.memory_kind import MemoryKind
+from task_planner.model.memory.memory_source import MemorySource
 
 
 def test_should_append_body_with_numbered_mark_and_keep_original():

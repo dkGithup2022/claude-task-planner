@@ -2,16 +2,16 @@ from datetime import UTC, datetime
 
 import pytest
 
-from task_plan_manager.model.progress.closed_progress import ClosedProgress
-from task_plan_manager.model.progress.feedback_progress import FeedbackProgress
-from task_plan_manager.model.progress.planning_progress import PlanningProgress
-from task_plan_manager.model.progress.progress_event import ProgressDetail, ProgressEvent
-from task_plan_manager.model.progress.reinforce_phase import ReinforcePhase
-from task_plan_manager.model.progress.reinforce_progress import ReinforceProgress
-from task_plan_manager.model.progress.run_node import RunNode
-from task_plan_manager.model.progress.run_phase import RunPhase
-from task_plan_manager.model.progress.run_progress import RunProgress
-from task_plan_manager.workflow.statusline.statusline_text import elapsed_text, statusline_text
+from task_planner.model.progress.closed_progress import ClosedProgress
+from task_planner.model.progress.feedback_progress import FeedbackProgress
+from task_planner.model.progress.planning_progress import PlanningProgress
+from task_planner.model.progress.progress_event import ProgressDetail, ProgressEvent
+from task_planner.model.progress.reinforce_phase import ReinforcePhase
+from task_planner.model.progress.reinforce_progress import ReinforceProgress
+from task_planner.model.progress.run_node import RunNode
+from task_planner.model.progress.run_phase import RunPhase
+from task_planner.model.progress.run_progress import RunProgress
+from task_planner.workflow.statusline.statusline_text import elapsed_text, statusline_text
 
 NOW = datetime(2026, 11, 20, 5, 10, 0, tzinfo=UTC)
 
@@ -31,7 +31,7 @@ def test_should_show_feedback_with_commands():
     assert lines_of(FeedbackProgress(editing_since=None)) == [
         "계획 11 │ 계획 입력 ✓ › 계획 세우기 ✓ › [계획 피드백] › 지식 강화 › 실행",
         "고칠 곳이 있으면 대화로 말하세요. 다 됐으면 아래 명령을 실행하세요",
-        "확정: /task_plan_manager:plan-go 11   ·   취소: /task_plan_manager:plan-cancel 11",
+        "확정: /task-planner:plan-go 11   ·   취소: /task-planner:plan-cancel 11",
     ]
 
 
@@ -45,7 +45,7 @@ def test_should_show_knowledge_draft():
         "계획 11 │ 계획 입력 ✓ › 계획 세우기 ✓ › 계획 피드백 ✓ › [지식 강화] › 실행",
         "지식 후보 - 3번째 / 7개 중 : 하위 기획 작성",
         "본문 초안을 쓰는 중입니다 (12초째)",
-        "그만두기: /task_plan_manager:plan-cancel 11",
+        "그만두기: /task-planner:plan-cancel 11",
     ]
 
 
@@ -53,7 +53,7 @@ def test_should_show_ready_to_run():
     assert lines_of(RunProgress(RunPhase.READY, 0, 10)) == [
         "계획 11 │ 계획 입력 ✓ › 계획 세우기 ✓ › 계획 피드백 ✓ › 지식 강화 ✓ › [실행]",
         "승인했습니다. 실행하려면 아래 명령을 실행하세요",
-        "실행: /task_plan_manager:plan-run 11",
+        "실행: /task-planner:plan-run 11",
     ]
 
 

@@ -4,11 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from task_plan_manager.model.progress.closed_progress import ClosedProgress
-from task_plan_manager.model.progress.feedback_progress import FeedbackProgress
-from task_plan_manager.model.progress.progress_event import ProgressEvent
-from task_plan_manager.port.local.progress_log.default_progress_log_writer import DefaultProgressLogWriter
-from task_plan_manager.workflow.statusline.draw_statusline import draw_statusline
+from task_planner.model.progress.closed_progress import ClosedProgress
+from task_planner.model.progress.feedback_progress import FeedbackProgress
+from task_planner.model.progress.progress_event import ProgressEvent
+from task_planner.port.local.progress_log.default_progress_log_writer import DefaultProgressLogWriter
+from task_planner.workflow.statusline.draw_statusline import draw_statusline
 
 
 @pytest.fixture(autouse=True)
@@ -66,6 +66,6 @@ def test_should_pass_the_same_input_to_user_statusline(folders):
 
 def test_should_not_call_itself_when_user_statusline_is_ours(folders):
     marker = folders / "called"
-    set_user_statusline(folders, f"touch {marker}; echo /plugin/bin/task_plan_manager statusline")
+    set_user_statusline(folders, f"touch {marker}; echo /plugin/bin/task-planner statusline")
     draw_statusline(status_input(folders))
     assert not marker.exists()

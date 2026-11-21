@@ -102,7 +102,7 @@
 **사용자 확인 필요**
 
 1. mock 구현의 이름 (`Mock...` 으로 둘지, 번들 규칙대로 `Default...` 로 둘지)
-2. `.mockData/` 의 기준 폴더. 계획 폴더(`.plan/`)처럼 CLI 를 부른 작업 폴더로 둘지, 도구 저장소(task-plan-manager) 쪽 고정 위치로 둘지
+2. `.mockData/` 의 기준 폴더. 계획 폴더(`.plan/`)처럼 CLI 를 부른 작업 폴더로 둘지, 도구 저장소(claude-task-planner) 쪽 고정 위치로 둘지
 3. 확정 문서와 다른 점: 확정 문서 3 절은 `read_result` 가 선행 노드의 제목과 상태까지 돌려준다고 적었다. 제목과 상태의 원본은 계획 저장소이므로, 계획 폴더 포트는 로컬에 있는 것(회차, 결과 위치, 파일 목록)만 돌려주고 제목·상태와 합치는 일은 쓰는 쪽(노드 시작 단계)이 하도록 나눈다. 이름도 `read_result` 대신 `read_output` 으로 한다
 
 ### tool-assess-model
@@ -149,7 +149,7 @@
 
 **사용자 확인 (2026-11-19)**
 1. mock 구현 이름은 `MockPlanApiReader`, `MockPlanApiWriter` 로 한다
-2. `.mockData/` 는 task-plan-manager 저장소 쪽에 둔다. 위치는 이 패키지 파일에서 저장소 루트를 계산한다. 시험과 다른 위치가 필요할 때는 환경 변수 `TASK_PLAN_MANAGER_MOCK_DIR` 로 바꾼다
+2. `.mockData/` 는 claude-task-planner 저장소 쪽에 둔다. 위치는 이 패키지 파일에서 저장소 루트를 계산한다. 시험과 다른 위치가 필요할 때는 환경 변수 `TASK_PLANNER_MOCK_DIR` 로 바꾼다
 3. 계획 폴더 포트는 로컬에 있는 것(회차, 결과 위치, 파일 목록)만 `read_output` 으로 돌려준다. 제목·상태와 합치는 일은 노드를 시작하는 쪽이 한다
 4. 계획 상태는 흐름 도식 B 절의 가안대로 enum 을 만든다. 진행 중 이상하면 바꾼다
 
@@ -167,7 +167,7 @@
 - add-model: model/plan/ (plan.py, plan_node.py, plan_edge.py, plan_status.py, plan_node_status.py, node_kind.py), model/node_run/ (node_run.py, read_input.py), 시험 tests/model/plan/test_plan.py, tests/model/node_run/test_node_run.py, specs/models.md
 - add-port: port/plan_api/ (인터페이스 2, mock 구현 2, mock_plan_files.py, 변환기, 위치, 예외 2, dto 3), 시험 tests/port/plan_api/test_mock_plan_api.py
 - add-port: port/local/plan_folder/ (인터페이스 2, 구현 2, 변환기, 위치, 예외 2, dto 2), 시험 tests/port/plan_folder/test_plan_folder.py, specs/ports.md
-- tests/conftest.py: 모든 시험이 임시 폴더를 mock 폴더로 쓰게 `TASK_PLAN_MANAGER_MOCK_DIR` 을 바꾸는 픽스처를 더함
+- tests/conftest.py: 모든 시험이 임시 폴더를 mock 폴더로 쓰게 `TASK_PLANNER_MOCK_DIR` 을 바꾸는 픽스처를 더함
 - 최종 검증: ruff 통과, import 검사 계약 4개 지킴, mypy 225개 파일 문제 없음, pytest 55개 통과
 - 리뷰 (별도 에이전트): `archive_round` 를 연달아 부르면 앞 회차 결과를 덮어쓰는 문제 1건. `archive_round` 가 run.json 의 회차를 직접 올려 저장하도록 고치고 시험을 더함
 - 가독성 정리 (사용자 규칙, CLAUDE.md): 줄임말 변수를 풀어 쓰고, 인터페이스 구현 메서드마다 하는 일 주석을 달고, 긴 메서드를 뜻 단위 함수로 나눔 (mock_plan_api_writer, mock_plan_file_converter, mock_plan_files, default_plan_folder_reader/writer, node_run_file_converter, plan.py, 시험 4개). 동작은 바꾸지 않음. 검증: ruff, import 계약 4개, mypy, pytest 56개 통과

@@ -2,17 +2,17 @@ from dataclasses import replace
 
 import pytest
 
-from task_plan_manager.model.memory.memory_kind import MemoryKind
-from task_plan_manager.model.memory.memory_source import MemorySource
-from task_plan_manager.port.memory_api.default_memory_api_reader import DefaultMemoryApiReader
-from task_plan_manager.port.memory_api.default_memory_api_writer import DefaultMemoryApiWriter
-from task_plan_manager.port.memory_api.dto.memory_search_hit import MemorySearchHit
-from task_plan_manager.port.memory_api.dto.memory_search_query import MemorySearchQuery
-from task_plan_manager.port.memory_api.dto.new_memory import NewMemory
-from task_plan_manager.port.memory_api.memory_api_error import MemoryApiError
-from task_plan_manager.port.memory_api.mock_memory_api_reader import MockMemoryApiReader
-from task_plan_manager.port.memory_api.mock_memory_api_writer import MockMemoryApiWriter
-from task_plan_manager.port.memory_api.mock_memory_files import load_memories
+from task_planner.model.memory.memory_kind import MemoryKind
+from task_planner.model.memory.memory_source import MemorySource
+from task_planner.port.memory_api.default_memory_api_reader import DefaultMemoryApiReader
+from task_planner.port.memory_api.default_memory_api_writer import DefaultMemoryApiWriter
+from task_planner.port.memory_api.dto.memory_search_hit import MemorySearchHit
+from task_planner.port.memory_api.dto.memory_search_query import MemorySearchQuery
+from task_planner.port.memory_api.dto.new_memory import NewMemory
+from task_planner.port.memory_api.memory_api_error import MemoryApiError
+from task_planner.port.memory_api.mock_memory_api_reader import MockMemoryApiReader
+from task_planner.port.memory_api.mock_memory_api_writer import MockMemoryApiWriter
+from task_planner.port.memory_api.mock_memory_files import load_memories
 
 QUERY = MemorySearchQuery(MemoryKind.KNOWLEDGE, "아무 검색어", (1,), limit=10)
 NEW = NewMemory(MemoryKind.KNOWLEDGE, "API 설계", "목록은 페이지로 나눈다", (1,), (MemorySource("페이지로", 3),))

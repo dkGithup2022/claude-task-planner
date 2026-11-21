@@ -2,18 +2,18 @@
 
 import re
 
-from task_plan_manager.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
-from task_plan_manager.model.persona.persona import Persona
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.task_tree import TaskTree
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.work_item import WorkItem
-from task_plan_manager.workflow.make_plan.split_plan.task_tree.work_kind import WorkKind
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.prerequisite import Prerequisite
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.prompt_spec_need import SpecNeed
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.prompt_spec_output import SpecOutput
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.prompt_spec_product import SpecProduct
-from task_plan_manager.workflow.make_plan.split_plan.write_specs.write_specs import write_specs
+from task_planner.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
+from task_planner.model.persona.persona import Persona
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
+from task_planner.workflow.make_plan.split_plan.task_tree.task_tree import TaskTree
+from task_planner.workflow.make_plan.split_plan.task_tree.work_item import WorkItem
+from task_planner.workflow.make_plan.split_plan.task_tree.work_kind import WorkKind
+from task_planner.workflow.make_plan.split_plan.write_specs.prerequisite import Prerequisite
+from task_planner.workflow.make_plan.split_plan.write_specs.prompt_spec_need import SpecNeed
+from task_planner.workflow.make_plan.split_plan.write_specs.prompt_spec_output import SpecOutput
+from task_planner.workflow.make_plan.split_plan.write_specs.prompt_spec_product import SpecProduct
+from task_planner.workflow.make_plan.split_plan.write_specs.write_specs import write_specs
 
 REQUEST_MD = "# 명령\n밤만쥬를 만든다.\n\n\n# 산출물\n레시피"
 PARTICIPANTS = (Persona(1, "dankim-persona", "사용자의 기본 작업 역할"),)

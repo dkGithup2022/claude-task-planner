@@ -1,14 +1,14 @@
 """작업 지시 만들기의 지식 찾기: 검색어, 확인 노드, 두 종류, 검색 실패를 본다 (가짜 지식 검색)."""
 
-from task_plan_manager.model.memory.memory_kind import MemoryKind
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.model.plan.plan_node import PlanNode
-from task_plan_manager.model.plan.plan_node_status import PlanNodeStatus
-from task_plan_manager.port.memory_api.dto.memory_search_hit import MemorySearchHit
-from task_plan_manager.port.memory_api.memory_api_error import MemoryApiError
-from task_plan_manager.workflow.plan_run.prompts.write_prompts import node_knowledge as knowledge_module
-from task_plan_manager.workflow.plan_run.prompts.write_prompts.node_knowledge import node_knowledge
-from task_plan_manager.workflow.plan_run.prompts.write_prompts.search_word import build_search_word
+from task_planner.model.memory.memory_kind import MemoryKind
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.model.plan.plan_node import PlanNode
+from task_planner.model.plan.plan_node_status import PlanNodeStatus
+from task_planner.port.memory_api.dto.memory_search_hit import MemorySearchHit
+from task_planner.port.memory_api.memory_api_error import MemoryApiError
+from task_planner.workflow.plan_run.prompts.write_prompts import node_knowledge as knowledge_module
+from task_planner.workflow.plan_run.prompts.write_prompts.node_knowledge import node_knowledge
+from task_planner.workflow.plan_run.prompts.write_prompts.search_word import build_search_word
 
 SPEC = "### 하는 일\n엔드포인트를 정한다\n\n### 산출물\n- 형태: 문서\nAPI 목록\n\n### 그 외 설명\n(없음)"
 

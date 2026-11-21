@@ -1,6 +1,6 @@
 import json
 
-from task_plan_manager.workflow.confirm_plan.extract_knowledge.feedback_dialogue import feedback_dialogue
+from task_planner.workflow.confirm_plan.extract_knowledge.feedback_dialogue import feedback_dialogue
 
 
 def _write(path, rows):
@@ -12,7 +12,7 @@ def _user(at, text):
 
 
 def _command(at, args):
-    return _user(at, f"<command-name>/task_plan_manager:plan-go</command-name>\n<command-args>{args}</command-args>")
+    return _user(at, f"<command-name>/task-planner:plan-go</command-name>\n<command-args>{args}</command-args>")
 
 
 def test_should_cut_from_shown_time_to_last_confirm_command(tmp_path):
@@ -26,7 +26,7 @@ def test_should_cut_from_shown_time_to_last_confirm_command(tmp_path):
         _user("2026-11-19T10:11:00.000Z", "명령 뒤의 말"),
     ])  # fmt: skip
     texts = [utterance.text for utterance in feedback_dialogue(path, "2026-11-19T10:00:00Z")]
-    assert texts == ["첫 피드백", "/task_plan_manager:plan-go 7", "다시 피드백"]
+    assert texts == ["첫 피드백", "/task-planner:plan-go 7", "다시 피드백"]
 
 
 def test_should_read_to_end_when_command_was_in_another_session(tmp_path):

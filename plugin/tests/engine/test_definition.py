@@ -1,21 +1,21 @@
 import pytest
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.ref import Ref
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.definition.unit.builders import group, task
-from task_plan_manager.engine.model.run_state.node_kind import NodeKind
-from task_plan_manager.engine.model.run_state.node_status import NodeStatus
-from task_plan_manager.engine.performer.performed_by import PerformedBy
-from task_plan_manager.engine.port.result.default_result_writer import DefaultResultWriter
-from task_plan_manager.engine.registry.registries import CONDITIONS, ITEM_SOURCES, TASKS
-from task_plan_manager.engine.request.code_request import CodeRequest
-from task_plan_manager.engine.request.question_request import QuestionRequest
-from task_plan_manager.engine.runner.child_run.child_run import ChildRun
-from task_plan_manager.engine.runner.scenario.build_scenario import build_scenario
-from task_plan_manager.engine.runner.scenario.check_definition import check_definition
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.ref import Ref
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.definition.unit.builders import group, task
+from task_planner.engine.model.run_state.node_kind import NodeKind
+from task_planner.engine.model.run_state.node_status import NodeStatus
+from task_planner.engine.performer.performed_by import PerformedBy
+from task_planner.engine.port.result.default_result_writer import DefaultResultWriter
+from task_planner.engine.registry.registries import CONDITIONS, ITEM_SOURCES, TASKS
+from task_planner.engine.request.code_request import CodeRequest
+from task_planner.engine.request.question_request import QuestionRequest
+from task_planner.engine.runner.child_run.child_run import ChildRun
+from task_planner.engine.runner.scenario.build_scenario import build_scenario
+from task_planner.engine.runner.scenario.check_definition import check_definition
 
 ALL = list(PerformedBy)
 
@@ -141,10 +141,10 @@ def test_should_reject_duplicate_and_unknown_keys_in_registry():
 
 
 def test_should_read_previous_output_by_node_name_with_default_item_key():
-    from task_plan_manager.engine.definition.task.output_missing_error import OutputMissingError
-    from task_plan_manager.engine.model.run_state.flow_run_state import FlowRunState
-    from task_plan_manager.engine.model.run_state.flow_run_status import FlowRunStatus
-    from task_plan_manager.engine.port.result.default_result_reader import DefaultResultReader
+    from task_planner.engine.definition.task.output_missing_error import OutputMissingError
+    from task_planner.engine.model.run_state.flow_run_state import FlowRunState
+    from task_planner.engine.model.run_state.flow_run_status import FlowRunStatus
+    from task_planner.engine.port.result.default_result_reader import DefaultResultReader
 
     # given: root → extract(반복 밖), doc(파일 결과), outer(반복) → pick, inner(반복) → q, r(앞 결과를 읽음)
     root = build_scenario(group("root", ChildRun.IN_ORDER,

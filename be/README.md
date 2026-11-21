@@ -1,6 +1,6 @@
 # task-plan-server
 
-task-plan-manager 의 서버. FastAPI / SQLAlchemy 2.0 / Postgres 기반 Hexagonal uv workspace 백엔드.
+claude-task-planner 의 서버. FastAPI / SQLAlchemy 2.0 / Postgres 기반 Hexagonal uv workspace 백엔드.
 
 ## 실행
 
@@ -11,7 +11,7 @@ task-plan-manager 의 서버. FastAPI / SQLAlchemy 2.0 / Postgres 기반 Hexagon
     uv run uvicorn task_plan_server.app.main:create_app --factory --reload --port 8000
 
 - OpenAPI: http://localhost:8000/docs
-- CLI 에서 쓰기: `TASK_PLAN_MANAGER_API=server`, `TASK_PLAN_MANAGER_API_URL=http://localhost:8000/api` (서버 경로는 모두 /api 로 시작한다)
+- CLI 에서 쓰기: `TASK_PLANNER_API=server`, `TASK_PLANNER_API_URL=http://localhost:8000/api` (서버 경로는 모두 /api 로 시작한다)
 
 ## 패키지
 

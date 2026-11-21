@@ -2,16 +2,16 @@
 
 import re
 
-from task_plan_manager.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
-from task_plan_manager.claude_utils.prompt.prompt_call_error import PromptCallError
-from task_plan_manager.claude_utils.search_utils.prompt_relevant_context_output import RelevantContextOutput
-from task_plan_manager.port.memory_api.memory_api_error import MemoryApiError
-from task_plan_manager.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
-from task_plan_manager.workflow.make_plan.split_plan.split_tree import relevant_plan_knowledge as knowledge_module
-from task_plan_manager.workflow.make_plan.split_plan.split_tree import split_tree as split_module
-from task_plan_manager.workflow.make_plan.split_plan.split_tree.prompt_split_child import SplitChild
-from task_plan_manager.workflow.make_plan.split_plan.split_tree.prompt_split_output import SplitOutput
-from task_plan_manager.workflow.make_plan.split_plan.split_tree.split_tree import split_tree
+from task_planner.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
+from task_planner.claude_utils.prompt.prompt_call_error import PromptCallError
+from task_planner.claude_utils.search_utils.prompt_relevant_context_output import RelevantContextOutput
+from task_planner.port.memory_api.memory_api_error import MemoryApiError
+from task_planner.workflow.make_plan.split_plan.prompt_call_log import PromptCallLog
+from task_planner.workflow.make_plan.split_plan.split_tree import relevant_plan_knowledge as knowledge_module
+from task_planner.workflow.make_plan.split_plan.split_tree import split_tree as split_module
+from task_planner.workflow.make_plan.split_plan.split_tree.prompt_split_child import SplitChild
+from task_planner.workflow.make_plan.split_plan.split_tree.prompt_split_output import SplitOutput
+from task_planner.workflow.make_plan.split_plan.split_tree.split_tree import split_tree
 
 REQUEST_MD = "# 명령\n밤만쥬를 만든다.\n\n\n# 맥락\n- 에어프라이어\n\n\n# 산출물\n- 장보기 목록\n- 레시피"
 PERSONA_IDS = (1,)

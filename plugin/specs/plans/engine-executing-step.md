@@ -14,7 +14,7 @@
 
 ## 1. 입력과 받는 방식
 
-- 명령은 지금과 같다: `task_plan_manager start <흐름> | next | done [--answer]`, 그리고 종료 훅(Stop).
+- 명령은 지금과 같다: `task-planner start <흐름> | next | done [--answer]`, 그리고 종료 훅(Stop).
 - 새로 읽는 것: state.json 의 `executing`.
 
 ## 2. 출력과 내보내는 방식
@@ -50,7 +50,7 @@ state.json 에 `executing` 을 더한다. 단계를 실행하는 동안만 채�
 ## 4. 파일 트리
 
 ```
-src/task_plan_manager/engine/
+src/task_planner/engine/
 ├─ model/run_state/executing_step.py        새로: ExecutingStep, is_alive()
 ├─ model/run_state/flow_run_state.py        executing 필드
 ├─ port/run_state/run_state_file_converter.py  executing 읽고 쓰기
@@ -67,7 +67,7 @@ tests/engine/test_executing_step.py         새로: 시험 4개
 
 없음. run 스킬에 두 줄을 더한다.
 - `wait`: `payload.text` 를 보이고 아무 명령도 부르지 않습니다. 앞 명령의 완료 알림이 오면 그 결과(지시)대로 이어 갑니다.
-- (첫머리) `task_plan_manager` 명령은 Bash 제한 시간 600000(10분)으로 부릅니다.
+- (첫머리) `task-planner` 명령은 Bash 제한 시간 600000(10분)으로 부릅니다.
 
 ## 6. 코드 요지
 

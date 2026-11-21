@@ -50,7 +50,7 @@ import pytest  # noqa: E402
 def fake_api(monkeypatch):
     """서버 구현을 쓰게 환경 변수를 바꾸고 가짜 서버를 띄운다."""
     server = FakeApiServer()
-    monkeypatch.setenv("TASK_PLAN_MANAGER_API", "server")
-    monkeypatch.setenv("TASK_PLAN_MANAGER_API_URL", server.url)
+    monkeypatch.setenv("TASK_PLANNER_API", "server")
+    monkeypatch.setenv("TASK_PLANNER_API_URL", server.url)
     yield server
     server.stop()

@@ -6,11 +6,11 @@ import sys
 
 import pytest
 
-from task_plan_manager.common import files
-from task_plan_manager.common.clock import utc_now
-from task_plan_manager.entry.cli import hook, main
-from task_plan_manager.port.plan_api.mock_plan_api_reader import MockPlanApiReader
-from task_plan_manager.workflow.make_plan.interview.interview_task import GOAL, OPENING
+from task_planner.common import files
+from task_planner.common.clock import utc_now
+from task_planner.entry.cli import hook, main
+from task_planner.port.plan_api.mock_plan_api_reader import MockPlanApiReader
+from task_planner.workflow.make_plan.interview.interview_task import GOAL, OPENING
 
 REQUEST_MD = "# 명령\n밤만쥬를 1인분 만든다.\n\n\n# 중요한 것\n(정하지 않음)\n\n\n# 산출물\n장보기 목록과 레시피"
 
@@ -61,7 +61,7 @@ def _fake_claude(tmp_path, monkeypatch):
     exe = tmp_path / "fake-claude"
     exe.write_text(f"#!{sys.executable}\nREQUEST_MD = {REQUEST_MD!r}\n" + FAKE_CLAUDE)
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", str(exe))
+    monkeypatch.setenv("TASK_PLANNER_CLAUDE_BIN", str(exe))
 
 
 def _done_until_finished(capsys) -> bool:
@@ -177,7 +177,7 @@ def test_should_show_summary_with_next_commands_and_finish(tmp_path, monkeypatch
 
     shown = run(capsys, "done")
     assert shown["type"] == "finished"
-    assert shown["payload"]["skill"] == "task_plan_manager:plan-feedback 1"  # 보인 뒤 고치기 대화 스킬
+    assert shown["payload"]["skill"] == "task-planner:plan-feedback 1"  # 보인 뒤 고치기 대화 스킬
     text = shown["payload"]["text"]
     assert text.startswith('계획 1 "밤만쥬 1인분 만들기" 을 만들었습니다.')
     assert text.endswith("고칠 곳이 있으면 대화로 말해 주세요.\n확정은 /plan-go 1, 불허는 /plan-cancel 1")
@@ -195,5 +195,5 @@ def test_should_turn_on_statusline_and_show_planning_then_feedback(tmp_path, mon
     records = (work_dir / ".plan" / "1" / "progress.jsonl").read_text(encoding="utf-8").splitlines()
     assert [json.loads(line)["detail"]["kind"] for line in records] == ["planning", "feedback"]
     settings = files.read_json(work_dir / ".claude" / "settings.local.json")
-    assert settings["statusLine"]["command"].endswith("/plugin/bin/task_plan_manager statusline")
+    assert settings["statusLine"]["command"].endswith("/plugin/bin/task-planner statusline")
     assert settings["statusLine"]["refreshInterval"] == 5

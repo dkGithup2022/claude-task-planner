@@ -1,6 +1,6 @@
 {
   "hooks": {
-    "SessionStart": [{"hooks": [{"type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/task_plan_manager\" hook session-start"}]}],
-    "Stop": [{"hooks": [{"type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/task_plan_manager\" hook stop"}]}]
+    "SessionStart": [{"hooks": [{"type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/task-planner\" hook session-start"}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/task-planner\" hook stop"}]}]
   }
 }

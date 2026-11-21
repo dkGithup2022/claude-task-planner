@@ -9,45 +9,45 @@ from typing import Any
 
 import pytest
 
-from task_plan_manager.claude_utils.prompt.common.prompt_file import PromptFile
-from task_plan_manager.claude_utils.prompt.dto.prompt_spec import PromptSpec
-from task_plan_manager.common import files
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.flow_definition import FlowDefinition
-from task_plan_manager.engine.definition.ref import Ref
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.definition.unit.builders import group, task
-from task_plan_manager.engine.hook.stop_hook import on_stop
-from task_plan_manager.engine.instruction.instruction_type import InstructionType
-from task_plan_manager.engine.model.run_state.executing_step import ExecutingStep
-from task_plan_manager.engine.model.run_state.flow_run_status import FlowRunStatus
-from task_plan_manager.engine.model.run_state.node_status import NodeStatus
-from task_plan_manager.engine.model.session.claude_session import ClaudeSession
-from task_plan_manager.engine.performer.default_performers import default_performers
-from task_plan_manager.engine.performer.performed_by import PerformedBy
-from task_plan_manager.engine.port.history.default_history_reader import DefaultHistoryReader
-from task_plan_manager.engine.port.history.default_history_writer import DefaultHistoryWriter
-from task_plan_manager.engine.port.result.default_result_reader import DefaultResultReader
-from task_plan_manager.engine.port.result.default_result_writer import DefaultResultWriter
-from task_plan_manager.engine.port.run_location import output_dir, run_dir
-from task_plan_manager.engine.port.run_state.default_run_state_reader import DefaultRunStateReader
-from task_plan_manager.engine.port.run_state.default_run_state_writer import DefaultRunStateWriter
-from task_plan_manager.engine.port.session.default_session_reader import DefaultSessionReader
-from task_plan_manager.engine.port.session.default_session_writer import DefaultSessionWriter
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.code_request import CodeRequest
-from task_plan_manager.engine.request.prompt_request import PromptRequest
-from task_plan_manager.engine.request.question_request import QuestionRequest
-from task_plan_manager.engine.request.show_request import ShowRequest
-from task_plan_manager.engine.request.subagent_request import SubagentRequest
-from task_plan_manager.engine.runner.child_run.child_run import ChildRun
-from task_plan_manager.engine.runner.child_run.default_strategies import default_strategies
-from task_plan_manager.engine.runner.flow.default_flow_runner import DefaultFlowRunner
-from task_plan_manager.engine.runner.flow.dict_flow_registry import DictFlowRegistry
-from task_plan_manager.engine.runner.unit.default_unit_runner import DefaultUnitRunner
-from task_plan_manager.workflow.demo.demo_flow import DEMO_FLOW
+from task_planner.claude_utils.prompt.common.prompt_file import PromptFile
+from task_planner.claude_utils.prompt.dto.prompt_spec import PromptSpec
+from task_planner.common import files
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.flow_definition import FlowDefinition
+from task_planner.engine.definition.ref import Ref
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.definition.unit.builders import group, task
+from task_planner.engine.hook.stop_hook import on_stop
+from task_planner.engine.instruction.instruction_type import InstructionType
+from task_planner.engine.model.run_state.executing_step import ExecutingStep
+from task_planner.engine.model.run_state.flow_run_status import FlowRunStatus
+from task_planner.engine.model.run_state.node_status import NodeStatus
+from task_planner.engine.model.session.claude_session import ClaudeSession
+from task_planner.engine.performer.default_performers import default_performers
+from task_planner.engine.performer.performed_by import PerformedBy
+from task_planner.engine.port.history.default_history_reader import DefaultHistoryReader
+from task_planner.engine.port.history.default_history_writer import DefaultHistoryWriter
+from task_planner.engine.port.result.default_result_reader import DefaultResultReader
+from task_planner.engine.port.result.default_result_writer import DefaultResultWriter
+from task_planner.engine.port.run_location import output_dir, run_dir
+from task_planner.engine.port.run_state.default_run_state_reader import DefaultRunStateReader
+from task_planner.engine.port.run_state.default_run_state_writer import DefaultRunStateWriter
+from task_planner.engine.port.session.default_session_reader import DefaultSessionReader
+from task_planner.engine.port.session.default_session_writer import DefaultSessionWriter
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.code_request import CodeRequest
+from task_planner.engine.request.prompt_request import PromptRequest
+from task_planner.engine.request.question_request import QuestionRequest
+from task_planner.engine.request.show_request import ShowRequest
+from task_planner.engine.request.subagent_request import SubagentRequest
+from task_planner.engine.runner.child_run.child_run import ChildRun
+from task_planner.engine.runner.child_run.default_strategies import default_strategies
+from task_planner.engine.runner.flow.default_flow_runner import DefaultFlowRunner
+from task_planner.engine.runner.flow.dict_flow_registry import DictFlowRegistry
+from task_planner.engine.runner.unit.default_unit_runner import DefaultUnitRunner
+from task_planner.workflow.demo.demo_flow import DEMO_FLOW
 
 SID = "sess-v2"
 FLOWS: dict[str, FlowDefinition] = {"demo": DEMO_FLOW}
@@ -176,7 +176,7 @@ class _Spawn(Task):
     output_kind = OutputKind.FILES
 
     def build_request(self, context: FlowContext) -> SubagentRequest:
-        return SubagentRequest("task_plan_manager:prep-writer", f"결과 폴더: {context.output_dir()}")
+        return SubagentRequest("task-planner:prep-writer", f"결과 폴더: {context.output_dir()}")
 
     def build_output(self, context: FlowContext, result: Any) -> TaskOutput:
         return TaskOutput()
@@ -285,7 +285,7 @@ def test_should_write_prompt_files_and_let_next_step_read_them(tmp_path, monkeyp
     exe = tmp_path / "claude"
     exe.write_text(f"#!/bin/bash\ncat >/dev/null\necho '{json.dumps(out)}'\n")
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", str(exe))
+    monkeypatch.setenv("TASK_PLANNER_CLAUDE_BIN", str(exe))
     FLOWS["docs"] = FlowDefinition("docs", "시험", group("root", ChildRun.IN_ORDER,
         task("docs", PerformedBy.CLAUDE_P, Ref("test_v2.prompt_docs")),
         task("show", PerformedBy.MAIN_SESSION_SHOW, Ref("test_v2.show_docs"), reads=("docs",))))  # fmt: skip
@@ -313,7 +313,7 @@ def test_should_record_failed_prompt_call_cost(tmp_path, monkeypatch):
     body = '{"is_error": true, "result": "bad", "total_cost_usd": 0.02}'
     exe.write_text(f"#!/bin/bash\ncat >/dev/null\necho '{body}'\n")
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", str(exe))
+    monkeypatch.setenv("TASK_PLANNER_CLAUDE_BIN", str(exe))
     _one("pr", PerformedBy.CLAUDE_P, "test_v2.prompt")
     failed = runner().start(session(), "pr")
     h = [x for x in DefaultHistoryReader().read_history(state()) if x.status is NodeStatus.FAILED][0]
@@ -356,7 +356,7 @@ class _AskInner(Task):
 
 
 def _register_nested() -> None:
-    from task_plan_manager.engine.registry.registries import CONDITIONS, ITEM_SOURCES
+    from task_planner.engine.registry.registries import CONDITIONS, ITEM_SOURCES
 
     if not ITEM_SOURCES.has("test_v2.outer"):
         ITEM_SOURCES.register("test_v2.outer", lambda: lambda ctx: ITEMS["outer"])

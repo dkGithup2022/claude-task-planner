@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from task_plan_manager.claude_utils.transcript import read_dialogue as transcript
+from task_planner.claude_utils.transcript import read_dialogue as transcript
 
 FIX = Path(__file__).parent.parent / "fixtures" / "transcripts" / "demo_run.jsonl"
 
@@ -19,11 +19,11 @@ def test_should_keep_only_direct_dialogue_when_reading_real_session():
     # then
     users = [u.text for u in d if u.role == "user"]
     said = "사과랑 배를 좋아해요. 그 정도면 충분해요."
-    assert users == ["/task_plan_manager:run demo", said, "예", "예", "맞음", "아님"]
+    assert users == ["/task-planner:run demo", said, "예", "예", "맞음", "아님"]
     texts = " ".join(u.text for u in d if u.role == "assistant")
     assert "좋아하는 과일이 뭐예요?" in texts and "정리할까요?" in texts
     # 명령 출력(JSON)은 들어오지 않음
-    assert "task_plan_manager" not in texts.replace("task_plan_manager:run", "")
+    assert "task-planner" not in texts.replace("task-planner:run", "")
     assert [u.id for u in d if u.role == "user"][:2] == ["u1", "u2"]
 
 
@@ -41,11 +41,11 @@ def test_should_drop_sidechain_meta_and_tool_results(tmp_path):
 
 
 def test_should_keep_command_args_when_slash_command_has_natural_language(tmp_path):
-    command = "<command-name>/task_plan_manager:run</command-name>"
+    command = "<command-name>/task-planner:run</command-name>"
     content = command + "\n<command-args>todo 내일 3시 치과</command-args>"
     rows = [{"type": "user", "timestamp": "1", "message": {"content": content}}]
     texts = [u.text for u in transcript.dialogue(_write(tmp_path, rows))]
-    assert texts == ["/task_plan_manager:run todo 내일 3시 치과"]
+    assert texts == ["/task-planner:run todo 내일 3시 치과"]
 
 
 def test_should_keep_pasted_text_and_drop_notifications_when_reading(tmp_path):

@@ -1,5 +1,5 @@
-"""task_plan_manager 명령 하나를 실행하면서,
-호출된 task_plan_manager 함수를 호출 순서와 깊이대로 출력한다.
+"""task-planner 명령 하나를 실행하면서,
+호출된 task_planner 함수를 호출 순서와 깊이대로 출력한다.
 
 사용: uv run python scripts/trace_calls.py --session walk start demo
 출력: 함수 이름과 파일:줄 (표준 오류). 명령 결과 JSON 은 원래대로 표준 출력.
@@ -7,7 +7,7 @@
 
 import sys
 
-from task_plan_manager.entry.cli import main  # import 는 추적하지 않는다 (클래스 정의가 섞이지 않게)
+from task_planner.entry.cli import main  # import 는 추적하지 않는다 (클래스 정의가 섞이지 않게)
 
 SKIP = {"__post_init__", "to_dict", "from_dict", "<genexpr>", "<listcomp>", "<dictcomp>", "<lambda>"}
 depth = 0
@@ -16,7 +16,7 @@ depth = 0
 def tracer(frame, event, arg):  # type: ignore[no-untyped-def]
     global depth
     path = frame.f_code.co_filename
-    if "/src/task_plan_manager/" not in path:
+    if "/src/task_planner/" not in path:
         return
     name = frame.f_code.co_qualname
     if event == "call":

@@ -1,6 +1,6 @@
 # task-plan-web
 
-task-plan-manager 의 웹. `nextjs-fe-base` 템플릿(커밋 60e48bc)에서 시작했다. 서버는 `../be` (http://localhost:8000, 경로는 /api 로 시작). 웹은 http://localhost:3000.
+claude-task-planner 의 웹. `nextjs-fe-base` 템플릿(커밋 60e48bc)에서 시작했다. 서버는 `../be` (http://localhost:8000, 경로는 /api 로 시작). 웹은 http://localhost:3000.
 
 ## 시작
 

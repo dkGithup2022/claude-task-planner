@@ -2,17 +2,17 @@ import json
 
 import pytest
 
-from task_plan_manager.model.progress.closed_progress import ClosedProgress
-from task_plan_manager.model.progress.feedback_progress import FeedbackProgress
-from task_plan_manager.model.progress.planning_progress import PlanningProgress
-from task_plan_manager.model.progress.progress_event import ProgressEvent
-from task_plan_manager.model.progress.reinforce_phase import ReinforcePhase
-from task_plan_manager.model.progress.reinforce_progress import ReinforceProgress
-from task_plan_manager.model.progress.run_node import RunNode
-from task_plan_manager.model.progress.run_phase import RunPhase
-from task_plan_manager.model.progress.run_progress import RunProgress
-from task_plan_manager.port.local.progress_log.default_progress_log_reader import DefaultProgressLogReader
-from task_plan_manager.port.local.progress_log.default_progress_log_writer import DefaultProgressLogWriter
+from task_planner.model.progress.closed_progress import ClosedProgress
+from task_planner.model.progress.feedback_progress import FeedbackProgress
+from task_planner.model.progress.planning_progress import PlanningProgress
+from task_planner.model.progress.progress_event import ProgressEvent
+from task_planner.model.progress.reinforce_phase import ReinforcePhase
+from task_planner.model.progress.reinforce_progress import ReinforceProgress
+from task_planner.model.progress.run_node import RunNode
+from task_planner.model.progress.run_phase import RunPhase
+from task_planner.model.progress.run_progress import RunProgress
+from task_planner.port.local.progress_log.default_progress_log_reader import DefaultProgressLogReader
+from task_planner.port.local.progress_log.default_progress_log_writer import DefaultProgressLogWriter
 
 
 @pytest.fixture(autouse=True)

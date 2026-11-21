@@ -1,4 +1,4 @@
-from task_plan_manager.model.counter.counter import Counter
+from task_planner.model.counter.counter import Counter
 
 
 def test_should_return_new_counter_increased_by_one():

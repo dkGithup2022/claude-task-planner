@@ -22,18 +22,18 @@
 ## 대화에 어떻게 끼어드나
 
 ```
-/task_plan_manager:run make_plan
+/task-planner:run make_plan
   └─ … ─▶ show_plan (마지막 단계)
-            └─ 끝 지시: {text: 계획 표 + 안내, skill: "task_plan_manager:plan-feedback 6"}
+            └─ 끝 지시: {text: 계획 표 + 안내, skill: "task-planner:plan-feedback 6"}
                   │  메인 세션: 글을 보이고 Skill 로 plan-feedback 6 을 부름 (흐름은 끝남)
                   ▼
 plan-feedback (대화 스킬, 메인 세션 맥락에 남음)
   사용자: "화면 설계가 너무 커. 와이어프레임이랑 디자인 테마로 나눠 줘"
      │
      ├─ 고치는 말 ─▶ Skill: plan-edit 6 (사용자 말)
-     │                 ├─ task_plan_manager plan show 6          ─▶ 계획 JSON
+     │                 ├─ task-planner plan show 6          ─▶ 계획 JSON
      │                 ├─ 사용자 말 → 묶음 동작(ops)
-     │                 └─ task_plan_manager plan edit 6 <<ops    ─▶ 코드가
+     │                 └─ task-planner plan edit 6 <<ops    ─▶ 코드가
      │                        ├─ 메모리에서 동작 적용 + 앞뒤 다시 잇기 + 정의서 만들기
      │                        ├─ 문제 점검 → 새 문제면 아무것도 보내지 않고 거절
      │                        ├─ 바뀐 것마다 서버에 요청
@@ -78,8 +78,8 @@ plan-feedback (대화 스킬, 메인 세션 맥락에 남음)
 
 - 대화 스킬 `plan-feedback <id>`: make_plan 의 끝 지시가 부른다. 사용자가 직접 불러도 된다.
 - 데이터 스킬 `plan-edit <id> <사용자 말>`: plan-feedback 이 부른다.
-- `task_plan_manager plan show <id>`: 인자만 받는다.
-- `task_plan_manager plan edit <id>`: 표준 입력으로 JSON 하나를 받는다 (heredoc. 허용 도구가 `Bash(task_plan_manager:*)` 뿐이라 파일을 쓰지 않음).
+- `task-planner plan show <id>`: 인자만 받는다.
+- `task-planner plan edit <id>`: 표준 입력으로 JSON 하나를 받는다 (heredoc. 허용 도구가 `Bash(task-planner:*)` 뿐이라 파일을 쓰지 않음).
 
 ```json
 {"ops": [
@@ -145,7 +145,7 @@ plugin/skills/
 ├─ plan-feedback/SKILL.md                      새로: 대화 스킬 (5절)
 ├─ plan-edit/SKILL.md                          새로: 데이터 스킬 (5절)
 └─ run/SKILL.md                                finished 에 skill 이 있으면 부른다 (한 줄)
-src/task_plan_manager/
+src/task_planner/
 ├─ engine/request/show_request.py              skill: str | None = None
 ├─ engine/instruction/instruction_converter.py  skill 이 있으면 payload 에 넣음
 ├─ engine/runner/unit/default_unit_runner.py   마지막 보이기를 끝 지시로 바꿀 때 skill 도 옮김
@@ -158,7 +158,7 @@ src/task_plan_manager/
    │  ├─ plan_view.py           plan show 의 JSON
    │  └─ plan_edit_refused_error.py
    └─ make_plan/
-   ├─ show_plan/show_plan_task.py      끝 지시에 skill "task_plan_manager:plan-feedback <id>"
+   ├─ show_plan/show_plan_task.py      끝 지시에 skill "task-planner:plan-feedback <id>"
    └─ prepare_show/plan_summary.py     머리 줄 "만들었습니다 / 고쳤습니다" 를 고름
 tests/workflow/plan_edit/              새로: op 마다 다시 잇기, 거절, 보내는 순서, show JSON
 ```
@@ -251,9 +251,9 @@ name: plan-edit
 description: 계획의 노드와 간선을 사용자 말대로 바꿔 계획 저장소에 보낸다. plan-feedback 이 부른다
 argument-hint: <계획 id> <사용자 말>
 ---
-`task_plan_manager` 명령은 Bash 제한 시간 600000(10분)으로 부릅니다.
+`task-planner` 명령은 Bash 제한 시간 600000(10분)으로 부릅니다.
 
-1. `task_plan_manager plan show <id>` 로 지금 계획(노드, 간선)을 읽습니다.
+1. `task-planner plan show <id>` 로 지금 계획(노드, 간선)을 읽습니다.
 2. 사용자 말을 아래 동작으로 옮깁니다. 말한 것만 바꿉니다.
 
    | op | 넘길 것 |
@@ -268,7 +268,7 @@ argument-hint: <계획 id> <사용자 말>
    - scope 는 이 노드가 하는 일 한두 줄, output 은 산출물 한 줄입니다. 사용자가 말한 조건은 note 나 add_note 에 넣습니다.
    - 앞뒤 간선은 넘기지 않습니다. 명령이 다시 잇습니다.
 3. 넘깁니다.
-       task_plan_manager plan edit <id> <<'EOF'
+       task-planner plan edit <id> <<'EOF'
        {"ops": [...]}
        EOF
 4. 결과의 `changes` 와 `summary`(새 계획 표)를 그대로 돌려줍니다. `ok: false` 면 이유를 그대로 돌려줍니다.
@@ -296,14 +296,14 @@ argument-hint: <계획 id> <사용자 말>
   - 계획과 다른 점: 정의서 md 만들기를 write_specs 와 같은 함수로 합치지 않고 plan_edit/node_spec.py 에 같은 형식으로 두었다 (make_plan 코드를 건드리지 않음)
   - 바뀐 것 글은 조사가 이름에 붙지 않게 "나눔: 14 화면 설계 → …" 모양으로 함
 - 2026-11-19 단위 3 entry/cli.py: plan show, plan edit (표준 입력 JSON). 시험 1개
-- 2026-11-19 단위 4 make_plan show_plan 이 skill "task_plan_manager:plan-feedback <id>" 를 실음, 계획 표 머리 줄 동사 인자, 스킬 plan-feedback·plan-edit. make_plan 시험에 skill 확인 추가
+- 2026-11-19 단위 4 make_plan show_plan 이 skill "task-planner:plan-feedback <id>" 를 실음, 계획 표 머리 줄 동사 인자, 스킬 plan-feedback·plan-edit. make_plan 시험에 skill 확인 추가
 - 별도 에이전트 리뷰 (단위 1~4 함께):
   - (1) 새 문제를 문제 글 그대로 비교해서, 원래 있던 문제가 간선 id 나 노드 제목이 바뀌면 새 문제로 잡혀 거절됨 → 원래 간선은 원래 id 를 쓰고, 제목을 지운 계획끼리 비교하게 고침. 시험 추가
   - (2) merge 에 같은 id 가 두 번 오면 명령이 오류로 멈춤 → 겹친 id 는 한 번만 씀
   - (3) 확인 노드를 작업 노드로 바꿀 때 담당이 비어 거절됨 → 담당을 주지 않았으면 계획의 첫 페르소나. 시험 추가
 - 검증: pytest 138개, ruff, ruff format, lint-imports, mypy 통과
 - 2026-11-19 e2e(edit1, 계획 7)에서 찾아 고침 (사용자 승인):
-  - heredoc 을 붙인 명령은 허용 규칙 `Bash(task_plan_manager:*)` 에 맞지 않아 거부됨 → `plan edit <id> --ops '<JSON>'` 인자를 받고, 스킬은 이 인자를 씀. 표준 입력도 그대로 받음
+  - heredoc 을 붙인 명령은 허용 규칙 `Bash(task-planner:*)` 에 맞지 않아 거부됨 → `plan edit <id> --ops '<JSON>'` 인자를 받고, 스킬은 이 인자를 씀. 표준 입력도 그대로 받음
   - 스킬이 kind 에 `doc` 을 넣음 → plan-edit 스킬에 kind 값 목록(document / research / code / hitl)
   - 메인 세션이 끝 지시의 계획 표를 보이지 않고 바로 plan-feedback 을 부름 → run 스킬: skill 이 있으면 먼저 글을 그대로 적은 뒤 스킬을 부름
 

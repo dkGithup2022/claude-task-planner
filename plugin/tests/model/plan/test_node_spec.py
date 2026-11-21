@@ -1,6 +1,6 @@
 """NodeSpec: 노드 정의서 md 를 절로 읽고, 같은 모양으로 되돌린다."""
 
-from task_plan_manager.model.plan.node_spec import NodeSpec
+from task_planner.model.plan.node_spec import NodeSpec
 
 MAKE_PLAN_MD = (
     "### 하는 일\n댓글 테이블을 설계한다.\n\n"

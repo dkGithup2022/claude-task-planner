@@ -1,8 +1,8 @@
-from task_plan_manager.model.persona.persona import Persona
-from task_plan_manager.port.persona_api.default_persona_api_reader import DefaultPersonaApiReader
-from task_plan_manager.port.persona_api.mock_persona_api_reader import MockPersonaApiReader
-from task_plan_manager.port.persona_api.persona_api_choice import persona_api_reader
-from task_plan_manager.port.persona_api.persona_api_error import PersonaApiError
+from task_planner.model.persona.persona import Persona
+from task_planner.port.persona_api.default_persona_api_reader import DefaultPersonaApiReader
+from task_planner.port.persona_api.mock_persona_api_reader import MockPersonaApiReader
+from task_planner.port.persona_api.persona_api_choice import persona_api_reader
+from task_planner.port.persona_api.persona_api_error import PersonaApiError
 
 
 def test_should_make_first_personas_in_mock_when_file_is_missing(mock_data_dir):

@@ -1,12 +1,12 @@
 import pytest
 
-from task_plan_manager.model.node_run.node_run import NodeRun
-from task_plan_manager.model.node_run.read_input import ReadInput
-from task_plan_manager.model.plan.plan_node_status import PlanNodeStatus
-from task_plan_manager.port.local.plan_folder.default_plan_folder_reader import DefaultPlanFolderReader
-from task_plan_manager.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
-from task_plan_manager.port.local.plan_folder.plan_folder_exists_error import PlanFolderExistsError
-from task_plan_manager.port.local.plan_folder.plan_folder_missing_error import PlanFolderMissingError
+from task_planner.model.node_run.node_run import NodeRun
+from task_planner.model.node_run.read_input import ReadInput
+from task_planner.model.plan.plan_node_status import PlanNodeStatus
+from task_planner.port.local.plan_folder.default_plan_folder_reader import DefaultPlanFolderReader
+from task_planner.port.local.plan_folder.default_plan_folder_writer import DefaultPlanFolderWriter
+from task_planner.port.local.plan_folder.plan_folder_exists_error import PlanFolderExistsError
+from task_planner.port.local.plan_folder.plan_folder_missing_error import PlanFolderMissingError
 
 
 @pytest.fixture(autouse=True)
@@ -94,7 +94,7 @@ def test_should_keep_each_round_when_archiving_twice(work_dir):
 
 
 def test_should_save_and_read_shown_record(work_dir):
-    from task_plan_manager.model.plan.shown_record import ShownRecord
+    from task_planner.model.plan.shown_record import ShownRecord
 
     reader, writer = DefaultPlanFolderReader(), DefaultPlanFolderWriter()
     writer.create_plan(7, "# 명령")
@@ -106,7 +106,7 @@ def test_should_save_and_read_shown_record(work_dir):
 
 
 def test_should_save_and_read_stop_mark(work_dir):
-    from task_plan_manager.port.local.plan_folder.dto.stop_mark import StopMark
+    from task_planner.port.local.plan_folder.dto.stop_mark import StopMark
 
     reader, writer = DefaultPlanFolderReader(), DefaultPlanFolderWriter()
     writer.create_plan(7, "# 명령")

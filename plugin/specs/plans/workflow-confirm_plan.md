@@ -129,7 +129,7 @@ list_plans                                           /plan-go, /plan-cancel, /pl
 3. 생길 파일 트리
    ```
    코드
-   src/task_plan_manager/workflow/confirm_plan/
+   src/task_planner/workflow/confirm_plan/
    ├─ __init__.py
    ├─ confirm_plan_flows.py           plan_go, plan_cancel 선언 (단계 목록을 만드는 함수 하나로 두 선언). 지금은 find_plan 까지
    └─ find_plan/
@@ -137,11 +137,11 @@ list_plans                                           /plan-go, /plan-cancel, /pl
       ├─ find_plan_task.py
       ├─ command_plan_id.py           대화에서 마지막 /plan-go·/plan-cancel 줄의 id 읽기
       └─ plan_not_confirmable_error.py   위 실패 경우들
-   src/task_plan_manager/workflow/registry.py   FLOWS 에 "plan_go", "plan_cancel"
+   src/task_planner/workflow/registry.py   FLOWS 에 "plan_go", "plan_cancel"
    tests/workflow/test_confirm_plan.py
 
    실행하면
-   .task_plan_manager/sessions/<세션 id>/runs/<실행 id>/find_plan_<uuid8>/result.json
+   .task_planner/sessions/<세션 id>/runs/<실행 id>/find_plan_<uuid8>/result.json
    ```
 4. 프롬프트: 없음
 5. 코드 (만들 모양)
@@ -175,7 +175,7 @@ list_plans                                           /plan-go, /plan-cancel, /pl
        """대화에서 사용자가 마지막으로 친 /plan-go·/plan-cancel 줄의 계획 id. 없으면 PlanNotConfirmableError."""
    ```
 6. 시험 (만들 것)
-   - 대화 기록에 `/task_plan_manager:plan-go 1` 줄을 쓰고, 계획 1(검토 중)과 `.plan/1/shown.json` 을 만들어 두고 `start plan_go` → find_plan 결과에 plan_id 1, 제목, 보여 준 기록 → finished (지금은 find_plan 뿐)
+   - 대화 기록에 `/task-planner:plan-go 1` 줄을 쓰고, 계획 1(검토 중)과 `.plan/1/shown.json` 을 만들어 두고 `start plan_go` → find_plan 결과에 plan_id 1, 제목, 보여 준 기록 → finished (지금은 find_plan 뿐)
    - 같은 대화에 `/plan-go 1` 뒤에 `/plan-go 2` 가 있으면 2
    - 실패 경우 다섯 가지마다 failed 와 메시지
 
@@ -194,22 +194,22 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.port.session.default_session_reader import DefaultSessionReader
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.code_request import CodeRequest
-from task_plan_manager.model.plan.plan import Plan
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.model.plan.shown_record import ShownRecord
-from task_plan_manager.port.local.plan_folder.default_plan_folder_reader import DefaultPlanFolderReader
-from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
-from task_plan_manager.port.plan_api.plan_not_found_error import PlanNotFoundError
-from task_plan_manager.workflow.confirm_plan.find_plan.command_plan_id import command_plan_id
-from task_plan_manager.workflow.confirm_plan.find_plan.plan_not_confirmable_error import PlanNotConfirmableError
-from task_plan_manager.workflow.list_plans.show_plans.plan_status_label import status_label
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.port.session.default_session_reader import DefaultSessionReader
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.code_request import CodeRequest
+from task_planner.model.plan.plan import Plan
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.model.plan.shown_record import ShownRecord
+from task_planner.port.local.plan_folder.default_plan_folder_reader import DefaultPlanFolderReader
+from task_planner.port.plan_api.plan_api_choice import plan_api_reader
+from task_planner.port.plan_api.plan_not_found_error import PlanNotFoundError
+from task_planner.workflow.confirm_plan.find_plan.command_plan_id import command_plan_id
+from task_planner.workflow.confirm_plan.find_plan.plan_not_confirmable_error import PlanNotConfirmableError
+from task_planner.workflow.list_plans.show_plans.plan_status_label import status_label
 
 
 @TASKS.register_as("confirm_plan.find_plan")
@@ -274,10 +274,10 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from task_plan_manager.claude_utils.transcript.read_dialogue import dialogue
-from task_plan_manager.workflow.confirm_plan.find_plan.plan_not_confirmable_error import PlanNotConfirmableError
+from task_planner.claude_utils.transcript.read_dialogue import dialogue
+from task_planner.workflow.confirm_plan.find_plan.plan_not_confirmable_error import PlanNotConfirmableError
 
-# 대화 읽기 함수는 슬래시 명령을 "/task_plan_manager:plan-go 7" 처럼 "명령 인자" 한 줄로 넣어 준다
+# 대화 읽기 함수는 슬래시 명령을 "/task-planner:plan-go 7" 처럼 "명령 인자" 한 줄로 넣어 준다
 COMMAND_LINE = re.compile(r"^/\S*plan-(?:go|cancel)\s+(\d+)")
 
 
@@ -300,12 +300,12 @@ def command_plan_id(transcript: Path) -> int:
 
 from __future__ import annotations
 
-from task_plan_manager.engine.definition.flow_definition import FlowDefinition
-from task_plan_manager.engine.definition.ref import Ref
-from task_plan_manager.engine.definition.unit.builders import group, task
-from task_plan_manager.engine.performer.performed_by import PerformedBy
-from task_plan_manager.engine.runner.child_run.child_run import ChildRun
-from task_plan_manager.workflow.confirm_plan.find_plan import find_plan_task  # noqa: F401
+from task_planner.engine.definition.flow_definition import FlowDefinition
+from task_planner.engine.definition.ref import Ref
+from task_planner.engine.definition.unit.builders import group, task
+from task_planner.engine.performer.performed_by import PerformedBy
+from task_planner.engine.runner.child_run.child_run import ChildRun
+from task_planner.workflow.confirm_plan.find_plan import find_plan_task  # noqa: F401
 
 
 def confirm_plan_flow(name: str, decision: str, description: str) -> FlowDefinition:
@@ -325,8 +325,8 @@ PLAN_CANCEL_FLOW = confirm_plan_flow(
      ```
 6. 검증: ruff, import 검사 계약 4개, mypy, pytest 101개 통과. 새 시험 7개: 마지막 명령 줄의 id(1 뒤의 2)와 보여 준 기록, /plan-cancel 줄, 실패 다섯 가지(명령 줄 없음, 계획 없음, 승인 상태, 보여 준 기록 없음, 대화 기록 경로 없음)
 7. 실제 실행 (Claude Code -p, 새 세션, 할 일 CLI 계획이 있는 작업 폴더 tpm-try2)
-   - `/task_plan_manager:plan-go` (id 없음) → list_plans 가 돌고, 메인 세션이 "명령 뒤에 계획 id 를 붙여 다시 불러 주세요. 예: /plan-go 1" 과 계획 표를 보였다
-   - `/task_plan_manager:plan-go 1` → plan_go 가 돌고 find_plan 결과: plan_id 1, 제목, persona_ids [1], shown_at, transcript(계획을 보여 준 다른 세션의 대화 기록). 지금은 find_plan 뿐이라 바로 끝남
+   - `/task-planner:plan-go` (id 없음) → list_plans 가 돌고, 메인 세션이 "명령 뒤에 계획 id 를 붙여 다시 불러 주세요. 예: /plan-go 1" 과 계획 표를 보였다
+   - `/task-planner:plan-go 1` → plan_go 가 돌고 find_plan 결과: plan_id 1, 제목, persona_ids [1], shown_at, transcript(계획을 보여 준 다른 세션의 대화 기록). 지금은 find_plan 뿐이라 바로 끝남
 
 ### check_edges (만들기 전 계획, 2026-11-19)
 
@@ -357,8 +357,8 @@ PLAN_CANCEL_FLOW = confirm_plan_flow(
      | 담당 | 확인 노드(hitl)가 아닌데 persona_ids 가 비었음 | 노드 5 장보기 목록 작성: 담당 페르소나가 없습니다 |
 3. 생길 파일 트리
    ```
-   src/task_plan_manager/model/plan/plan.py        동작 problems() -> tuple[str, ...] 를 더함
-   src/task_plan_manager/workflow/confirm_plan/check_edges/
+   src/task_planner/model/plan/plan.py        동작 problems() -> tuple[str, ...] 를 더함
+   src/task_planner/workflow/confirm_plan/check_edges/
    ├─ __init__.py
    ├─ check_edges_task.py
    └─ plan_has_problems_error.py
@@ -471,14 +471,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.code_request import CodeRequest
-from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
-from task_plan_manager.workflow.confirm_plan.check_edges.plan_has_problems_error import PlanHasProblemsError
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.code_request import CodeRequest
+from task_planner.port.plan_api.plan_api_choice import plan_api_reader
+from task_planner.workflow.confirm_plan.check_edges.plan_has_problems_error import PlanHasProblemsError
 
 
 @TASKS.register_as("confirm_plan.check_edges")
@@ -514,14 +514,14 @@ def _problem_message(plan_id: int, problems: tuple[str, ...]) -> str:
 
 from __future__ import annotations
 
-from task_plan_manager.engine.definition.flow_definition import FlowDefinition
-from task_plan_manager.engine.definition.ref import Ref
-from task_plan_manager.engine.definition.unit.builders import group, task
-from task_plan_manager.engine.definition.unit.unit import Unit
-from task_plan_manager.engine.performer.performed_by import PerformedBy
-from task_plan_manager.engine.runner.child_run.child_run import ChildRun
-from task_plan_manager.workflow.confirm_plan.check_edges import check_edges_task  # noqa: F401
-from task_plan_manager.workflow.confirm_plan.find_plan import find_plan_task  # noqa: F401
+from task_planner.engine.definition.flow_definition import FlowDefinition
+from task_planner.engine.definition.ref import Ref
+from task_planner.engine.definition.unit.builders import group, task
+from task_planner.engine.definition.unit.unit import Unit
+from task_planner.engine.performer.performed_by import PerformedBy
+from task_planner.engine.runner.child_run.child_run import ChildRun
+from task_planner.workflow.confirm_plan.check_edges import check_edges_task  # noqa: F401
+from task_planner.workflow.confirm_plan.find_plan import find_plan_task  # noqa: F401
 
 
 def confirm_plan_flow(name: str, decision: str, description: str) -> FlowDefinition:
@@ -638,7 +638,7 @@ user: 저장 파일은 홈 말고 XDG 경로 써. 우리 도구들은 다 그렇
 #### 5. 생길 파일 트리
 
 ```
-src/task_plan_manager/workflow/confirm_plan/extract_knowledge/
+src/task_planner/workflow/confirm_plan/extract_knowledge/
 ├─ __init__.py
 ├─ extract_knowledge_task.py
 ├─ prompt_extract_knowledge.md
@@ -764,21 +764,21 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from task_plan_manager.claude_utils.prompt.dto.prompt_spec import PromptSpec
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.prompt_request import PromptRequest
-from task_plan_manager.model.plan.plan import Plan
-from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader
-from task_plan_manager.workflow.confirm_plan.extract_knowledge.feedback_dialogue import feedback_dialogue
-from task_plan_manager.workflow.confirm_plan.extract_knowledge.knowledge_candidate import KnowledgeCandidate
-from task_plan_manager.workflow.confirm_plan.extract_knowledge.prompt_extract_knowledge_output import (
+from task_planner.claude_utils.prompt.dto.prompt_spec import PromptSpec
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.prompt_request import PromptRequest
+from task_planner.model.plan.plan import Plan
+from task_planner.port.plan_api.plan_api_choice import plan_api_reader
+from task_planner.workflow.confirm_plan.extract_knowledge.feedback_dialogue import feedback_dialogue
+from task_planner.workflow.confirm_plan.extract_knowledge.knowledge_candidate import KnowledgeCandidate
+from task_planner.workflow.confirm_plan.extract_knowledge.prompt_extract_knowledge_output import (
     ExtractKnowledgeOutput,
 )
-from task_plan_manager.workflow.confirm_plan.find_plan.plan_not_confirmable_error import PlanNotConfirmableError
+from task_planner.workflow.confirm_plan.find_plan.plan_not_confirmable_error import PlanNotConfirmableError
 
 MAX_CANDIDATES = 16  # 후보가 많으면 앞의 16 개만 다룬다 (사용자, 2026-11-18)
 CANDIDATE_TYPES = ("plan", "domain")
@@ -852,9 +852,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from task_plan_manager.claude_utils.transcript.dto.utterance import Utterance
-from task_plan_manager.claude_utils.transcript.read_dialogue import dialogue
-from task_plan_manager.workflow.confirm_plan.find_plan.command_plan_id import COMMAND_LINE
+from task_planner.claude_utils.transcript.dto.utterance import Utterance
+from task_planner.claude_utils.transcript.read_dialogue import dialogue
+from task_planner.workflow.confirm_plan.find_plan.command_plan_id import COMMAND_LINE
 
 
 def feedback_dialogue(transcript: Path, shown_at: str) -> list[Utterance]:
@@ -1021,7 +1021,7 @@ refine_each            [FOR_EACH_ITEM: extract_knowledge.candidates]     후보�
 
 #### 생길 파일 트리
 ```
-src/task_plan_manager/workflow/confirm_plan/refine_each/
+src/task_planner/workflow/confirm_plan/refine_each/
 ├─ __init__.py
 ├─ candidates_items.py              반복 항목 함수 confirm_plan.candidates
 ├─ keeps_candidate.py               조건 함수 confirm_plan.keeps_candidate
@@ -1141,7 +1141,7 @@ body:
    - 실패: 지금 상태에서 그 상태로 바꿀 수 없으면 (`PlanStatus.can_move_to` 가 거짓) 실패로 멈춘다. 메시지 "계획 7 은 승인 상태라 다시 확정할 수 없습니다". find_plan 이 이미 검토 중인지 봤으므로, find_plan 뒤에 다른 곳에서 상태가 바뀐 경우에만 생긴다
 3. 생길 파일 트리
    ```
-   src/task_plan_manager/workflow/confirm_plan/record_decision/
+   src/task_planner/workflow/confirm_plan/record_decision/
    ├─ __init__.py
    ├─ record_decision_task.py
    └─ decision_not_allowed_error.py
@@ -1186,16 +1186,16 @@ from __future__ import annotations
 
 from typing import Any
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.code_request import CodeRequest
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
-from task_plan_manager.workflow.confirm_plan.record_decision.decision_not_allowed_error import DecisionNotAllowedError
-from task_plan_manager.workflow.list_plans.show_plans.plan_status_label import status_label
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.code_request import CodeRequest
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.port.plan_api.plan_api_choice import plan_api_reader, plan_api_writer
+from task_planner.workflow.confirm_plan.record_decision.decision_not_allowed_error import DecisionNotAllowedError
+from task_planner.workflow.list_plans.show_plans.plan_status_label import status_label
 
 
 @TASKS.register_as("confirm_plan.record_decision")
@@ -1245,7 +1245,7 @@ class RecordDecisionTask(Task):
    - `/plan-run` 은 아직 없는 명령(D)이지만 정한 안내 그대로 넣는다
 3. 생길 파일 트리
    ```
-   src/task_plan_manager/workflow/confirm_plan/notify/
+   src/task_planner/workflow/confirm_plan/notify/
    ├─ __init__.py
    ├─ notify_task.py
    └─ saved_knowledge_count.py        후보마다 save_knowledge 결과를 세기 (새로, 덧붙이기)
@@ -1289,13 +1289,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_kind import OutputKind
-from task_plan_manager.engine.definition.task.task import Task
-from task_plan_manager.engine.definition.task.task_output import TaskOutput
-from task_plan_manager.engine.registry.registries import TASKS
-from task_plan_manager.engine.request.show_request import ShowRequest
-from task_plan_manager.workflow.confirm_plan.notify.saved_knowledge_count import saved_knowledge_count
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_kind import OutputKind
+from task_planner.engine.definition.task.task import Task
+from task_planner.engine.definition.task.task_output import TaskOutput
+from task_planner.engine.registry.registries import TASKS
+from task_planner.engine.request.show_request import ShowRequest
+from task_planner.workflow.confirm_plan.notify.saved_knowledge_count import saved_knowledge_count
 
 
 @TASKS.register_as("confirm_plan.notify")
@@ -1329,8 +1329,8 @@ def build_notice(decision: str, plan_id: int, title: str, new_count: int, append
 
 from __future__ import annotations
 
-from task_plan_manager.engine.definition.context.flow_context import FlowContext
-from task_plan_manager.engine.definition.task.output_missing_error import OutputMissingError
+from task_planner.engine.definition.context.flow_context import FlowContext
+from task_planner.engine.definition.task.output_missing_error import OutputMissingError
 
 
 def saved_knowledge_count(context: FlowContext) -> tuple[int, int]:
@@ -1357,28 +1357,28 @@ find_plan → (승인만) check_edges → extract_knowledge → refine_each → 
 
 from __future__ import annotations
 
-from task_plan_manager.engine.definition.flow_definition import FlowDefinition
-from task_plan_manager.engine.definition.ref import Ref
-from task_plan_manager.engine.definition.unit.builders import group, task
-from task_plan_manager.engine.definition.unit.unit import Unit
-from task_plan_manager.engine.performer.performed_by import PerformedBy
-from task_plan_manager.engine.runner.child_run.child_run import ChildRun
-from task_plan_manager.workflow.confirm_plan.check_edges import check_edges_task  # noqa: F401
-from task_plan_manager.workflow.confirm_plan.extract_knowledge import extract_knowledge_task  # noqa: F401
-from task_plan_manager.workflow.confirm_plan.find_plan import find_plan_task  # noqa: F401
-from task_plan_manager.workflow.confirm_plan.notify import notify_task  # noqa: F401
-from task_plan_manager.workflow.confirm_plan.record_decision import record_decision_task  # noqa: F401
-from task_plan_manager.workflow.confirm_plan.refine_each import candidates_items, keeps_candidate  # noqa: F401
-from task_plan_manager.workflow.confirm_plan.refine_each.choose_action import choose_action_task  # noqa: F401
-from task_plan_manager.workflow.confirm_plan.refine_each.find_existing import find_existing_task  # noqa: F401
-from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.finalize_knowledge import (  # noqa: F401
+from task_planner.engine.definition.flow_definition import FlowDefinition
+from task_planner.engine.definition.ref import Ref
+from task_planner.engine.definition.unit.builders import group, task
+from task_planner.engine.definition.unit.unit import Unit
+from task_planner.engine.performer.performed_by import PerformedBy
+from task_planner.engine.runner.child_run.child_run import ChildRun
+from task_planner.workflow.confirm_plan.check_edges import check_edges_task  # noqa: F401
+from task_planner.workflow.confirm_plan.extract_knowledge import extract_knowledge_task  # noqa: F401
+from task_planner.workflow.confirm_plan.find_plan import find_plan_task  # noqa: F401
+from task_planner.workflow.confirm_plan.notify import notify_task  # noqa: F401
+from task_planner.workflow.confirm_plan.record_decision import record_decision_task  # noqa: F401
+from task_planner.workflow.confirm_plan.refine_each import candidates_items, keeps_candidate  # noqa: F401
+from task_planner.workflow.confirm_plan.refine_each.choose_action import choose_action_task  # noqa: F401
+from task_planner.workflow.confirm_plan.refine_each.find_existing import find_existing_task  # noqa: F401
+from task_planner.workflow.confirm_plan.refine_each.keep_each.finalize_knowledge import (  # noqa: F401
     finalize_knowledge_task,
 )
-from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.review_knowledge import (  # noqa: F401
+from task_planner.workflow.confirm_plan.refine_each.keep_each.review_knowledge import (  # noqa: F401
     review_knowledge_task,
 )
-from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.save_knowledge import save_knowledge_task  # noqa: F401
-from task_plan_manager.workflow.confirm_plan.refine_each.keep_each.write_knowledge import (  # noqa: F401
+from task_planner.workflow.confirm_plan.refine_each.keep_each.save_knowledge import save_knowledge_task  # noqa: F401
+from task_planner.workflow.confirm_plan.refine_each.keep_each.write_knowledge import (  # noqa: F401
     write_knowledge_task,
 )
 

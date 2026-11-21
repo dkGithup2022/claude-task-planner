@@ -4,9 +4,9 @@ import json
 import stat
 from pathlib import Path
 
-from task_plan_manager.common import files
-from task_plan_manager.entry.cli import main
-from task_plan_manager.port.local.counter.default_counter_reader import DefaultCounterReader
+from task_planner.common import files
+from task_planner.entry.cli import main
+from task_planner.port.local.counter.default_counter_reader import DefaultCounterReader
 
 
 def _fake_claude(tmp_path, monkeypatch, joke: str):
@@ -14,7 +14,7 @@ def _fake_claude(tmp_path, monkeypatch, joke: str):
     exe = tmp_path / "fake-claude"
     exe.write_text(f"#!/bin/bash\ncat > /dev/null\necho '{json.dumps(out, ensure_ascii=False)}'")
     exe.chmod(exe.stat().st_mode | stat.S_IEXEC)
-    monkeypatch.setenv("TASK_PLAN_MANAGER_CLAUDE_BIN", str(exe))
+    monkeypatch.setenv("TASK_PLANNER_CLAUDE_BIN", str(exe))
 
 
 def run(capsys, *args):
@@ -26,7 +26,7 @@ def test_should_count_up_make_joke_and_show_it(tmp_path, monkeypatch, capsys, pa
     _fake_claude(tmp_path, monkeypatch, "팔(8)이 아파서 팔팔하지 못해요. ")
     # 첫 실행: 0 → 1
     spawn = run(capsys, "start", "count_joke")
-    assert spawn["type"] == "spawn" and spawn["payload"]["agent"] == "task_plan_manager:joke-note-writer"
+    assert spawn["type"] == "spawn" and spawn["payload"]["agent"] == "task-planner:joke-note-writer"
     assert "말장난: 팔(8)이 아파서 팔팔하지 못해요." in spawn["payload"]["message"]
     folder = Path(spawn["payload"]["message"].split("결과 폴더: ")[1])
     assert folder.name == "files" and folder.parent.name.startswith("write_note_")

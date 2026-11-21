@@ -23,7 +23,7 @@
 - 포트: 계획 읽기, 노드 추가·고치기·지우기, 간선 추가·지우기 (계획 저장소 API)
 - model: 노드 정의서(output_spec md)를 절(하는 일, 산출물 형태·담을 것, 그 외 설명)로 읽고 쓰는 일. 간선 다시 정하기의 입력 만들기, 계획 고치기의 정의서 만들기·바꾸기, make_plan 의 정의서 쓰기가 같이 쓴다
 - 공통 기능: 없음. 정의서 모양은 도메인 지식이라 common 이 아니다
-- tool-planner 범위 밖 (직접 만듦, 이전 plan-edit 과 같음): 간선 다시 정하기(`workflow/relink_edges/`), make_plan 의 간선 정리(`write_edges`), 계획 고치기(`workflow/plan_edit/`), plan-edit 스킬 글. 흐름 선언(FlowDefinition)은 바뀌지 않아 tool-workflow-planner 로 넘기지 않는다. claude -p 를 부르는 파일은 tool-add-prompt-task 의 모양(`prompt_{이름}.md`, `prompt_{이름}_output.py`, `PromptSpec` 상수)을 따르고, 시험은 tool-workflow-planner 6 절처럼 가짜 claude(`TASK_PLAN_MANAGER_CLAUDE_BIN`)로 한다
+- tool-planner 범위 밖 (직접 만듦, 이전 plan-edit 과 같음): 간선 다시 정하기(`workflow/relink_edges/`), make_plan 의 간선 정리(`write_edges`), 계획 고치기(`workflow/plan_edit/`), plan-edit 스킬 글. 흐름 선언(FlowDefinition)은 바뀌지 않아 tool-workflow-planner 로 넘기지 않는다. claude -p 를 부르는 파일은 tool-add-prompt-task 의 모양(`prompt_{이름}.md`, `prompt_{이름}_output.py`, `PromptSpec` 상수)을 따르고, 시험은 tool-workflow-planner 6 절처럼 가짜 claude(`TASK_PLANNER_CLAUDE_BIN`)로 한다
 
 ### tool-assess-port
 
@@ -363,9 +363,9 @@ argument-hint: <계획 id> <사용자 말>
 ---
 `$ARGUMENTS` 의 첫 단어가 계획 id, 나머지가 사용자 말입니다.
 
-`task_plan_manager` 명령은 Bash 제한 시간 600000(10분)으로 부릅니다.
+`task-planner` 명령은 Bash 제한 시간 600000(10분)으로 부릅니다.
 
-1. `task_plan_manager plan show <id>` 로 지금 계획(노드, 간선)을 읽습니다.
+1. `task-planner plan show <id>` 로 지금 계획(노드, 간선)을 읽습니다.
 2. 사용자 말을 아래 동작으로 옮깁니다. 말한 것만 바꿉니다.
 
    | op | 넘길 것 |
@@ -381,7 +381,7 @@ argument-hint: <계획 id> <사용자 말>
    - scope 는 이 노드가 하는 일 한두 줄, output 은 산출물 한 줄입니다. 사용자가 말한 조건은 note 나 add_note 에 넣습니다.
    - 앞뒤 간선은 넘기지 않습니다. 명령이 다시 잇습니다.
 3. JSON 한 줄을 작은따옴표로 감싸 넘깁니다. JSON 안에는 작은따옴표(')를 쓰지 않습니다.
-       task_plan_manager plan edit <id> --ops '{"ops": [...]}'
+       task-planner plan edit <id> --ops '{"ops": [...]}'
 4. 결과의 `changes` 와 `summary`(새 계획 표)를 그대로 돌려줍니다. `ok: false` 면 이유를 그대로 돌려줍니다.
 ````
 
@@ -394,9 +394,9 @@ argument-hint: <계획 id> <사용자 말>
 ---
 `$ARGUMENTS` 의 첫 단어가 계획 id, 나머지가 사용자 말입니다.
 
-`task_plan_manager` 명령은 Bash 제한 시간 600000(10분)으로 부릅니다. 노드를 나누거나 넣으면 간선을 다시 정하느라 1분 안팎이 걸립니다.
+`task-planner` 명령은 Bash 제한 시간 600000(10분)으로 부릅니다. 노드를 나누거나 넣으면 간선을 다시 정하느라 1분 안팎이 걸립니다.
 
-1. `task_plan_manager plan show <id>` 로 지금 계획(노드, 정의서, 간선)을 읽습니다.
+1. `task-planner plan show <id>` 로 지금 계획(노드, 정의서, 간선)을 읽습니다.
 2. 사용자 말을 아래 동작으로 옮깁니다. 말한 것만 바꿉니다.
 
    | op | 넘길 것 |
@@ -416,7 +416,7 @@ argument-hint: <계획 id> <사용자 말>
    - notes: 꼭 할 일과 주의할 점. 나누는 노드의 정의서에 있던 조건 가운데 이 노드에 해당하는 것을 옮기고, 사용자가 말한 조건과 이유를 씁니다.
    - 간선은 넘기지 않습니다. 명령이 바뀐 노드와 앞뒤 노드 사이의 간선을 다시 정합니다.
 3. JSON 한 줄을 작은따옴표로 감싸 넘깁니다. JSON 안에는 작은따옴표(')를 쓰지 않습니다.
-       task_plan_manager plan edit <id> --ops '{"ops": [...]}'
+       task-planner plan edit <id> --ops '{"ops": [...]}'
 4. 결과의 `changes`(바뀐 노드와 간선)와 `summary`(새 계획 표)를 그대로 돌려줍니다. `ok: false` 면 이유를 그대로 돌려줍니다.
 ````
 
@@ -425,7 +425,7 @@ argument-hint: <계획 id> <사용자 말>
 ## 6. 파일 트리
 
 ```
-src/task_plan_manager/workflow/
+src/task_planner/workflow/
 ├─ relink_edges/                         새로
 │  ├─ __init__.py
 │  ├─ relink_edges.py                    입력 JSON 만들기, claude -p 부르기, 거르기 (거르기는 write_edges 에서 옮김)
@@ -477,7 +477,7 @@ tests/workflow/make_plan/…                         간선 가짜 출력을 새
 - 3. make_plan write_edges: relink_edges 를 부름. local_id ↔ 1, 2, 3…, 받는 산출물 → previous_edges. 명령서 인자를 뺌(split_plan_task 한 줄). prompt_edges.md, prompt_edges_output.py 지움. "받는 산출물인데 빠진 간선 더하기"는 뺌 (계획대로). 시험 3개로 다시 씀, make_plan 흐름 시험의 가짜 claude 를 새 입력에 맞춤
 - 4. plan_edit: op(NewPart: title, does, kind?, output{form, contents}?, notes?; NodeOutput 새로; split 의 order·split_order.py 지움; insert 의 kind 는 새 노드 칸으로, 없으면 거절; update 의 scope → does, output 은 {form, contents} 또는 형태 글), node_spec(NodeSpec 으로 만들고 바꿈), edit_graph(간선 잇기 규칙을 빼고 원래·바뀐·앞뒤 노드와 이전 간선을 모음, 잇기·끊기는 user_edges 로), edit_plan(relink 부르기, 실패하면 거절, 이음·끊음 줄). 시험 다시 씀 (가짜 caller)
   - 계획과 다른 점: 잇기·끊기만 있는 고치기는 지금처럼 바로 반영하고, "이음 / 끊음" 줄은 비교 줄 하나로 합쳤다 (동작마다 적던 줄은 뺌). 앞뒤가 없는 노드를 빼면 다시 정할 노드가 없어 부르지 않는다
-  - 시험이 실제 claude 를 부르지 않게 tests/conftest.py 에 기본값 `TASK_PLAN_MANAGER_CLAUDE_BIN=false` 를 더함
+  - 시험이 실제 claude 를 부르지 않게 tests/conftest.py 에 기본값 `TASK_PLANNER_CLAUDE_BIN=false` 를 더함
 - 5. plan-edit 스킬 글: 계획서 5 절 to-be 그대로
 - 6. 최종 검증: pytest 154개, ruff, ruff format, mypy, lint-imports 통과
 - 별도 에이전트 리뷰 반영:

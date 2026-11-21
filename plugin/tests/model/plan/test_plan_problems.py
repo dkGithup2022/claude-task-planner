@@ -1,11 +1,11 @@
 """Plan.problems: 확정·실행 전에 고쳐야 할 문제."""
 
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.model.plan.plan import Plan
-from task_plan_manager.model.plan.plan_edge import PlanEdge
-from task_plan_manager.model.plan.plan_node import PlanNode
-from task_plan_manager.model.plan.plan_node_status import PlanNodeStatus
-from task_plan_manager.model.plan.plan_status import PlanStatus
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.model.plan.plan import Plan
+from task_planner.model.plan.plan_edge import PlanEdge
+from task_planner.model.plan.plan_node import PlanNode
+from task_planner.model.plan.plan_node_status import PlanNodeStatus
+from task_planner.model.plan.plan_status import PlanStatus
 
 
 def _plan(edges: tuple[PlanEdge, ...], nodes: tuple[PlanNode, ...] | None = None) -> Plan:

@@ -1,6 +1,6 @@
-from task_plan_manager.model.node_run.node_run import NodeRun
-from task_plan_manager.model.node_run.read_input import ReadInput
-from task_plan_manager.model.plan.plan_node_status import PlanNodeStatus
+from task_planner.model.node_run.node_run import NodeRun
+from task_planner.model.node_run.read_input import ReadInput
+from task_planner.model.plan.plan_node_status import PlanNodeStatus
 
 
 def test_should_return_new_run_on_start_and_finish():

@@ -1,9 +1,9 @@
 import pytest
 
-from task_plan_manager.model.plan.plan import Plan
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.workflow.plan_run.find_plan.plan_not_runnable_error import PlanNotRunnableError
-from task_plan_manager.workflow.plan_run.find_plan.runnable_check import require_runnable
+from task_planner.model.plan.plan import Plan
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.workflow.plan_run.find_plan.plan_not_runnable_error import PlanNotRunnableError
+from task_planner.workflow.plan_run.find_plan.runnable_check import require_runnable
 
 
 def _plan(status: PlanStatus) -> Plan:
@@ -18,8 +18,8 @@ def test_should_pass_approved_and_running(status):
 @pytest.mark.parametrize(
     ("status", "message"),
     [
-        (PlanStatus.DRAFTING, "작성 중 상태라 실행할 수 없습니다. 계획을 다 만든 뒤 /task_plan_manager:plan-go 7"),
-        (PlanStatus.REVIEWING, "검토 중 상태라 실행할 수 없습니다. 확정은 /task_plan_manager:plan-go 7"),
+        (PlanStatus.DRAFTING, "작성 중 상태라 실행할 수 없습니다. 계획을 다 만든 뒤 /task-planner:plan-go 7"),
+        (PlanStatus.REVIEWING, "검토 중 상태라 실행할 수 없습니다. 확정은 /task-planner:plan-go 7"),
         (PlanStatus.REJECTED, "계획 7 은 불허 상태라 실행할 수 없습니다"),
         (PlanStatus.DONE, "계획 7 은 끝남 상태입니다"),
     ],

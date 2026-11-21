@@ -4,18 +4,18 @@
 
 import json
 
-from task_plan_manager.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
-from task_plan_manager.claude_utils.prompt.prompt_call_error import PromptCallError
-from task_plan_manager.model.plan.node_kind import NodeKind
-from task_plan_manager.model.plan.plan_status import PlanStatus
-from task_plan_manager.port.plan_api.dto.new_node import NewNode
-from task_plan_manager.port.plan_api.dto.new_plan import NewPlan
-from task_plan_manager.port.plan_api.dto.node_change import NodeChange
-from task_plan_manager.port.plan_api.mock_plan_api_reader import MockPlanApiReader
-from task_plan_manager.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
-from task_plan_manager.workflow.plan_edit.edit_plan import edit_plan, show_plan
-from task_plan_manager.workflow.relink_edges.prompt_relink_edges_edge import RelinkEdgesEdge
-from task_plan_manager.workflow.relink_edges.prompt_relink_edges_output import RelinkEdgesOutput
+from task_planner.claude_utils.prompt.dto.prompt_call_record import PromptCallRecord
+from task_planner.claude_utils.prompt.prompt_call_error import PromptCallError
+from task_planner.model.plan.node_kind import NodeKind
+from task_planner.model.plan.plan_status import PlanStatus
+from task_planner.port.plan_api.dto.new_node import NewNode
+from task_planner.port.plan_api.dto.new_plan import NewPlan
+from task_planner.port.plan_api.dto.node_change import NodeChange
+from task_planner.port.plan_api.mock_plan_api_reader import MockPlanApiReader
+from task_planner.port.plan_api.mock_plan_api_writer import MockPlanApiWriter
+from task_planner.workflow.plan_edit.edit_plan import edit_plan, show_plan
+from task_planner.workflow.relink_edges.prompt_relink_edges_edge import RelinkEdgesEdge
+from task_planner.workflow.relink_edges.prompt_relink_edges_output import RelinkEdgesOutput
 
 SPEC = "### 하는 일\n{}\n\n### 산출물\n- 형태: 문서\n\n### 그 외 설명\n(없음)"
 
